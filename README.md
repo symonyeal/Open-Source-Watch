@@ -19,6 +19,7 @@ Built with Next.js, TypeScript, Tailwind CSS, and Leaflet. No API keys required.
 - **Naval Tracker** — Vessel monitoring in the Persian Gulf and Eastern Mediterranean
 - **Defense & Markets** — Defense contractor stocks, indices, VIX, gold, USD
 - **Crypto Markets** — Bitcoin, Ethereum, Solana, BNB with 24h price changes
+- **Prediction Markets** — Live Polymarket odds on Middle East conflict outcomes
 - **Energy Markets** — WTI, Brent, natural gas, heating oil, gasoline
 - **Satellite Thermal Detect** — NASA FIRMS fire/explosion detection
 
@@ -93,11 +94,10 @@ All data sources are free and require no API keys.
 | CNBC Quote API | Stock prices, indices, commodities | CNBC | Free, no key |
 | Tzeva Adom | Israeli missile/rocket alerts | Community mirror of Pikud HaOref | Free, no key |
 | NASA FIRMS | Fire/thermal detection satellite data | NASA | Free, no key |
-| OpenSky Network | Backup aircraft tracking | OpenSky | Free, no key |
 | adsb.lol | Military aircraft ADS-B tracking | Community ADS-B network | Free, no key |
-| EIA | US gas prices | US Energy Information Administration | Free, public demo key |
-| GDELT | Global event data (naval tracking) | GDELT Project | Free, no key |
+| GDELT | Global event data | GDELT Project | Free, no key |
 | CoinGecko | Cryptocurrency prices (BTC, ETH, SOL, BNB) | CoinGecko | Free, no key |
+| Polymarket | Prediction market odds (Middle East conflict) | Polymarket | Free, no key |
 | Google Translate | Hebrew/Arabic/Farsi auto-translation | Google (unofficial) | Free, no key |
 
 ### Polling Intervals
@@ -109,7 +109,7 @@ All data sources are free and require no API keys.
 | News RSS | 90 seconds |
 | Strikes | 2 minutes |
 | Conflicts | 3 minutes |
-| Markets, Oil & Crypto | 5 minutes |
+| Markets, Oil, Crypto & Polymarket | 5 minutes |
 | Fires (NASA FIRMS) | 10 minutes |
 
 ## Getting Started
@@ -123,7 +123,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Maps:** Leaflet / React-Leaflet

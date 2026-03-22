@@ -11,7 +11,7 @@ Built with Next.js, TypeScript, Tailwind CSS, and Leaflet. No API keys required.
 - **Live Intel Feed** — 20+ RSS news sources with keyword relevance filtering
 - **Telegram OSINT** — 27 channels scraped in real-time with auto-translation (Hebrew/Arabic/Farsi), including GCC sources
 - **Theater Map** — Interactive Leaflet map with military aircraft, naval vessels, strike markers from news and Telegram, missile trajectory arcs, range rings, and distance measurement
-- **Israel Alert Status** — Live Pikud HaOref / Tzeva Adom missile alerts with audio notifications
+- **Israel Alert Status** — Live Pikud HaOref / Tzeva Adom missile alerts with audio notifications and looping missile trajectory arcs on the map
 - **Conflict Monitor** — Categorized events (strikes, defense, diplomatic, nuclear)
 - **Missile / Strike Tracker** — Weapon type classification and severity
 - **Regional Threat Monitor** — Per-country threat levels across 10 nations

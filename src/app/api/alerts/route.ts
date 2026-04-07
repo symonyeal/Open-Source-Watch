@@ -59,7 +59,8 @@ export async function GET() {
       }
     }
   } catch (err) {
-    console.error('Tzeva Adom fetch error:', err);
+    const isTimeout = err instanceof Error && (err.message.includes('Timeout') || (err as NodeJS.ErrnoException).code === 'UND_ERR_CONNECT_TIMEOUT');
+    if (!isTimeout) console.error('Tzeva Adom fetch error:', err);
   }
 
   // Fallback: use Google Translate for any remaining Hebrew text the dictionary missed

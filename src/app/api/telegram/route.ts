@@ -41,6 +41,8 @@ const CHANNELS = [
   { name: 'gulfnewsUAE', label: 'Gulf News', color: '#e6b800' },
   { name: 'Alibk3', label: 'Ali Bk', color: '#44bb88' },
   { name: 'aljazeeraglobal', label: 'Al Jazeera', color: '#d4a843' },
+  { name: 'bintjbeilnews', label: 'Bint Jbeil', color: '#55aa77' },
+  { name: 'kianmeli1', label: 'Kian Meli (Iran)', color: '#7744aa' },
 ];
 
 interface TelegramPost {

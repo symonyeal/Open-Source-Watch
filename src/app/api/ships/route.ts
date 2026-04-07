@@ -134,22 +134,6 @@ interface NavalVessel {
 }
 
 async function getOSINTNavalPositions(): Promise<NavalVessel[]> {
-  // Search GDELT for recent naval movement reports to update positions
-  const vessels: NavalVessel[] = [];
-
-  try {
-    const url = 'https://api.gdeltproject.org/api/v2/doc/doc?query=navy%20carrier%20destroyer%20Persian%20Gulf%20OR%20%22Red%20Sea%22%20OR%20%22Mediterranean%22%20deploy&mode=artlist&maxrecords=10&format=json&sort=datedesc';
-    const res = await fetchWithTimeout(url, { timeout: 10000 });
-    if (res.ok) {
-      const data = await res.json();
-      // Use articles to inform which ships are deployed where
-      // For now, we use the known deployment data supplemented by news
-      void data;
-    }
-  } catch {
-    // Continue with known data
-  }
-
   // Known naval deployments (updated from public DoD/Navy press releases)
   // These approximate positions are from publicly available information
   const knownDeployments: NavalVessel[] = [

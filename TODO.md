@@ -4,6 +4,12 @@ Working task list for **IRONSIGHT**. Read this at the start of a work session an
 
 ---
 
+## Refactor audit (2026-10-01) - found, not started
+
+Read-only fleet audit (9 agents, nothing changed). Each line: effort S (<half day) / M (1-3 days) / L, and the risk of making the fix. 🔴 = a live bug or safety hole.
+
+- [ ] 🟡 API response types defined twice (routes + panels) -> `src/lib/types/`; split `src/components/map/ConflictMap.tsx` (1,038, 18 `useEffect`) into one hook per feed layer. M, low-med.
+
 ## Open
 
 _None tracked yet - add items as `- [ ] task`, grouped by priority or theme. Mark done inline: `- [x] ~~task~~ ✅ done YYYY-MM-DD`._

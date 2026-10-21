@@ -16,6 +16,7 @@ import NavalPanel from '@/components/panels/NavalPanel';
 import RegionalAlertsPanel from '@/components/panels/RegionalAlertsPanel';
 import CryptoPanel from '@/components/panels/CryptoPanel';
 import PolymarketPanel from '@/components/panels/PolymarketPanel';
+import SourceHealth from '@/components/panels/SourceHealth';
 import ConflictToggle from '@/components/ConflictToggle';
 import { useConflict } from '@/lib/conflicts/context';
 import { useState, useEffect } from 'react';
@@ -60,7 +61,7 @@ export default function Dashboard() {
               <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-[var(--cyan)] rounded-full -translate-x-1/2 -translate-y-1/2" />
             </div>
             <div>
-              <h1 className="text-sm font-bold tracking-[3px] text-[var(--cyan)]">IRONSIGHT</h1>
+              <h1 className="text-sm font-bold tracking-[3px] text-[var(--cyan)]">OPEN-SOURCE-WATCH</h1>
               <p className="text-[8px] text-[var(--text-secondary)] tracking-[2px]">
                 OSINT COMMAND CENTER // UNCLASSIFIED
               </p>
@@ -140,6 +141,7 @@ export default function Dashboard() {
       <footer className="border-t border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-1 flex items-center justify-between text-[9px] text-[var(--text-secondary)] shrink-0">
         <span>FEEDS: NEWS | GDELT | TELEGRAM | OPENSKY | OCHA | YAHOO FIN | {config.client.alertSystemName.toUpperCase()} | NASA FIRMS | ADSB.LOL</span>
         <div className="flex items-center gap-4">
+          <SourceHealth />
           <span>ALERTS: 5s | NEWS: 2m | MARKETS: 5m</span>
           <span>ALL DATA: PUBLIC / OSINT</span>
           <span>CLASSIFICATION: UNCLASSIFIED // FOUO</span>

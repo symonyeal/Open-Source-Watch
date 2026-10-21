@@ -1,19 +1,20 @@
 """Engine HTTP API (spec § Seam).
 
-Engine-native routes: /regions, /observations, /sources, /stream.
-Upstream-shaped routes under /api/* return exactly the JSON of the IRONSIGHT
-route of the same path (src/lib/types/api.ts), built from the store, so a
-Next.js route with ENGINE_URL set can forward to them unchanged.
+/fetch?url=U   the recording proxy: the latest stored response for an upstream URL
+               (src/lib/fetcher.ts forwards here when ENGINE_URL is set)
+/api/telegram  upstream's TelegramData shape (src/lib/types/api.ts), from the store
+/regions, /observations, /sources, /stream   engine-native views
 """
 import asyncio
 import json
 import threading
+from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
-from starlette.responses import JSONResponse, StreamingResponse
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
 from engine import cycle, regions, store
@@ -36,6 +37,14 @@ def js(x):
     return JSONResponse(json.loads(json.dumps(x, default=str)), headers=NO_CACHE)
 
 
+async def fetch(req):
+    res = await run_in_threadpool(cycle.proxy, req.query_params.get("url", ""))
+    if res is None:
+        return Response(status_code=502)
+    return Response(res.content, status_code=res.status_code, headers=NO_CACHE,
+                    media_type=res.headers.get("content-type", "application/octet-stream"))
+
+
 async def regions_(req):
     return js([{"id": r["id"], "name": r["name"], "bbox": r["bbox"],
                 "pirs": [{"id": p["id"], "question": p["question"]} for p in r["pir"]]}
@@ -54,7 +63,7 @@ async def observations(req):
 
 
 def health(runs, cadence, t):
-    """ok | stale | failed | unknown (spec § Errors)."""
+    """ok | stale | failed | unknown (spec § Errors); runs newest first."""
     if not runs:
         return "unknown"
     good = [x for x in runs if x["status"] in ("ok", "empty")]
@@ -67,43 +76,50 @@ def health(runs, cadence, t):
 
 def source_table(r):
     t = datetime.now(UTC)
-    runs = store.query("SELECT * FROM collection_run WHERE region = ? AND started_at > ? "
-                       "ORDER BY started_at DESC", (r["id"], t - timedelta(days=1)))
-    out = []
-    for _, sid, c, _, a in cycle.tasks([r["id"]]):
-        R = [x for x in runs if x["source_id"] == sid]
-        out.append({"id": sid, "adapter": a, "reliability": regions.reliability(r, sid),
-                    "owner": regions.owner(r, sid), "cadence_s": c, "health": health(R, c, t),
-                    "last_status": R[0]["status"] if R else None,
-                    "last_run": R[0]["started_at"] if R else None})
-    return out
+    runs = defaultdict(list)
+    for x in store.query("SELECT * FROM collection_run WHERE region IN (?, 'global') "
+                         "AND started_at > ? ORDER BY started_at DESC",
+                         (r["id"], t - timedelta(days=1))):
+        runs[x["source_id"]].append(x)
+    return [{"id": s["id"], "region": s["region"], "url": s["url"],
+             "reliability": regions.reliability(r, s["id"]), "owner": regions.owner(r, s["id"]),
+             "cadence_s": s["cadence"], "health": health(runs[s["id"]], s["cadence"], t),
+             "last_status": runs[s["id"]][0]["status"] if runs[s["id"]] else None,
+             "last_run": runs[s["id"]][0]["started_at"] if runs[s["id"]] else None}
+            for s in cycle.sources([r["id"], "global"])]
 
 
 async def sources(req):
     return js(await run_in_threadpool(source_table, region_of(req)))
 
 
-def news_items(r, t):
-    """Upstream NewsItem[]: deduplicated on the first 60 lowercased title characters,
-    nearest to now first, at most 100 (src/app/api/news/route.ts)."""
+def telegram_data(r, t):
+    """Upstream TelegramData: the latest 3 stored posts per channel, newest first
+    (src/app/api/telegram/route.ts); text is the stored excerpt, translated."""
     X = store.query(
-        "SELECT o.text_en, o.t, r.payload FROM observation o JOIN raw_report r ON r.id = o.raw_id "
-        "WHERE o.region = ? AND o.source_id LIKE 'rss:%' AND o.t > ?", (r["id"], t))
-    now, seen, out = datetime.now(UTC), set(), []
-    for x in sorted(X, key=lambda x: abs((now - x["t"]).total_seconds())):
-        k = x["text_en"].lower().strip()[:60]
-        if k in seen:
-            continue
-        seen.add(k)
+        "SELECT o.text_en, r.payload FROM observation o JOIN raw_report r ON r.id = o.raw_id "
+        "WHERE o.region = ? AND o.source_id LIKE 'telegram:%' AND o.t > ?", (r["id"], t))
+    C = {c["name"]: c for c in r["conflict"]["telegramChannels"]}
+    by = defaultdict(list)
+    for x in X:
         p = json.loads(x["payload"])
-        item = {"title": x["text_en"], "link": p["link"], "source": p["source"],
-                "pubDate": p["pubDate"]}
-        out.append(item | ({"category": p["category"]} if p["category"] else {}))
-    return out[:100]
+        by[p["channel"]].append((p, x["text_en"]))
+    posts = []
+    for ch, P in by.items():
+        c = C.get(ch) or next((v for k, v in C.items() if k.lower() == ch.lower()), None)
+        if c is None:
+            continue
+        for p, en in sorted(P, key=lambda y: -y[0]["postId"])[:3]:
+            posts.append({"channel": c["name"], "channelLabel": c["label"], "color": c["color"],
+                          "postId": p["postId"], "text": en, "date": p["date"],
+                          "url": f"https://t.me/{c['name']}/{p['postId']}"})
+    posts.sort(key=lambda p: p["date"] or "", reverse=True)
+    return {"posts": posts, "channels": [c["label"] for c in C.values()],
+            "updated": datetime.now(UTC).isoformat()}
 
 
-async def news(req):
-    return js(await run_in_threadpool(news_items, region_of(req), since(req)))
+async def telegram(req):
+    return js(await run_in_threadpool(telegram_data, region_of(req), since(req, 24 * 7)))
 
 
 async def stream(req):
@@ -135,6 +151,7 @@ def app(collect=True):
         stop.set()
 
     return Starlette(lifespan=life, routes=[
-        Route("/regions", regions_), Route("/observations", observations),
-        Route("/sources", sources), Route("/stream", stream), Route("/api/news", news),
+        Route("/fetch", fetch), Route("/api/telegram", telegram), Route("/regions", regions_),
+        Route("/observations", observations), Route("/sources", sources),
+        Route("/stream", stream),
     ])

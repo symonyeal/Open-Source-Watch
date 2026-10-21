@@ -4,10 +4,10 @@ import "./globals.css";
 import { ConflictProvider } from "@/lib/conflicts/context";
 
 export const metadata: Metadata = {
-  title: "IRONSIGHT // OSINT Command Center",
+  title: "Open-Source-Watch // OSINT (IRONSIGHT fork)",
   description:
     "Real-time OSINT dashboard aggregating free, public open-source intelligence across two conflict theaters (Iran/Israel and Russia/Ukraine): news, Telegram, air-raid alerts, live drone/missile tracking, military aircraft, naval, markets, and satellite thermal detection. All data belongs to its respective providers.",
-  applicationName: "IRONSIGHT",
+  applicationName: "Open-Source-Watch",
   keywords: [
     "OSINT",
     "dashboard",

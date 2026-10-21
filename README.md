@@ -8,10 +8,11 @@ prices. Open-Source-Watch gathers that trail for a region, keeps every item with
 of where it came from and how far that source can be trusted, and shows it on one live
 map.
 
-**Status.** Phase 0 of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
-news for the two starting regions (Iran/Israel, Russia/Ukraine) is collected, graded,
-stored and served to the dashboard by the Python engine. The other feeds still run
-through the original dashboard code.
+**Status.** Phase 1 of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
+every feed of the two starting regions (Iran/Israel, Russia/Ukraine) is collected,
+graded and stored by the Python engine, which serves it to the dashboard. That covers
+news, Telegram, satellite fire detections, aircraft, air-raid alerts, drone tracks and
+markets. The footer shows the health of each source.
 
 **What this does not show.** Nothing here is verified ground truth. Each item is a
 claim by its source; the grade says how reliable the source has been judged, not whether

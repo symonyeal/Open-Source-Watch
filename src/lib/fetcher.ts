@@ -6,6 +6,19 @@ export async function fetchWithTimeout(
 ): Promise<Response> {
   const { timeout = 10000, ...fetchOptions } = options;
 
+  // Open-Source-Watch seam: with ENGINE_URL set, upstream URLs are answered by the
+  // engine's recording proxy, so what a route shows is what the engine stored.
+  const engine = process.env.ENGINE_URL;
+  if (engine && /^https?:\/\//.test(url) && !url.startsWith(engine)) {
+    try {
+      const res = await fetchWithTimeout(`${engine}/fetch?url=${encodeURIComponent(url)}`, options);
+      if (res.status !== 502) return res;
+    } catch {
+      // engine unreachable: fall through to the direct fetch
+    }
+    // 502: the engine has no response for this URL; fetch it directly
+  }
+
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 

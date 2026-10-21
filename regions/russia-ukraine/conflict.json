@@ -962,6 +962,108 @@
         47.01,
         28.86
       ]
+    },
+    "alertCities": {
+      "vinnytsia oblast": [
+        49.23,
+        28.48
+      ],
+      "volyn oblast": [
+        50.75,
+        25.34
+      ],
+      "dnipropetrovsk oblast": [
+        48.46,
+        35.05
+      ],
+      "donetsk oblast": [
+        48.02,
+        37.8
+      ],
+      "zhytomyr oblast": [
+        50.25,
+        28.66
+      ],
+      "zakarpattia oblast": [
+        48.62,
+        22.29
+      ],
+      "zaporizhzhia oblast": [
+        47.84,
+        35.14
+      ],
+      "ivano-frankivsk oblast": [
+        48.92,
+        24.71
+      ],
+      "kyiv oblast": [
+        50.45,
+        30.52
+      ],
+      "kirovohrad oblast": [
+        48.51,
+        32.26
+      ],
+      "luhansk oblast": [
+        48.57,
+        39.31
+      ],
+      "lviv oblast": [
+        49.84,
+        24.03
+      ],
+      "mykolaiv oblast": [
+        46.98,
+        31.99
+      ],
+      "odesa oblast": [
+        46.48,
+        30.73
+      ],
+      "poltava oblast": [
+        49.59,
+        34.55
+      ],
+      "rivne oblast": [
+        50.62,
+        26.25
+      ],
+      "sumy oblast": [
+        50.91,
+        34.8
+      ],
+      "ternopil oblast": [
+        49.55,
+        25.59
+      ],
+      "kharkiv oblast": [
+        49.99,
+        36.23
+      ],
+      "kherson oblast": [
+        46.64,
+        32.61
+      ],
+      "khmelnytskyi oblast": [
+        49.42,
+        26.99
+      ],
+      "cherkasy oblast": [
+        49.44,
+        32.06
+      ],
+      "chernivtsi oblast": [
+        48.29,
+        25.94
+      ],
+      "chernihiv oblast": [
+        51.49,
+        31.29
+      ],
+      "kyiv": [
+        50.45,
+        30.52
+      ]
     }
   }
 }

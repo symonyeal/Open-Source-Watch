@@ -1,0 +1,40 @@
+{
+"states": [
+{
+"id": 1,
+"name": "Вінницька область",
+"name_en": "Vinnytsia oblast",
+"alert": false,
+"changed": "2025-11-02T22:07:39.738Z"
+},
+{
+"id": 2,
+"name": "Волинська область",
+"name_en": "Volyn oblast",
+"alert": false,
+"changed": "2025-12-23T07:09:02.018Z"
+},
+{
+"id": 3,
+"name": "Дніпропетровська область",
+"name_en": "Dnipropetrovsk oblast",
+"alert": true,
+"changed": "2025-11-04T01:50:57.350Z"
+},
+{
+"id": 4,
+"name": "Донецька область",
+"name_en": "Donetsk oblast",
+"alert": false,
+"changed": "2025-11-04T21:37:04.663Z"
+},
+{
+"id": 5,
+"name": "Житомирська область",
+"name_en": "Zhytomyr oblast",
+"alert": false,
+"changed": "2025-11-02T22:07:11.961Z"
+}
+],
+"last_update": "2026-10-21T07:15:58.609+00:00"
+}

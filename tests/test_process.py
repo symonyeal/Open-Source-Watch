@@ -29,6 +29,16 @@ def test_classify(s, kind):
     assert process.classify(s) == kind
 
 
+@pytest.mark.parametrize("rid, s, place", [
+    ("iran-israel", "Fujairah Oil Zone Hit by Fire After Drone Attack", "Fujairah"),
+    ("russia-ukraine", "In the Poltava community, UAVs were hit", "Poltava"),
+])
+def test_geonames_city_and_short_words(rid, s, place):
+    """GeoNames names match capitalised; 'Hit' (Iraq, under 500,000) is not a place."""
+    names = process.geocode(process.gazetteer(R[rid]), s)[3]
+    assert place in names and "Hit" not in names
+
+
 def test_geocode_prefers_the_most_specific_place():
     G = process.gazetteer(II)
     lat, lon, prec, names = process.geocode(G, "Strike near Isfahan, Iran")
@@ -49,5 +59,5 @@ def test_language_by_script():
 
 def test_translation_is_cached(monkeypatch):
     process._cache["שלום"] = "Hello"
-    monkeypatch.setattr(process.httpx, "get", None)  # any network call would fail
+    monkeypatch.setattr(process, "google", None)  # any network call would fail
     assert process.translate("שלום") == "Hello" and process.translate("hi") == "hi"

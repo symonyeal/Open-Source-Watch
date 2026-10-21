@@ -1,0 +1,4 @@
+tests/fixtures/** linguist-vendored
+regions/**/conflict.json linguist-generated
+regions/global.json linguist-generated
+regions/geonames.tsv linguist-generated

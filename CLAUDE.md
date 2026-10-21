@@ -34,6 +34,11 @@ Python engine in `engine/` runs the intelligence cycle behind it.
   (`/fetch`), and every engine source URL is built exactly as the upstream route builds
   it (tests check this against Node). `/api/telegram` is the one engine-shaped route.
 - The gazetteer is `regions/geonames.tsv`, rebuilt by `py -3.14 -m engine gazetteer`.
+- A new region is one file, `regions/<id>/region.toml`, with a `[conflict]` table;
+  `py -3.14 -m engine regions` writes it into `src/lib/conflicts/generated.ts` (never
+  edit that by hand). The two upstream theaters keep their TypeScript configs.
+- Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
+  from them at start-up, so derived tables depend on raw reports and labels only.
 - Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
   regenerates every derived table from them.
 
@@ -49,7 +54,9 @@ exception.
 py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
 py -3.14 -m engine collect [--region R]  # one poll of every source
 py -3.14 -m engine fuse                  # recompute events and entities
+py -3.14 -m engine regions               # after editing any region.toml
 git worktree add data data               # once: ./data = the cron's `data` branch
+AISSTREAM_KEY=... py -3.14 -m engine serve   # AIS for the transit indicators (free key)
 npm run dev                              # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790
 ```
 

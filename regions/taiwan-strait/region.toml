@@ -1,0 +1,140 @@
+# Taiwan Strait and the northern South China Sea (chokepoint region, spec P4).
+
+id = "taiwan-strait"
+name = "Taiwan Strait"
+bbox = [21.0, 27.5, 116.0, 123.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "zh"]
+timezone = "Asia/Taipei"  # local time of reports (engine.process.when)
+
+[gate.taiwan-strait]
+# Across the strait, Pingtan (Fujian) to Hsinchu (Taiwan), approximate.
+line = [[25.45, 119.85], [24.85, 120.92]]
+
+[reliability]
+"rss:Taipei Times" = "C"
+"rss:SCMP" = "C"
+"rss:The Diplomat" = "C"
+"rss:Japan Times" = "C"
+"rss:CNA" = "C"
+"rss:gCaptain" = "C"
+"rss:Google News" = "C"
+"gnews:strike" = "C"
+"gnews:conflict" = "C"
+"gnews:country" = "C"
+"telegram:OSINTdefender" = "E"
+"telegram:Liveuamap" = "E"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"ais:aisstream" = "B"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+[[link]]
+title = "Supply-Chain-Cuts"
+url = "https://symonyeal.github.io/Supply-Chain-Cuts/"
+note = "Every single point of failure found there (battery cells, cathode, anode, graphite, lithium carbonate; polysilicon to modules) is Chinese production, much of it shipped through these waters."
+
+[[pir]]
+id = "TW-1"
+question = "Is PLA military activity around Taiwan escalating?"
+
+  [[pir.indicator]]
+  id = "TW-1a"
+  name = "Reported drills, deployments, incursions"
+  kind = "strategic_developments"
+  window_h = 24
+  watch = 3
+  trigger = 10
+  max_credibility = 4
+
+  [[pir.indicator]]
+  id = "TW-1b"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 72
+  watch = 1
+  trigger = 3
+  max_credibility = 4
+
+[[pir]]
+id = "TW-2"
+question = "Is commercial traffic through the Taiwan Strait disrupted?"
+
+  [[pir.indicator]]
+  id = "TW-2a"
+  name = "Daily transits, z-score against 14 days"
+  metric = "transit"
+  gate = "taiwan-strait"
+  window_days = 14
+  watch_z = -1.0
+  trigger_z = -2.0
+
+  [[pir.hypothesis]]
+  id = "TW-2-H1"
+  text = "A blockade or exclusion zone is diverting traffic"
+  expect = { "TW-1a" = "present", "TW-1b" = "present", "TW-2a" = "present" }
+
+  [[pir.hypothesis]]
+  id = "TW-2-H2"
+  text = "Exercises without effect on traffic"
+  expect = { "TW-1a" = "present", "TW-2a" = "absent" }
+
+  [[pir.hypothesis]]
+  id = "TW-2-H3"
+  text = "Routine activity"
+  expect = { "TW-1a" = "absent", "TW-1b" = "absent", "TW-2a" = "absent" }
+
+[conflict]
+label = "TAIWAN STRAIT"
+
+[conflict.client]
+mapCenter = [24.3, 119.8]
+mapZoom = 6
+cities = [
+  { name = "Taipei", lat = 25.033, lon = 121.5654, country = "Taiwan", capital = true },
+  { name = "Kaohsiung", lat = 22.6273, lon = 120.3014, country = "Taiwan", capital = false },
+  { name = "Taichung", lat = 24.1477, lon = 120.6736, country = "Taiwan", capital = false },
+  { name = "Kinmen", lat = 24.4321, lon = 118.3171, country = "Taiwan", capital = false },
+  { name = "Penghu", lat = 23.5711, lon = 119.5793, country = "Taiwan", capital = false },
+  { name = "Xiamen", lat = 24.4798, lon = 118.0894, country = "China", capital = false },
+  { name = "Fuzhou", lat = 26.0745, lon = 119.2965, country = "China", capital = false },
+  { name = "Pingtan", lat = 25.5003, lon = 119.7903, country = "China", capital = false },
+]
+cityColors = { China = "#ff6666", Taiwan = "#66ccff", default = "#999999" }
+strikeLocations = { "taiwan strait" = [24.3, 119.8], "taipei" = [25.03, 121.57], "kaohsiung" = [22.63, 120.30], "taichung" = [24.15, 120.67], "kinmen" = [24.43, 118.32], "matsu" = [26.16, 119.95], "penghu" = [23.57, 119.58], "pratas" = [20.70, 116.72], "xiamen" = [24.48, 118.09], "fujian" = [26.1, 118.3], "pingtan" = [25.50, 119.79], "taiwan" = [23.7, 121.0] }
+timeZones = [
+  { label = "TAIPEI", zone = "Asia/Taipei", flag = "🇹🇼" },
+  { label = "BEIJING", zone = "Asia/Shanghai", flag = "🇨🇳" },
+  { label = "UTC", zone = "UTC", flag = "🌐" },
+]
+maritimeRegions = ["Taiwan Strait", "South China Sea", "Philippine Sea"]
+
+[conflict.server]
+strikeQueries = ["PLA+aircraft+Taiwan+ADIZ", "Taiwan+Strait+warship+drill"]
+conflictQueries = ["Taiwan Strait PLA exercise", "China coast guard Kinmen"]
+countryQueries = [
+  { country = "Taiwan", flag = "🇹🇼", query = "Taiwan+defense+ministry+PLA" },
+  { country = "China", flag = "🇨🇳", query = "PLA+Eastern+Theater+Command" },
+  { country = "Philippines", flag = "🇵🇭", query = "Philippines+Bashi+Channel+China" },
+  { country = "Japan", flag = "🇯🇵", query = "Japan+Yonaguni+China+military" },
+]
+countryAttribution = [{ match = ["pla", "china", "chinese"], country = "China" }]
+defaultCountry = "Taiwan Strait"
+conflictLocations = [{ match = ["taiwan strait"], location = "Taiwan Strait" }, { match = ["kinmen"], location = "Kinmen" }]
+newsFeeds = [
+  { url = "https://www.taipeitimes.com/xml/index.rss", name = "Taipei Times" },
+  { url = "https://www.scmp.com/rss/91/feed", name = "SCMP" },
+  { url = "https://thediplomat.com/feed/", name = "The Diplomat" },
+  { url = "https://www.japantimes.co.jp/feed/", name = "Japan Times" },
+  { url = "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511", name = "CNA" },
+  { url = "https://gcaptain.com/feed/", name = "gCaptain" },
+  { url = "https://news.google.com/rss/search?q=%22Taiwan+Strait%22+OR+PLA+Taiwan&hl=en-US&gl=US&ceid=US:en", name = "Google News", unfiltered = true },
+]
+newsRelevanceKeywords = { regex = "taiwan|pla\\b|people.s liberation|strait|kinmen|matsu|penghu|adiz|blockade|drill|exercise|warship|carrier|coast guard|beijing|xi jinping|lai ching", flags = "i" }
+polymarketKeywords = { regex = "taiwan|china.*(?:invade|blockade|strait)|pla\\b", flags = "i" }
+polymarketExclude = { regex = "nba|nfl|mlb|nhl|fifa|world.?cup|oscar|grammy|crypto|bitcoin|tariff", flags = "i" }
+telegramChannels = [
+  { name = "OSINTdefender", label = "OSINT Defender", color = "#00aaff" },
+  { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
+]

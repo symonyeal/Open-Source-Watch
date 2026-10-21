@@ -6,28 +6,30 @@ parser and processor. Sources sharing a URL are fetched once per poll. The lates
 response per URL is kept in CACHE, from which the proxy answers the front end
 (spec § Seam): what the dashboard shows is what was stored.
 """
+import queue
 import threading
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from functools import cache
+from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 import httpx
 
-from engine import fuse, regions, store
-from engine.collect import adsb, alerts, firms, markets, neptun, now, rss, run, telegram
+from engine import analyze, fuse, produce, regions, store
+from engine.collect import ais, adsb, alerts, firms, markets, neptun, now, rss, run, telegram
 from engine.process import feeds, news
 from engine.schema import DERIVED
 
-MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets)
+MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais)
 PARSE = {"rss": rss.parse, "gnews": rss.parse, "telegram": telegram.parse, "firms": firms.parse,
          "adsb": adsb.parse, "alerts": alerts.parse, "drones": neptun.parse,
-         "markets": markets.parse}
+         "markets": markets.parse, "ais": ais.parse}
 DERIVE = {"rss": news.derive, "gnews": news.derive, "telegram": feeds.telegram,
           "firms": feeds.firms, "adsb": feeds.adsb, "alerts": feeds.alerts,
-          "drones": feeds.neptun}
+          "drones": feeds.neptun, "ais": feeds.ais}
 
 CACHE = {}          # url -> (monotonic time, httpx.Response)
 _seen, _lock = None, threading.Lock()
@@ -37,10 +39,68 @@ def adapter(source_id):
     return source_id.split(":", 1)[0]
 
 
-def sources(region_ids=None, adapters=None):
+def sources(region_ids=None, adapters=None, polled=False):
+    """Sources of the given regions and adapters; polled=True drops stream sources."""
     S = [s for m in MODULES for s in m.sources(regions.regions())]
     return [s for s in S if (not region_ids or s["region"] in region_ids)
-            and (not adapters or adapter(s["id"]) in adapters)]
+            and (not adapters or adapter(s["id"]) in adapters)
+            and not (polled and s.get("stream"))]
+
+
+def due(S, t=None):
+    """Sources of S of which 90 % of the cadence has elapsed since their last
+    successful run in the store (a stateless runner, such as the cron, polls only
+    these; the 10 % absorbs its schedule jitter)."""
+    t = t or now()
+    last = {x["source_id"]: x["t"] for x in store.query(
+        "SELECT source_id, max(started_at) t FROM collection_run WHERE status IN "
+        "('ok', 'empty') GROUP BY source_id")}
+    return [s for s in S if s["id"] not in last
+            or (t - last[s["id"]]).total_seconds() >= 0.9 * s["cadence"]]
+
+
+def health(runs, cadence, t):
+    """ok | stale | failed | unknown (spec § Errors); runs newest first."""
+    if not runs:
+        return "unknown"
+    good = [x for x in runs if x["status"] in ("ok", "empty")]
+    if len(runs) >= 3 and not any(x in good for x in runs[:3]):
+        return "failed"
+    if not good or (t - good[0]["started_at"]).total_seconds() > 3 * cadence:
+        return "stale"
+    return "ok"
+
+
+def source_table(r):
+    """Every source serving region r, with its grade, owner and health."""
+    t = now()
+    runs = defaultdict(list)
+    for x in store.query("SELECT * FROM collection_run WHERE region IN (?, 'global') "
+                         "AND started_at > ? ORDER BY started_at DESC",
+                         (r["id"], t - timedelta(days=1))):
+        runs[x["source_id"]].append(x)
+    return [{"id": s["id"], "region": s["region"], "url": s["url"],
+             "reliability": regions.reliability(r, s["id"]), "owner": regions.owner(r, s["id"]),
+             "cadence_s": s["cadence"], "health": health(runs[s["id"]], s["cadence"], t),
+             "last_status": runs[s["id"]][0]["status"] if runs[s["id"]] else None,
+             "last_run": runs[s["id"]][0]["started_at"] if runs[s["id"]] else None}
+            for s in sources([r["id"], "global"])]
+
+
+def board(r):
+    """Indicator board of region r with current source health (engine.analyze)."""
+    return analyze.board(r, {s["id"]: s["health"] for s in source_table(r)})
+
+
+def analyse(products=()):
+    """After fusion: append each region's indicator snapshot and the given products."""
+    S, P = [], []
+    for r in regions.regions().values():
+        B = board(r)
+        S += analyze.snapshot(r, B)
+        P += [produce.product(r, k, produce.report(r, B, source_table(r), k)) for k in products]
+    store.append("indicator_status", S)
+    store.append("product", P)
 
 
 @cache
@@ -89,20 +149,45 @@ def collect(S, runner="local", workers=16):
         res, raw, runs = run(group, PARSE[adapter(group[0]["id"])], runner)
         if res is not None:
             CACHE[group[0]["url"]] = (time.monotonic(), res)
-        with _lock:
-            K = seen()
-            new = [x for x in raw if x["id"] not in K]
-            K.update((x["id"], x["fetched_at"]) for x in new)
-        return new, derive(new), runs
+        return keep(raw, runs)
 
+    base = [g for g in G.values() if g[0]["cadence"] >= 86400]   # baselines (FIRMS 7 d) first
+    out = [one(g) for g in base]
+    save(out)
     with ThreadPoolExecutor(workers) as ex:
-        out = list(ex.map(one, G.values()))
+        return [x for o in out for x in o[2]] + \
+            save(list(ex.map(one, [g for g in G.values() if g not in base])))
+
+
+def keep(raw, runs):
+    """(new raw reports, what they derive, run rows); a stored report is not new."""
+    with _lock:
+        K = seen()
+        new = [x for x in raw if x["id"] not in K]
+        K.update((x["id"], x["fetched_at"]) for x in new)
+    return new, derive(new), runs
+
+
+def save(out):
     store.append("raw_report", [x for o in out for x in o[0]])
     for t in DERIVED:
         store.append(t, [x for o in out for x in o[1].get(t, [])])
     runs = [x for o in out for x in o[2]]
     store.append("collection_run", runs)
     return runs
+
+
+def ingest(src, messages, runner="local"):
+    """Store one batch of a stream source's messages as one poll; without the
+    source's key the poll is `blocked`."""
+    if not ais.key():
+        return save([([], {}, [{"source_id": src["id"], "region": src["region"],
+                                "started_at": now(), "status": "blocked", "n_rows": 0,
+                                "latency_ms": 0, "runner": runner}])])
+    body = "\n".join(messages).encode()
+    _, raw, runs = run([src], PARSE[adapter(src["id"])], runner,
+                       get=lambda s: SimpleNamespace(content=body))
+    return save([keep(raw, runs)])
 
 
 def proxy(url):
@@ -134,9 +219,18 @@ def proxy(url):
 
 def schedule(stop, runner="local", tick=15, fusion=600, housekeeping=3600):
     """Collect each source whenever its cadence has elapsed, until stop is set;
-    recompute events every `fusion` seconds; compact the store and prune the seen set
-    every `housekeeping` seconds."""
-    S, due, fused, kept = sources(), {}, 0.0, time.monotonic()
+    every `fusion` seconds recompute events and snapshot the indicator board,
+    storing a SITREP every 6 h and an INTSUM every 24 h; compact the store and
+    prune the seen set every `housekeeping` seconds. Stream sources (AIS) buffer
+    their messages, which are stored once per cadence."""
+    S, due, fused, kept = sources(polled=True), {}, 0.0, time.monotonic()
+    made = {k: time.monotonic() for k in produce.PERIOD}
+    streams = [s for s in sources() if s.get("stream")]
+    Q = {s["id"]: queue.SimpleQueue() for s in streams}
+    if ais.key():
+        for s in streams:
+            threading.Thread(target=ais.stream, args=(ais.key(), regions.regions(),
+                                                      Q[s["id"]].put, stop), daemon=True).start()
     while not stop.is_set():
         t = time.monotonic()
         D = [s for s in S if due.get(s["id"], 0) <= t]
@@ -144,8 +238,18 @@ def schedule(stop, runner="local", tick=15, fusion=600, housekeeping=3600):
             collect(D, runner)
             for s in D:
                 due[s["id"]] = t + s["cadence"]
+        for s in streams:
+            if due.get(s["id"], 0) <= t:
+                M = []
+                while not Q[s["id"]].empty():
+                    M.append(Q[s["id"]].get())
+                ingest(s, M, runner)
+                due[s["id"]] = t + s["cadence"]
         if t - fused > fusion:
             fuse.fuse()
+            P = [k for k, h in produce.PERIOD.items() if t - made[k] > 3600 * h]
+            analyse(P)
+            made |= {k: t for k in P}
             fused = t
         if t - kept > housekeeping:
             store.compact()

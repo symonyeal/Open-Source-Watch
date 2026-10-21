@@ -12,8 +12,10 @@ Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items belo
 - [x] 2026-10-21 P1: collectors for every upstream feed; recording proxy in `fetchWithTimeout`; Telegram via channel previews; GeoNames gazetteer; source health in the footer.
 - [x] 2026-10-21 P2: fusion into events and entities; credibility from corroboration; PIR/indicator status (header strip); collection cron onto `data`.
 - [ ] P2 done-when: confirm the `Collect` workflow ran 24 h without repair (started 2026-10-21).
-- [ ] P3: registry served by the engine; indicator board; INTSUM/SITREP; ACH; classifier.
-- [ ] P4: AIS; chokepoint regions (Red Sea, Hormuz, Taiwan Strait, Black Sea); anomaly models; Supply-Chain-Cuts link.
+- [x] 2026-10-21 P3: TOML region registry (generated.ts); indicator history; INTSUM/SITREP; ACH; classifier (0.68 vs 0.54); event times and contradiction.
+- [x] 2026-10-21 P4: chokepoint regions; AIS adapter (needs key); transit indicator; thermal baseline; Supply-Chain-Cuts links.
+- [ ] Set `AISSTREAM_KEY` locally and confirm a live PositionReport; transit PIRs need 7 days of coverage.
+- [ ] Label a second sample from another week to check the classifier does not overfit one news cycle.
 
 ## Audit findings (2026-10-02)
 

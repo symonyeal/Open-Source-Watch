@@ -6,6 +6,7 @@ id = "russia-ukraine"
 name = "Russia / Ukraine"
 bbox = [44.0, 56.0, 22.0, 48.0]  # lat_min, lat_max, lon_min, lon_max
 languages = ["en", "uk", "ru"]
+timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
 
 [reliability]
 "rss:BBC" = "B"

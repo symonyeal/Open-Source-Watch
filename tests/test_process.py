@@ -1,6 +1,7 @@
 import pytest
 
 from engine import process, regions
+from engine.schema import KINDS
 from engine.process import news
 
 R = regions.regions()
@@ -25,8 +26,16 @@ def test_relevance_rule_of_upstream():
     ("Ceasefire talks resume in Doha", "strategic_developments"),
     ("Opinion: what comes next", "report"),
 ])
-def test_classify(s, kind):
-    assert process.classify(s) == kind
+def test_rules(s, kind):
+    assert process.rules(s) == kind
+
+
+def test_classifier_beats_rules_under_cross_validation():
+    """The measurement behind adopting the classifier (docs/DECISIONS.md)."""
+    from engine import classifier
+    r, c = classifier.compare(seed=0)
+    assert round(r, 3) == 0.543 and c > r + 0.05
+    assert classifier.predict("Russian drones attack Kyiv, two killed") in KINDS
 
 
 @pytest.mark.parametrize("rid, s, place", [

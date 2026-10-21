@@ -159,7 +159,8 @@ def test_failure_is_a_status_not_an_exception(get, status):
 def test_one_fetch_serves_every_source_on_the_url():
     S = [dict(SRC[0]), {"id": "rss:BBC", "region": "russia-ukraine", "name": "BBC"}]
     _, raw, runs = collect.run(S, rss.parse, get=ok("bbc_rss.xml"))
-    assert [r["n_rows"] for r in runs] == [3, 3] and len({x["id"] for x in raw}) == 3
+    assert [r["n_rows"] for r in runs] == [3, 3]
+    assert len({x["id"] for x in raw}) == 6        # one report per region per item
 
 
 def test_raw_ids_are_content_hashes():

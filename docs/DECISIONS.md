@@ -70,12 +70,49 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 - **Indicator status on demand** (2026-10-21). `/api/indicators` evaluates each
   indicator over the event table when asked. Status history is the P3 indicator board.
 
+- **Raw report ids include the region** (2026-10-21). The id was a hash of source and
+  item only, so a source shared by two regions (for example `rss:Al Jazeera`, same URL
+  in both upstream theaters) gave one id, and deduplication kept one region's copy.
+  Ids written before this change (P0 to P2, and the first `data` branch commits) use
+  the old hash; the `data` branch was restarted.
+- **Thermal baseline** (2026-10-21). A detection is a thermal anomaly only if its 0.1°
+  cell was active on fewer than 3 of the 7 preceding days. In the first live run with
+  the 7-day file, 1,206 of 1,435 Iran/Israel detections in 24 h were at persistent
+  sources, and II-3a fell from 228 to 42 events. The 7-day file is processed before
+  the 24-hour file, since processing them in parallel judged recent detections with no
+  history.
+- **Registry from TOML, generated at build time** (2026-10-21). The spec's direction
+  was an engine-served registry. But upstream's routes read the registry
+  synchronously, so serving it would mean an async rewrite of every route. A generated,
+  typed `generated.ts` keeps upstream code unchanged and lets `tsc` validate each
+  region.
+- **Classifier replaces keyword rules** (2026-10-21). On 200 observations labelled by
+  the agent, blind to the rule label (`docs/labels/`), the measured population-weighted
+  accuracy was rules 0.543 against TF-IDF + logistic regression 0.68 (5 seeds,
+  0.67–0.69) under 3-fold cross-validation; event-vs-report precision was 0.63 against
+  0.79. C = 4 was chosen from {1, 4, 16} on the same folds, a mild selection bias. Rare
+  kinds remain poor for both methods (macro-F1 about 0.4). The labels are one labeller's
+  judgement.
+- **Contradiction restored with stated event times** (2026-10-21). The P2 false
+  positive (Kyiv reports describing a 02:20 UTC alert) is now a regression test: no
+  warning-source runs covered 02:20, so there is no contradiction.
+- **Collection gap by producing adapters** (2026-10-21). The P2 rule called a kind
+  that had not occurred a gap (Taiwan, no maritime incidents). A gap is now: no healthy
+  source of an adapter able to produce the kind.
+- **ACH sees every indicator of the region** (2026-10-21). Hypotheses cite evidence
+  across PIRs (RS-2 cites RS-1a).
+- **Cron polls only due sources** (2026-10-21). `collect --due` skips sources whose
+  last successful run is younger than 90 % of their cadence; otherwise the 34 MB FIRMS
+  7-day file would be fetched every 15 minutes.
+
 ## Open
 
-- Thermal indicators are miscalibrated: II-3a counted 228 events in 12 h on
-  2026-10-21 (triggered at 25), because persistent oil-field gas flares in Iraq and
-  Iran are daily VIIRS detections. A per-location baseline (P4 anomaly model) should
-  replace fixed thresholds; until then II-3 and RU-2b read as always triggered.
+- Thermal indicators II-3 and RU-2b still count events against fixed thresholds after
+  the baseline (II-3a 42 in 12 h on 2026-10-21). Whether that reflects real strikes is
+  not measured.
+- AIS needs `AISSTREAM_KEY`; the message format is taken from aisstream.io's
+  documentation, and no live message has been received. Transit PIRs read as
+  collection gaps until a key is set and 7 days of coverage exist.
 - Live-only feeds (alerts, aircraft, drone tracks) have history only while a local
   engine runs.
 - A local engine and the cron both write the `data` branch's tables when `./data` is

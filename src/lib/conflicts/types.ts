@@ -8,7 +8,8 @@
 // BOTH client components (via the conflict context) and server API routes
 // (via the ?conflict= query param). Keep it free of client-only imports.
 
-export type ConflictKey = 'iran-israel' | 'russia-ukraine';
+// Open-Source-Watch: any region id; later regions come from regions/*/region.toml.
+export type ConflictKey = string;
 
 export interface MapCity {
   name: string;
@@ -175,7 +176,7 @@ export interface ServerConfig {
   shipRegions: string[];
 
   // alerts route: which provider drives the air-raid feed
-  alertProvider: 'tzevaadom' | 'alertsua';
+  alertProvider: 'tzevaadom' | 'alertsua' | 'none';
 
   // drones route: real-time drone/missile track provider (undefined = none)
   droneProvider?: 'neptun';

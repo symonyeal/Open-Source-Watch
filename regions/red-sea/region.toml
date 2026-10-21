@@ -1,0 +1,162 @@
+# Red Sea, Bab el-Mandeb and the Gulf of Aden (chokepoint region, spec P4).
+# The whole region is this file: engine configuration and, under [conflict], the
+# dashboard's ConflictConfig (generated into src/lib/conflicts/generated.ts).
+
+id = "red-sea"
+name = "Red Sea / Bab el-Mandeb"
+bbox = [11.0, 30.0, 32.0, 51.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "ar"]
+timezone = "Asia/Aden"  # local time of reports (engine.process.when)
+
+[gate.bab-el-mandeb]
+# Across the strait, Ras Menheli (Yemen) to Ras Siyyan (Djibouti), approximate.
+line = [[12.70, 43.47], [12.47, 43.32]]
+
+[reliability]
+"rss:gCaptain" = "C"
+"rss:Splash247" = "C"
+"rss:Maritime Executive" = "C"
+"rss:Arab News" = "D"
+"rss:The National" = "C"
+"rss:Al Jazeera" = "C"
+"rss:BBC" = "B"
+"rss:Google News" = "C"
+"gnews:strike" = "C"
+"gnews:conflict" = "C"
+"gnews:country" = "C"
+"telegram:OSINTdefender" = "E"
+"telegram:middle_east_spectator" = "E"
+"telegram:warfareanalysis" = "E"
+"telegram:rnintel" = "E"
+"telegram:GeoPWatch" = "E"
+"telegram:Liveuamap" = "E"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"ais:aisstream" = "B"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+[owner]
+"telegram:middle_east_spectator" = "Middle East Spectator"
+
+[[link]]
+title = "Supply-Chain-Cuts"
+url = "https://symonyeal.github.io/Supply-Chain-Cuts/"
+note = "Battery and solar supply chains; their single points of failure are Chinese production stages, whose exports to Europe pass Bab el-Mandeb and Suez."
+
+[[pir]]
+id = "RS-1"
+question = "Are merchant ships being attacked in the Red Sea or the Gulf of Aden?"
+
+  [[pir.indicator]]
+  id = "RS-1a"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 72
+  watch = 1
+  trigger = 3
+  max_credibility = 4
+
+  [[pir.indicator]]
+  id = "RS-1b"
+  name = "Reported strikes or explosions"
+  kind = "explosions_remote_violence"
+  window_h = 48
+  watch = 2
+  trigger = 6
+  max_credibility = 3
+
+[[pir]]
+id = "RS-2"
+question = "Is traffic through Bab el-Mandeb collapsing?"
+
+  [[pir.indicator]]
+  id = "RS-2a"
+  name = "Daily transits, z-score against 14 days"
+  metric = "transit"
+  gate = "bab-el-mandeb"
+  window_days = 14
+  watch_z = -1.0
+  trigger_z = -2.0
+
+  [[pir.hypothesis]]
+  id = "RS-2-H1"
+  text = "Traffic is diverting because of attacks"
+  expect = { "RS-1a" = "present", "RS-2a" = "present" }
+
+  [[pir.hypothesis]]
+  id = "RS-2-H2"
+  text = "Traffic varies for commercial reasons only"
+  expect = { "RS-1a" = "absent", "RS-2a" = "present" }
+
+  [[pir.hypothesis]]
+  id = "RS-2-H3"
+  text = "Traffic is normal"
+  expect = { "RS-1a" = "absent", "RS-2a" = "absent" }
+
+[conflict]
+label = "RED SEA"
+
+[conflict.client]
+mapCenter = [16.5, 42.0]
+mapZoom = 5
+cities = [
+  { name = "Sana'a", lat = 15.3694, lon = 44.191, country = "Yemen", capital = true },
+  { name = "Hodeidah", lat = 14.7978, lon = 42.9545, country = "Yemen", capital = false },
+  { name = "Aden", lat = 12.7855, lon = 45.0187, country = "Yemen", capital = false },
+  { name = "Djibouti", lat = 11.5721, lon = 43.1456, country = "Djibouti", capital = true },
+  { name = "Asmara", lat = 15.3229, lon = 38.9251, country = "Eritrea", capital = true },
+  { name = "Massawa", lat = 15.6097, lon = 39.4500, country = "Eritrea", capital = false },
+  { name = "Port Sudan", lat = 19.6158, lon = 37.2164, country = "Sudan", capital = false },
+  { name = "Jeddah", lat = 21.4858, lon = 39.1925, country = "Saudi Arabia", capital = false },
+  { name = "Eilat", lat = 29.5577, lon = 34.9519, country = "Israel", capital = false },
+  { name = "Suez", lat = 29.9668, lon = 32.5498, country = "Egypt", capital = false },
+]
+cityColors = { Yemen = "#ff6666", default = "#999999" }
+strikeLocations = { "hodeidah" = [14.80, 42.95], "ras isa" = [15.12, 42.62], "sanaa" = [15.37, 44.19], "sana'a" = [15.37, 44.19], "aden" = [12.79, 45.02], "mocha" = [13.32, 43.25], "bab el-mandeb" = [12.58, 43.33], "bab al-mandab" = [12.58, 43.33], "gulf of aden" = [12.5, 47.0], "red sea" = [20.0, 38.5], "eilat" = [29.56, 34.95], "port sudan" = [19.62, 37.22], "djibouti" = [11.57, 43.15], "jeddah" = [21.49, 39.19], "suez" = [29.97, 32.55], "yemen" = [15.5, 47.5] }
+timeZones = [
+  { label = "SANAA", zone = "Asia/Aden", flag = "🇾🇪" },
+  { label = "DJIBOUTI", zone = "Africa/Djibouti", flag = "🇩🇯" },
+  { label = "UTC", zone = "UTC", flag = "🌐" },
+]
+maritimeRegions = ["Red Sea", "Bab el-Mandeb", "Gulf of Aden"]
+regionBoxes = [
+  { name = "Yemen", latMin = 12.0, latMax = 19.0, lonMin = 42.0, lonMax = 54.0 },
+  { name = "Red Sea", latMin = 13.0, latMax = 28.0, lonMin = 33.0, lonMax = 43.0 },
+  { name = "Gulf of Aden", latMin = 10.5, latMax = 15.0, lonMin = 43.0, lonMax = 51.0 },
+]
+
+[conflict.server]
+strikeQueries = ["Houthi+ship+attack+Red+Sea", "Red+Sea+missile+drone+vessel"]
+conflictQueries = ["Red Sea shipping Houthi", "Bab el-Mandeb Gulf of Aden vessel"]
+countryQueries = [
+  { country = "Yemen", flag = "🇾🇪", query = "Yemen+Houthi+military" },
+  { country = "Eritrea", flag = "🇪🇷", query = "Eritrea+Red+Sea" },
+  { country = "Djibouti", flag = "🇩🇯", query = "Djibouti+naval" },
+  { country = "Sudan", flag = "🇸🇩", query = "Port+Sudan+Red+Sea" },
+]
+countryAttribution = [{ match = ["houthi", "yemen", "ansar"], country = "Yemen" }]
+defaultCountry = "Red Sea"
+conflictLocations = [{ match = ["red sea"], location = "Red Sea" }, { match = ["aden"], location = "Gulf of Aden" }]
+newsFeeds = [
+  { url = "https://gcaptain.com/feed/", name = "gCaptain" },
+  { url = "https://splash247.com/feed/", name = "Splash247" },
+  { url = "https://www.maritime-executive.com/articles.rss", name = "Maritime Executive" },
+  { url = "https://www.arabnews.com/rss.xml", name = "Arab News" },
+  { url = "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml", name = "The National" },
+  { url = "https://www.aljazeera.com/xml/rss/all.xml", name = "Al Jazeera" },
+  { url = "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml", name = "BBC" },
+  { url = "https://news.google.com/rss/search?q=%22Red+Sea%22+shipping+OR+Houthi&hl=en-US&gl=US&ceid=US:en", name = "Google News", unfiltered = true },
+]
+newsRelevanceKeywords = { regex = "red\\s?sea|bab.el.mandeb|bab.al.mandab|gulf of aden|houthi|ansar|yemen|hodeidah|suez|eilat|tanker|vessel|ship|maritime|navy|naval|frigate|destroyer|ukmto|piracy|somali", flags = "i" }
+polymarketKeywords = { regex = "houthi|red.?sea|yemen|suez|bab.el.mandeb", flags = "i" }
+polymarketExclude = { regex = "nba|nfl|mlb|nhl|fifa|world.?cup|oscar|grammy|crypto|bitcoin", flags = "i" }
+telegramChannels = [
+  { name = "OSINTdefender", label = "OSINT Defender", color = "#00aaff" },
+  { name = "middle_east_spectator", label = "ME Spectator", color = "#ff6600" },
+  { name = "warfareanalysis", label = "Warfare Analysis", color = "#ffaa00" },
+  { name = "rnintel", label = "RN Intel", color = "#66ccff" },
+  { name = "GeoPWatch", label = "GeoPol Watch", color = "#cc66ff" },
+  { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
+]

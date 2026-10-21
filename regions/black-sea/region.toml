@@ -1,0 +1,148 @@
+# Black Sea, the Bosphorus and the Sea of Azov (chokepoint region, spec P4).
+
+id = "black-sea"
+name = "Black Sea"
+bbox = [40.5, 47.5, 27.0, 42.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "uk", "ru", "tr"]
+timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
+
+[gate.bosphorus]
+# Across the Bosphorus near Rumelihisarı, European to Asian shore, approximate.
+line = [[41.083, 29.040], [41.086, 29.078]]
+
+[reliability]
+"rss:gCaptain" = "C"
+"rss:Splash247" = "C"
+"rss:Hellenic Shipping News" = "C"
+"rss:Offshore Energy" = "C"
+"rss:Ukrinform" = "D"
+"rss:NV" = "C"
+"rss:Daily Sabah" = "D"
+"rss:Google News" = "C"
+"gnews:strike" = "C"
+"gnews:conflict" = "C"
+"gnews:country" = "C"
+"telegram:UkraineNow" = "E"
+"telegram:war_monitor" = "E"
+"telegram:DeepStateUA" = "C"
+"telegram:militarysummary" = "E"
+"telegram:Liveuamap" = "E"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"ais:aisstream" = "B"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+[[link]]
+title = "Supply-Chain-Cuts"
+url = "https://symonyeal.github.io/Supply-Chain-Cuts/"
+note = "Context only: the Black Sea carries grain and oil rather than battery or solar inputs."
+
+[[pir]]
+id = "BS-1"
+question = "Are strikes hitting Black Sea ports or ships?"
+
+  [[pir.indicator]]
+  id = "BS-1a"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 48
+  watch = 1
+  trigger = 3
+  max_credibility = 4
+
+  [[pir.indicator]]
+  id = "BS-1b"
+  name = "Reported strikes or explosions"
+  kind = "explosions_remote_violence"
+  window_h = 24
+  watch = 3
+  trigger = 10
+  max_credibility = 3
+
+[[pir]]
+id = "BS-2"
+question = "Is traffic through the Bosphorus disrupted?"
+
+  [[pir.indicator]]
+  id = "BS-2a"
+  name = "Daily transits, z-score against 14 days"
+  metric = "transit"
+  gate = "bosphorus"
+  window_days = 14
+  watch_z = -1.0
+  trigger_z = -2.0
+
+  [[pir.hypothesis]]
+  id = "BS-2-H1"
+  text = "Strikes on ports and ships are suppressing traffic"
+  expect = { "BS-1a" = "present", "BS-1b" = "present", "BS-2a" = "present" }
+
+  [[pir.hypothesis]]
+  id = "BS-2-H2"
+  text = "Strikes continue without effect on traffic"
+  expect = { "BS-1b" = "present", "BS-2a" = "absent" }
+
+  [[pir.hypothesis]]
+  id = "BS-2-H3"
+  text = "Quiet sea"
+  expect = { "BS-1a" = "absent", "BS-1b" = "absent", "BS-2a" = "absent" }
+
+[conflict]
+label = "BLACK SEA"
+
+[conflict.client]
+mapCenter = [43.8, 34.0]
+mapZoom = 6
+cities = [
+  { name = "Odesa", lat = 46.4825, lon = 30.7233, country = "Ukraine", capital = false },
+  { name = "Mykolaiv", lat = 46.975, lon = 31.9946, country = "Ukraine", capital = false },
+  { name = "Sevastopol", lat = 44.6167, lon = 33.5254, country = "Ukraine", capital = false },
+  { name = "Novorossiysk", lat = 44.7239, lon = 37.7708, country = "Russia", capital = false },
+  { name = "Constanța", lat = 44.1598, lon = 28.6348, country = "Romania", capital = false },
+  { name = "Varna", lat = 43.2141, lon = 27.9147, country = "Bulgaria", capital = false },
+  { name = "Istanbul", lat = 41.0082, lon = 28.9784, country = "Turkey", capital = false },
+  { name = "Batumi", lat = 41.6168, lon = 41.6367, country = "Georgia", capital = false },
+]
+cityColors = { Russia = "#ff6666", Ukraine = "#66ccff", default = "#999999" }
+strikeLocations = { "odesa" = [46.48, 30.72], "odessa" = [46.48, 30.72], "izmail" = [45.35, 28.84], "mykolaiv" = [46.98, 31.99], "sevastopol" = [44.62, 33.53], "crimea" = [45.0, 34.1], "kerch" = [45.36, 36.47], "novorossiysk" = [44.72, 37.77], "tuapse" = [44.10, 39.08], "snake island" = [45.25, 30.20], "sea of azov" = [46.0, 36.5], "bosphorus" = [41.08, 29.06], "black sea" = [43.5, 34.0], "constanta" = [44.16, 28.63], "ukraine" = [48.5, 31.5] }
+timeZones = [
+  { label = "KYIV", zone = "Europe/Kyiv", flag = "🇺🇦" },
+  { label = "ISTANBUL", zone = "Europe/Istanbul", flag = "🇹🇷" },
+  { label = "UTC", zone = "UTC", flag = "🌐" },
+]
+maritimeRegions = ["Black Sea", "Sea of Azov", "Bosphorus"]
+
+[conflict.server]
+strikeQueries = ["Black+Sea+port+strike+Odesa", "Black+Sea+Fleet+drone+attack"]
+conflictQueries = ["Black Sea shipping grain corridor", "Novorossiysk Sevastopol naval drone"]
+countryQueries = [
+  { country = "Ukraine", flag = "🇺🇦", query = "Odesa+port+attack" },
+  { country = "Russia", flag = "🇷🇺", query = "Black+Sea+Fleet" },
+  { country = "Turkey", flag = "🇹🇷", query = "Bosphorus+shipping" },
+  { country = "Romania", flag = "🇷🇴", query = "Constanta+Black+Sea+drone" },
+]
+countryAttribution = [{ match = ["russia", "russian"], country = "Russia" }, { match = ["ukrain"], country = "Ukraine" }]
+defaultCountry = "Black Sea"
+conflictLocations = [{ match = ["odesa", "odessa"], location = "Odesa" }, { match = ["crimea", "sevastopol"], location = "Crimea" }]
+newsFeeds = [
+  { url = "https://gcaptain.com/feed/", name = "gCaptain" },
+  { url = "https://splash247.com/feed/", name = "Splash247" },
+  { url = "https://www.hellenicshippingnews.com/feed/", name = "Hellenic Shipping News" },
+  { url = "https://www.offshore-energy.biz/feed/", name = "Offshore Energy" },
+  { url = "https://www.ukrinform.net/rss/block-lastnews", name = "Ukrinform" },
+  { url = "https://english.nv.ua/rss/all.xml", name = "NV" },
+  { url = "https://www.dailysabah.com/rss/turkiye", name = "Daily Sabah" },
+  { url = "https://news.google.com/rss/search?q=%22Black+Sea%22+shipping+OR+port&hl=en-US&gl=US&ceid=US:en", name = "Google News", unfiltered = true },
+]
+newsRelevanceKeywords = { regex = "black\\s?sea|bosphorus|bosporus|odesa|odessa|izmail|mykolaiv|crimea|sevastopol|kerch|novorossiysk|azov|grain corridor|tanker|vessel|ship|port|naval|fleet|sea drone", flags = "i" }
+polymarketKeywords = { regex = "black.?sea|crimea|odesa|bosphorus", flags = "i" }
+polymarketExclude = { regex = "nba|nfl|mlb|nhl|fifa|world.?cup|oscar|grammy|crypto|bitcoin", flags = "i" }
+telegramChannels = [
+  { name = "UkraineNow", label = "Ukraine NOW", color = "#0057b7" },
+  { name = "war_monitor", label = "War Monitor", color = "#00aaff" },
+  { name = "DeepStateUA", label = "DeepState UA", color = "#ffd500" },
+  { name = "militarysummary", label = "Military Summary", color = "#999999" },
+  { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
+]

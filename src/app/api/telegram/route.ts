@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { translateFreeText } from '@/lib/hebrew';
 import { getConflictFromRequest } from '@/lib/conflicts';
 import { extractTelegramText } from '@/lib/telegramText';
+import { fromEngine } from '@/lib/engine';
 import type { TelegramPost } from '@/lib/types/api';
 
 // Detect non-Latin scripts (Hebrew, Arabic, Farsi, Cyrillic, etc.)
@@ -123,6 +124,8 @@ async function findLatestPostId(channel: string): Promise<number> {
 }
 
 export async function GET(req: Request) {
+  const engine = await fromEngine(req);
+  if (engine) return engine;
   const { server } = getConflictFromRequest(req);
   const channels = server.telegramChannels;
 

@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import threading
+from functools import cache
 
 import httpx
 
@@ -37,20 +38,24 @@ def _translations():
     return _cache
 
 
+def google(s):
+    """Google's unofficial translation endpoint, as upstream (src/lib/hebrew.ts)."""
+    res = httpx.get("https://translate.googleapis.com/translate_a/single",
+                    params={"client": "gtx", "sl": "auto", "tl": "en", "dt": "t", "q": s},
+                    headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
+    res.raise_for_status()
+    return "".join(part[0] for part in res.json()[0] if part[0]) or s
+
+
 def translate(s):
-    """English text of s via Google's unofficial endpoint, as upstream
-    (src/lib/hebrew.ts translateFreeText); s itself on failure. Cached on disk."""
+    """English text of s; s itself if the endpoint fails. Cached on disk."""
     if lang(s) == "en":
         return s
     C = _translations()
     if s in C:
         return C[s]
     try:
-        res = httpx.get("https://translate.googleapis.com/translate_a/single",
-                        params={"client": "gtx", "sl": "auto", "tl": "en", "dt": "t", "q": s},
-                        headers={"User-Agent": "Mozilla/5.0"}, timeout=5.0)
-        res.raise_for_status()
-        t = "".join(part[0] for part in res.json()[0] if part[0]) or s
+        t = google(s)
     except (httpx.HTTPError, ValueError, IndexError, TypeError):
         return s
     with _lock:
@@ -69,23 +74,74 @@ COUNTRIES = {
 }
 
 
+GEONAMES = regions.DIR / "geonames.tsv"   # built by `engine gazetteer` (GeoNames cities15000)
+WORD = re.compile(r"[^\W\d_][\w'’-]*")
+ORDER = {"point": 0, "city": 1, "admin": 2, "country": 3}
+
+
+@cache
+def _geonames():
+    if not GEONAMES.exists():
+        return []
+    rows = [l.split("\t") for l in GEONAMES.read_text(encoding="utf8").splitlines()[1:]]
+    return [(n, float(a), float(b), int(pop)) for n, a, b, _, pop in rows]
+
+
+@cache
+def _gazetteer(rid):
+    r = regions.regions()[rid]
+    L = {k: (lat, lon, "country" if k in COUNTRIES else "city")
+         for k, (lat, lon) in r["conflict"]["client"]["strikeLocations"].items()}
+    C = {}
+    for n, lat, lon, pop in sorted(_geonames(), key=lambda g: g[3]):  # largest wins a name
+        if regions.in_bbox(r, lat, lon) and (len(n) >= 5 or pop >= 500_000):
+            C[n] = (lat, lon, "city")
+    return L, C
+
+
+def build_geonames(zip_path):
+    """Write GEONAMES from GeoNames cities15000.zip (geonames.org export dump, CC BY
+    4.0): name and ASCII name of every city inside some region's box. Returns rows."""
+    import zipfile
+    R = regions.regions().values()
+    out = {}
+    for l in zipfile.ZipFile(zip_path).read("cities15000.txt").decode("utf8").splitlines():
+        f = l.split("\t")   # geonameid name asciiname alternatenames lat lon ... population
+        lat, lon = float(f[4]), float(f[5])
+        if any(regions.in_bbox(r, lat, lon) for r in R):
+            for n in {f[1], f[2]}:
+                out[(n, f[8])] = (n, f[4], f[5], f[8], f[14])
+    rows = sorted(out.values())
+    GEONAMES.write_text("name\tlat\tlon\tcountry\tpopulation\n"
+                        + "".join("\t".join(x) + "\n" for x in rows), encoding="utf8")
+    _geonames.cache_clear()
+    _gazetteer.cache_clear()
+    return len(rows)
+
+
 def gazetteer(r):
-    """[(pattern, name, lat, lon, precision)], longest name first. Source: the
-    conflict's strikeLocations table (P0); GeoNames replaces it in P1."""
-    G = r["conflict"]["client"]["strikeLocations"]
-    return [(re.compile(rf"\b{re.escape(k)}\b", re.IGNORECASE), k, lat, lon,
-             "country" if k in COUNTRIES else "city")
-            for k, (lat, lon) in sorted(G.items(), key=lambda kv: -len(kv[0]))]
+    """(L, C): the conflict's curated strikeLocations, matched case-insensitively,
+    and GeoNames cities inside the region's box, matched as capitalised words.
+    Names under 5 letters need population >= 500,000 ("Hit", "Kut" are words)."""
+    return _gazetteer(r["id"])
 
 
 def geocode(G, s):
-    """(lat, lon, precision, names) of the most specific gazetteer match in s."""
-    hits = [g for g in G if g[0].search(s)]
+    """(lat, lon, precision, names) of the most specific place named in s: the
+    finest precision, then the longest name. O(len(s)) phrase lookups."""
+    L, C = G
+    w, hits = WORD.findall(s), {}
+    for n in (3, 2, 1):
+        for i in range(len(w) - n + 1):
+            g = " ".join(w[i:i + n])
+            if g.lower() in L:
+                hits[g.lower()] = L[g.lower()]
+            elif g in C and g[0].isupper():
+                hits[g] = C[g]
     if not hits:
         return None, None, "none", []
-    order = {"point": 0, "city": 1, "admin": 2, "country": 3}
-    _, _, lat, lon, prec = min(hits, key=lambda g: (order[g[4]], -len(g[1])))
-    return lat, lon, prec, [g[1] for g in hits]
+    k = min(hits, key=lambda k: (ORDER[hits[k][2]], -len(k)))
+    return hits[k][0], hits[k][1], hits[k][2], list(hits)
 
 
 # Kind rules over English text, first match wins (spec § Event taxonomy).
@@ -117,3 +173,14 @@ def credibility_single(r, source_id):
 
 def obs_id(raw_id, k=0):
     return hashlib.sha256(f"obs\0{raw_id}\0{k}".encode()).hexdigest()[:32]
+
+
+def observation(r, x, text):
+    """Observation of raw report x whose claim is `text`: translated, geocoded,
+    classified, graded (spec § Processing)."""
+    en = translate(text)
+    lat, lon, prec, names = geocode(gazetteer(r), en)
+    return {"id": obs_id(x["id"]), "raw_id": x["id"], "source_id": x["source_id"],
+            "region": r["id"], "t": x["published_at"] or x["fetched_at"], "lat": lat, "lon": lon,
+            "geo_precision": prec, "kind": classify(en), "text_en": en, "lang": lang(text),
+            "credibility": credibility_single(r, x["source_id"]), "names": names}

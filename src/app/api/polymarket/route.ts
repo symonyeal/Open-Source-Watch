@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConflictFromRequest } from '@/lib/conflicts';
+import { fetchWithTimeout } from '@/lib/fetcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +25,10 @@ export async function GET(req: Request) {
   const KEYWORDS = server.polymarketKeywords;
   const EXCLUDE = server.polymarketExclude;
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       'https://gamma-api.polymarket.com/markets?limit=500&closed=false&active=true&order=volume24hr&ascending=false',
       {
-        signal: AbortSignal.timeout(10000),
+        timeout: 10000,
         headers: { 'User-Agent': 'IronSight/1.0' },
       }
     );

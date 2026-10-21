@@ -6,8 +6,10 @@ same item is idempotent (spec § Errors). The data root is $OSW_DATA or ./data.
 """
 import os
 import shutil
+import threading
 import uuid
 from collections import defaultdict
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
@@ -17,6 +19,7 @@ import pyarrow.parquet as pq
 from engine.schema import SCHEMA
 
 ROOT = Path(__file__).resolve().parent.parent
+LOCK = threading.RLock()   # compaction deletes files; queries must not see that happen
 
 
 def data_dir():
@@ -41,7 +44,26 @@ def append(table, rows):
 
 
 def drop(table):
-    shutil.rmtree(data_dir() / table, ignore_errors=True)
+    with LOCK:
+        shutil.rmtree(data_dir() / table, ignore_errors=True)
+
+
+def compact(before=None):
+    """Merge the files of each <table>/<region>/<date> directory dated before
+    `before` (default: today, UTC) into one file. Returns the files removed."""
+    before = before or datetime.now(UTC).date().isoformat()
+    n = 0
+    with LOCK:
+        for d in data_dir().glob("*/*/*"):
+            F = sorted(d.glob("*.parquet"))
+            if len(F) < 2 or d.name >= before or d.parts[-3] not in SCHEMA:
+                continue
+            T = pa.concat_tables([pq.read_table(f) for f in F], promote_options="default")
+            pq.write_table(T.cast(SCHEMA[d.parts[-3]]), d / f"{uuid.uuid4().hex}.parquet")
+            for f in F:
+                f.unlink()
+            n += len(F)
+    return n
 
 
 ORDER = {"raw_report": "fetched_at", "observation": "t", "event": "t_start", "entity": "id"}
@@ -67,7 +89,7 @@ def connect():
 
 def query(sql, params=()):
     """Rows of `sql` as dicts."""
-    con = connect()
-    cur = con.execute(sql, params)
-    cols = [c[0] for c in cur.description]
-    return [dict(zip(cols, r)) for r in cur.fetchall()]
+    with LOCK:
+        cur = connect().execute(sql, params)
+        cols = [c[0] for c in cur.description]
+        return [dict(zip(cols, r)) for r in cur.fetchall()]

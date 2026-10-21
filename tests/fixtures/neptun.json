@@ -1,0 +1,803 @@
+{
+"tracks": [
+{
+"id": "trk_00286713",
+"track_id": "trk_00286713",
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"threat_type": "shahed",
+"place": "Марганець",
+"region": "Дніпропетровська область",
+"text": "FPV-дрон — Марганець, Дніпропетровська область. Підтверджень: 1.",
+"date": "2026-10-21T07:10:34.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": null,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.6,
+"confidence_0_100": 60,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": {
+"start": [
+47.6297869209111,
+34.583619730805765
+],
+"end": [
+47.64251112274174,
+34.636896648728
+],
+"predicted": false,
+"source": "trail",
+"prediction_confidence": 0.6,
+"flight_phase": "cruise"
+},
+"trajectory_source": "trail",
+"created_at_epoch": 1792566634000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 0,
+"is_estimated": false,
+"track_state": "observed",
+"track_confidence": 0.6,
+"motion_reason": "fresh_observation",
+"radar_state": "confirmed",
+"uncertainty_radius_km": 6,
+"show_precise_pin": true,
+"last_observation_epoch": 1792566700000,
+"positions": [
+{
+"lat": 47.6297869209111,
+"lng": 34.583619730805765,
+"ts": 1792562520000,
+"source": ""
+},
+{
+"lat": 47.60436877558488,
+"lng": 34.48872104777181,
+"ts": 1792563085000,
+"source": ""
+},
+{
+"lat": 47.60699454722046,
+"lng": 34.49355624340184,
+"ts": 1792564276000,
+"source": ""
+},
+{
+"lat": 47.61422411680171,
+"lng": 34.519521935633904,
+"ts": 1792564750000,
+"source": ""
+},
+{
+"lat": 47.63006112242503,
+"lng": 34.58461918750966,
+"ts": 1792565308000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566634000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566700000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 47.6297869209111,
+"lng": 34.583619730805765,
+"ts": 1792562520000,
+"source": ""
+},
+{
+"lat": 47.60436877558488,
+"lng": 34.48872104777181,
+"ts": 1792563085000,
+"source": ""
+},
+{
+"lat": 47.60699454722046,
+"lng": 34.49355624340184,
+"ts": 1792564276000,
+"source": ""
+},
+{
+"lat": 47.61422411680171,
+"lng": 34.519521935633904,
+"ts": 1792564750000,
+"source": ""
+},
+{
+"lat": 47.63006112242503,
+"lng": 34.58461918750966,
+"ts": 1792565308000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566634000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566700000,
+"source": ""
+}
+],
+"observation_count": 7,
+"oblast": "Дніпропетровська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.6,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.6,
+"geo_confidence_score": 0.6,
+"parser_confidence_score": 0.6,
+"motion_confidence_score": 0.6,
+"evidence_confidence_score": 0.6,
+"publication_confidence_score": 0.6,
+"display_class": "point",
+"display_uncertainty_km": 6,
+"display_trust_hint_uk": "Підтверджена позиція."
+},
+{
+"id": "trk_00286955",
+"track_id": "trk_00286955",
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"threat_type": "shahed",
+"place": "Дніпровське",
+"region": "Миколаївська область",
+"text": "БпЛА — Дніпровське, Миколаївська область. Підтверджень: 1.",
+"date": "2026-10-21T07:10:42.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": 89.285,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.9,
+"confidence_0_100": 90,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": {
+"start": [
+46.613,
+31.545
+],
+"end": [
+46.63787553263773,
+31.888695814749408
+],
+"predicted": false,
+"source": "trail",
+"prediction_confidence": 0.9,
+"flight_phase": "cruise"
+},
+"trajectory_source": "trail",
+"created_at_epoch": 1792566642000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 89.285,
+"is_estimated": false,
+"track_state": "observed",
+"track_confidence": 0.9,
+"motion_reason": "fresh_observation",
+"radar_state": "confirmed",
+"uncertainty_radius_km": 25,
+"show_precise_pin": true,
+"last_observation_epoch": 1792566642000,
+"positions": [
+{
+"lat": 46.613,
+"lng": 31.545,
+"ts": 1792564869000,
+"source": ""
+},
+{
+"lat": 46.633789637188826,
+"lng": 31.7340871740487,
+"ts": 1792565558000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 46.613,
+"lng": 31.545,
+"ts": 1792564869000,
+"source": ""
+},
+{
+"lat": 46.633789637188826,
+"lng": 31.7340871740487,
+"ts": 1792565558000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+}
+],
+"observation_count": 4,
+"oblast": "Миколаївська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.9,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.9,
+"geo_confidence_score": 0.9,
+"parser_confidence_score": 0.9,
+"motion_confidence_score": 0.9,
+"evidence_confidence_score": 0.9,
+"publication_confidence_score": 0.9,
+"display_class": "point",
+"display_uncertainty_km": 25,
+"display_trust_hint_uk": "Підтверджена позиція."
+},
+{
+"id": "trk_00286992",
+"track_id": "trk_00286992",
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"threat_type": "shahed",
+"place": "Логачівка",
+"region": "Харківська область",
+"text": "БпЛА курсом на Логачівка. Підтверджень: 2.",
+"date": "2026-10-21T07:09:37.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": 193.063,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.6,
+"confidence_0_100": 60,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": null,
+"trajectory_source": "",
+"created_at_epoch": 1792566577000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 193.063,
+"is_estimated": true,
+"track_state": "observed",
+"track_confidence": 0.6,
+"motion_reason": "fresh_observation",
+"radar_state": "estimated",
+"uncertainty_radius_km": 10,
+"show_precise_pin": false,
+"last_observation_epoch": 1792566577000,
+"positions": [
+{
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"ts": 1792566577000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"ts": 1792566577000,
+"source": ""
+}
+],
+"observation_count": 1,
+"oblast": "Харківська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.6,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.6,
+"geo_confidence_score": 0.6,
+"parser_confidence_score": 0.6,
+"motion_confidence_score": 0.6,
+"evidence_confidence_score": 0.6,
+"publication_confidence_score": 0.6,
+"display_class": "region_signal",
+"display_uncertainty_km": 10,
+"display_trust_hint_uk": "Орієнтовно в межах регіону; точна позиція не стверджується."
+}
+],
+"markers": [
+{
+"id": "trk_00286713",
+"track_id": "trk_00286713",
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"threat_type": "shahed",
+"place": "Марганець",
+"region": "Дніпропетровська область",
+"text": "FPV-дрон — Марганець, Дніпропетровська область. Підтверджень: 1.",
+"date": "2026-10-21T07:10:34.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": null,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.6,
+"confidence_0_100": 60,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": {
+"start": [
+47.6297869209111,
+34.583619730805765
+],
+"end": [
+47.64251112274174,
+34.636896648728
+],
+"predicted": false,
+"source": "trail",
+"prediction_confidence": 0.6,
+"flight_phase": "cruise"
+},
+"trajectory_source": "trail",
+"created_at_epoch": 1792566634000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 0,
+"is_estimated": false,
+"track_state": "observed",
+"track_confidence": 0.6,
+"motion_reason": "fresh_observation",
+"radar_state": "confirmed",
+"uncertainty_radius_km": 6,
+"show_precise_pin": true,
+"last_observation_epoch": 1792566700000,
+"positions": [
+{
+"lat": 47.6297869209111,
+"lng": 34.583619730805765,
+"ts": 1792562520000,
+"source": ""
+},
+{
+"lat": 47.60436877558488,
+"lng": 34.48872104777181,
+"ts": 1792563085000,
+"source": ""
+},
+{
+"lat": 47.60699454722046,
+"lng": 34.49355624340184,
+"ts": 1792564276000,
+"source": ""
+},
+{
+"lat": 47.61422411680171,
+"lng": 34.519521935633904,
+"ts": 1792564750000,
+"source": ""
+},
+{
+"lat": 47.63006112242503,
+"lng": 34.58461918750966,
+"ts": 1792565308000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566634000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566700000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 47.6297869209111,
+"lng": 34.583619730805765,
+"ts": 1792562520000,
+"source": ""
+},
+{
+"lat": 47.60436877558488,
+"lng": 34.48872104777181,
+"ts": 1792563085000,
+"source": ""
+},
+{
+"lat": 47.60699454722046,
+"lng": 34.49355624340184,
+"ts": 1792564276000,
+"source": ""
+},
+{
+"lat": 47.61422411680171,
+"lng": 34.519521935633904,
+"ts": 1792564750000,
+"source": ""
+},
+{
+"lat": 47.63006112242503,
+"lng": 34.58461918750966,
+"ts": 1792565308000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566634000,
+"source": ""
+},
+{
+"lat": 47.64251112274174,
+"lng": 34.636896648728,
+"ts": 1792566700000,
+"source": ""
+}
+],
+"observation_count": 7,
+"oblast": "Дніпропетровська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.6,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.6,
+"geo_confidence_score": 0.6,
+"parser_confidence_score": 0.6,
+"motion_confidence_score": 0.6,
+"evidence_confidence_score": 0.6,
+"publication_confidence_score": 0.6,
+"display_class": "point",
+"display_uncertainty_km": 6,
+"display_trust_hint_uk": "Підтверджена позиція."
+},
+{
+"id": "trk_00286955",
+"track_id": "trk_00286955",
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"threat_type": "shahed",
+"place": "Дніпровське",
+"region": "Миколаївська область",
+"text": "БпЛА — Дніпровське, Миколаївська область. Підтверджень: 1.",
+"date": "2026-10-21T07:10:42.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": 89.285,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.9,
+"confidence_0_100": 90,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": {
+"start": [
+46.613,
+31.545
+],
+"end": [
+46.63787553263773,
+31.888695814749408
+],
+"predicted": false,
+"source": "trail",
+"prediction_confidence": 0.9,
+"flight_phase": "cruise"
+},
+"trajectory_source": "trail",
+"created_at_epoch": 1792566642000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 89.285,
+"is_estimated": false,
+"track_state": "observed",
+"track_confidence": 0.9,
+"motion_reason": "fresh_observation",
+"radar_state": "confirmed",
+"uncertainty_radius_km": 25,
+"show_precise_pin": true,
+"last_observation_epoch": 1792566642000,
+"positions": [
+{
+"lat": 46.613,
+"lng": 31.545,
+"ts": 1792564869000,
+"source": ""
+},
+{
+"lat": 46.633789637188826,
+"lng": 31.7340871740487,
+"ts": 1792565558000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 46.613,
+"lng": 31.545,
+"ts": 1792564869000,
+"source": ""
+},
+{
+"lat": 46.633789637188826,
+"lng": 31.7340871740487,
+"ts": 1792565558000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+},
+{
+"lat": 46.63787553263773,
+"lng": 31.888695814749408,
+"ts": 1792566642000,
+"source": ""
+}
+],
+"observation_count": 4,
+"oblast": "Миколаївська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.9,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.9,
+"geo_confidence_score": 0.9,
+"parser_confidence_score": 0.9,
+"motion_confidence_score": 0.9,
+"evidence_confidence_score": 0.9,
+"publication_confidence_score": 0.9,
+"display_class": "point",
+"display_uncertainty_km": 25,
+"display_trust_hint_uk": "Підтверджена позиція."
+},
+{
+"id": "trk_00286992",
+"track_id": "trk_00286992",
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"threat_type": "shahed",
+"place": "Логачівка",
+"region": "Харківська область",
+"text": "БпЛА курсом на Логачівка. Підтверджень: 2.",
+"date": "2026-10-21T07:09:37.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": 193.063,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.6,
+"confidence_0_100": 60,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": null,
+"trajectory_source": "",
+"created_at_epoch": 1792566577000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 193.063,
+"is_estimated": true,
+"track_state": "observed",
+"track_confidence": 0.6,
+"motion_reason": "fresh_observation",
+"radar_state": "estimated",
+"uncertainty_radius_km": 10,
+"show_precise_pin": false,
+"last_observation_epoch": 1792566577000,
+"positions": [
+{
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"ts": 1792566577000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 50.14813977244677,
+"lng": 36.44188299935672,
+"ts": 1792566577000,
+"source": ""
+}
+],
+"observation_count": 1,
+"oblast": "Харківська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.6,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.6,
+"geo_confidence_score": 0.6,
+"parser_confidence_score": 0.6,
+"motion_confidence_score": 0.6,
+"evidence_confidence_score": 0.6,
+"publication_confidence_score": 0.6,
+"display_class": "region_signal",
+"display_uncertainty_km": 10,
+"display_trust_hint_uk": "Орієнтовно в межах регіону; точна позиція не стверджується."
+},
+{
+"id": "trk_00287005",
+"track_id": "trk_00287005",
+"lat": 47.55211,
+"lng": 34.15212,
+"threat_type": "shahed",
+"place": "Покровське",
+"region": "Дніпропетровська область",
+"text": "FPV-дрон — Покровське, Дніпропетровська область. Підтверджень: 1.",
+"date": "2026-10-21T07:10:51.000Z",
+"count": 0,
+"marker_icon": "",
+"course_bearing": null,
+"course_direction": "",
+"speed_kmh": 0,
+"computed_speed_kmh": 0,
+"confidence": 0.6,
+"confidence_0_100": 60,
+"placement_mode": "point",
+"tracker_type": "exact_point",
+"resolve_status": "ok",
+"trajectory": null,
+"trajectory_source": "",
+"created_at_epoch": 1792566651000,
+"origin": "",
+"flight_phase": null,
+"ticker_bearing": 0,
+"is_estimated": false,
+"track_state": "observed",
+"track_confidence": 0.6,
+"motion_reason": "fresh_observation",
+"radar_state": "confirmed",
+"uncertainty_radius_km": 25,
+"show_precise_pin": true,
+"last_observation_epoch": 1792566651000,
+"positions": [
+{
+"lat": 47.55211,
+"lng": 34.15212,
+"ts": 1792566651000,
+"source": ""
+}
+],
+"observations": [
+{
+"lat": 47.55211,
+"lng": 34.15212,
+"ts": 1792566651000,
+"source": ""
+}
+],
+"observation_count": 1,
+"oblast": "Дніпропетровська область",
+"resolved_oblast_hasc": "",
+"region_key": "",
+"manual": false,
+"geo_decision_reason": "accepted_point",
+"geocode_source": "",
+"candidates": [],
+"radar_decision": "publish",
+"radar_score": 0.6,
+"radar_scores": {},
+"radar_reasons": [],
+"radar_invariant_violations": [],
+"radar_source_profile": {},
+"source_trust_score": 0.6,
+"geo_confidence_score": 0.6,
+"parser_confidence_score": 0.6,
+"motion_confidence_score": 0.6,
+"evidence_confidence_score": 0.6,
+"publication_confidence_score": 0.6,
+"display_class": "point",
+"display_uncertainty_km": 25,
+"display_trust_hint_uk": "Підтверджена позиція."
+}
+],
+"ballistic_threat": null,
+"server_time": 1792566990657,
+"data_age": 9,
+"markers_version": 1792566977
+}

@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { fetchWithTimeout, parseXML, getTextContent } from '@/lib/fetcher';
 import { isHebrew, translateFreeText } from '@/lib/hebrew';
 import { getConflictFromRequest } from '@/lib/conflicts';
-import { fromEngine } from '@/lib/engine';
 import type { NewsItem } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -72,8 +71,6 @@ async function fetchRSS(feedUrl: string, source: string): Promise<NewsItem[]> {
 }
 
 export async function GET(req: Request) {
-  const engine = await fromEngine(req);
-  if (engine) return engine;
   const { server } = getConflictFromRequest(req);
   const feeds = server.newsFeeds;
   const relevanceKeywords = server.newsRelevanceKeywords;

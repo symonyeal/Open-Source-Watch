@@ -9,7 +9,7 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items below are kept as found.
 
 - [x] 2026-10-21 P0: fork, house layout, engine skeleton, schema, region registry, RSS collector, news route via `ENGINE_URL`.
-- [ ] P1: collectors for FIRMS, Telegram, alerts (Tzeva Adom, alerts.com.ua), adsb.lol, neptun, markets; GeoNames gazetteer; every route forwarded; source-health panel.
+- [x] 2026-10-21 P1: collectors for every upstream feed; recording proxy in `fetchWithTimeout`; Telegram via channel previews; GeoNames gazetteer; source health in the footer.
 - [ ] P2: collection cron onto the `data` branch; fusion into events and entities; credibility from corroboration; PIR and indicator status.
 - [ ] P3: registry served by the engine; indicator board; INTSUM/SITREP; ACH; classifier.
 - [ ] P4: AIS; chokepoint regions (Red Sea, Hormuz, Taiwan Strait, Black Sea); anomaly models; Supply-Chain-Cuts link.

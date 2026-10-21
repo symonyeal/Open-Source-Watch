@@ -65,15 +65,25 @@ IRONSIGHT's files stay in place, so `git merge upstream/main` keeps working.
 
 ## Seam between front end and engine
 
-Each Next.js API route gets an opt-in proxy:
-- If `ENGINE_URL` is set, the route forwards the request to the engine.
-- If it is unset, the route runs upstream's own fetch.
+(Amended 2026-10-21.) The seam is a **recording proxy**. Upstream routes fetch through
+one helper, `fetchWithTimeout` in `src/lib/fetcher.ts`.
+- If `ENGINE_URL` is set, that helper requests `GET /fetch?url=<upstream URL>` from the
+  engine. The engine polls every upstream URL on its cadence, stores what it parses,
+  and answers with the latest response.
+- The route then runs upstream's own shaping code on it, so the dashboard shows exactly
+  what the engine stored, and no upstream logic is copied into Python.
+- If `ENGINE_URL` is unset, or the engine answers 502 or not at all, the helper fetches
+  directly, and the fork runs as plain IRONSIGHT.
 
-So the fork always runs as plain IRONSIGHT. Feeds move to the engine one route at a
-time, and the app works at every step.
+Telegram is the exception: upstream probes embed pages one post at a time, which the
+engine replaces with the channel preview page. Its route therefore returns the
+engine's own view through `fromEngine` (`src/lib/engine.ts`), as does the new
+`/api/sources`.
 
 Engine API:
 
+- `GET /fetch?url=`: the recording proxy; 502 for a URL on no scheduled host
+- `GET /api/telegram`: upstream's `TelegramData` from the store
 - `GET /regions`: region registry
 - `GET /events?region=&since=&kind=`
 - `GET /observations?region=&since=&source=`

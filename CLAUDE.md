@@ -20,7 +20,7 @@ Python engine in `engine/` runs the intelligence cycle behind it.
 | Add a dependency only after measurement. Use the system Python 3.14; no virtual environment. | One environment on this machine. |
 | State what was measured and what was not. | "Not measured" is a finding. |
 | Leave upstream files in place; edit them minimally. | `git merge upstream/main` must keep working. |
-| A route forwards to the engine only through `fromEngine` (`src/lib/engine.ts`). | With `ENGINE_URL` unset the app is plain IRONSIGHT. |
+| Upstream URLs reach the engine only through `fetchWithTimeout` (the recording proxy); a route returns an engine view only through `fromEngine`. | With `ENGINE_URL` unset the app is plain IRONSIGHT, and upstream's shaping code stays the only copy. |
 | Store at most 280 characters of article or post text. | The repository and its `data` branch are public. |
 | Grades come from `regions/*/region.toml`; credibility is computed, never assigned by an adapter. | Admiralty grading separates the source from the claim. |
 
@@ -30,8 +30,10 @@ Python engine in `engine/` runs the intelligence cycle behind it.
   export `regions/<id>/conflict.json` (`node scripts/export-regions.mjs`); never edit
   that JSON by hand.
 - The table schemas live in `engine/schema.py`, the event taxonomy in `KINDS` there.
-- Each `/api/*` engine route reproduces one upstream route's JSON
-  (`src/lib/types/api.ts`); the upstream route stays the definition of that shape.
+- Upstream's shaping code is the only copy: the engine serves upstream responses
+  (`/fetch`), and every engine source URL is built exactly as the upstream route builds
+  it (tests check this against Node). `/api/telegram` is the one engine-shaped route.
+- The gazetteer is `regions/geonames.tsv`, rebuilt by `py -3.14 -m engine gazetteer`.
 - Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
   regenerates every derived table from them.
 

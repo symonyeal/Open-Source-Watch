@@ -1,0 +1,936 @@
+{
+  "key": "iran-israel",
+  "label": "IRAN / ISRAEL",
+  "strikeQueries": [
+    "Iran+OR+Israel+missile+strike+OR+airstrike+OR+intercept",
+    "Iran+OR+Israel+drone+attack+OR+rocket+launch"
+  ],
+  "countryAttribution": [
+    {
+      "match": [
+        "iran",
+        "tehran"
+      ],
+      "country": "Iran"
+    },
+    {
+      "match": [
+        "israel"
+      ],
+      "country": "Israel"
+    },
+    {
+      "match": [
+        "lebanon"
+      ],
+      "country": "Lebanon"
+    },
+    {
+      "match": [
+        "syria"
+      ],
+      "country": "Syria"
+    },
+    {
+      "match": [
+        "yemen",
+        "houthi"
+      ],
+      "country": "Yemen"
+    }
+  ],
+  "defaultCountry": "Middle East",
+  "conflictQueries": [
+    "Iran Israel war military conflict strike attack",
+    "missile OR rocket OR drone strike OR attack Arad OR Dimona OR \"Tel Aviv\" OR Haifa OR Eilat OR Tehran OR Isfahan OR Beirut OR \"South Pars\" OR Natanz OR \"Diego Garcia\""
+  ],
+  "conflictLocations": [
+    {
+      "match": [
+        "arad"
+      ],
+      "location": "Arad, Israel"
+    },
+    {
+      "match": [
+        "dimona",
+        "nuclear town"
+      ],
+      "location": "Dimona, Israel"
+    },
+    {
+      "match": [
+        "tel aviv"
+      ],
+      "location": "Tel Aviv, Israel"
+    },
+    {
+      "match": [
+        "haifa"
+      ],
+      "location": "Haifa, Israel"
+    },
+    {
+      "match": [
+        "eilat"
+      ],
+      "location": "Eilat, Israel"
+    },
+    {
+      "match": [
+        "ashkelon"
+      ],
+      "location": "Ashkelon, Israel"
+    },
+    {
+      "match": [
+        "ashdod"
+      ],
+      "location": "Ashdod, Israel"
+    },
+    {
+      "match": [
+        "negev"
+      ],
+      "location": "Negev, Israel"
+    },
+    {
+      "match": [
+        "natanz"
+      ],
+      "location": "Natanz, Iran"
+    },
+    {
+      "match": [
+        "isfahan"
+      ],
+      "location": "Isfahan, Iran"
+    },
+    {
+      "match": [
+        "tehran"
+      ],
+      "location": "Tehran, Iran"
+    },
+    {
+      "match": [
+        "south pars"
+      ],
+      "location": "South Pars, Iran"
+    },
+    {
+      "match": [
+        "bushehr"
+      ],
+      "location": "Bushehr, Iran"
+    },
+    {
+      "match": [
+        "tabriz"
+      ],
+      "location": "Tabriz, Iran"
+    },
+    {
+      "match": [
+        "beirut"
+      ],
+      "location": "Beirut, Lebanon"
+    },
+    {
+      "match": [
+        "lebanon"
+      ],
+      "location": "Lebanon"
+    },
+    {
+      "match": [
+        "damascus"
+      ],
+      "location": "Damascus, Syria"
+    },
+    {
+      "match": [
+        "syria"
+      ],
+      "location": "Syria"
+    },
+    {
+      "match": [
+        "baghdad"
+      ],
+      "location": "Baghdad, Iraq"
+    },
+    {
+      "match": [
+        "iraq"
+      ],
+      "location": "Iraq"
+    },
+    {
+      "match": [
+        "diego garcia"
+      ],
+      "location": "Diego Garcia"
+    },
+    {
+      "match": [
+        "qatar",
+        "doha"
+      ],
+      "location": "Qatar"
+    },
+    {
+      "match": [
+        "kuwait"
+      ],
+      "location": "Kuwait"
+    },
+    {
+      "match": [
+        "saudi"
+      ],
+      "location": "Saudi Arabia"
+    },
+    {
+      "match": [
+        "yemen",
+        "houthi"
+      ],
+      "location": "Yemen"
+    },
+    {
+      "match": [
+        "gaza"
+      ],
+      "location": "Gaza"
+    },
+    {
+      "match": [
+        "israel"
+      ],
+      "location": "Israel"
+    },
+    {
+      "match": [
+        "iran"
+      ],
+      "location": "Iran"
+    }
+  ],
+  "countryQueries": [
+    {
+      "country": "Lebanon",
+      "flag": "🇱🇧",
+      "query": "Lebanon+strike+OR+airstrike+OR+attack+OR+missile+OR+bomb+OR+Hezbollah+OR+Beirut+attack"
+    },
+    {
+      "country": "Iran",
+      "flag": "🇮🇷",
+      "query": "Iran+strike+OR+attack+OR+missile+OR+bomb+OR+Tehran+strike+OR+IRGC+attack"
+    },
+    {
+      "country": "Iraq",
+      "flag": "🇮🇶",
+      "query": "Iraq+strike+OR+attack+OR+missile+OR+Baghdad+strike+OR+militia+attack"
+    },
+    {
+      "country": "Syria",
+      "flag": "🇸🇾",
+      "query": "Syria+strike+OR+airstrike+OR+attack+OR+Damascus+strike"
+    },
+    {
+      "country": "Yemen",
+      "flag": "🇾🇪",
+      "query": "Yemen+Houthi+strike+OR+attack+OR+missile+OR+drone+OR+\"Red+Sea\"+attack"
+    },
+    {
+      "country": "Kuwait",
+      "flag": "🇰🇼",
+      "query": "Kuwait+siren+OR+missile+OR+attack+OR+\"air+defense\"+OR+intercept"
+    },
+    {
+      "country": "Bahrain",
+      "flag": "🇧🇭",
+      "query": "Bahrain+attack+OR+missile+OR+military+OR+threat+OR+\"5th+Fleet\""
+    },
+    {
+      "country": "UAE",
+      "flag": "🇦🇪",
+      "query": "UAE+OR+Dubai+OR+\"Abu+Dhabi\"+attack+OR+missile+OR+drone+OR+intercept"
+    },
+    {
+      "country": "Saudi Arabia",
+      "flag": "🇸🇦",
+      "query": "Saudi+Arabia+attack+OR+missile+OR+drone+OR+intercept+OR+Houthi"
+    },
+    {
+      "country": "Jordan",
+      "flag": "🇯🇴",
+      "query": "Jordan+attack+OR+missile+OR+intercept+OR+airspace+OR+military"
+    }
+  ],
+  "polymarketKeywords": {
+    "regex": "\\biran\\b|israel|middle.?east|ceasefire|military.*iran|military.*israel|\\bwar\\b.*(?:iran|israel|middle.?east)|strike.*(?:iran|israel)|missile|nuclear.*iran|gaza|hezbollah|houthi|lebanon.*(?:strike|offensive|invasion)|syria.*strike|yemen.*(?:strike|attack)|hormuz|red.?sea.*(?:attack|military)|idf\\b|irgc\\b|netanyahu|khamenei|trump.*iran|regime.*(?:fall|change)|ground.*offensive|air.*strike|drone.*(?:iran|israel|attack)|ballistic",
+    "flags": "i"
+  },
+  "polymarketExclude": {
+    "regex": "nba|nfl|mlb|nhl|fifa|world.?cup|premier.?league|champions.?league|super.?bowl|oscar|grammy|emmy|election.*governor|mayor|warriors|lakers|celtics|yankees|dodgers|russia|ukraine|china|taiwan|north.?korea|tariff|crypto|bitcoin|ethereum|solana",
+    "flags": "i"
+  },
+  "firesBBox": {
+    "latMin": 20,
+    "latMax": 42,
+    "lonMin": 25,
+    "lonMax": 65
+  },
+  "flightsCenter": {
+    "lat": 30,
+    "lon": 48,
+    "dist": 2500
+  },
+  "flightsBBox": {
+    "latMin": 10,
+    "latMax": 45,
+    "lonMin": 20,
+    "lonMax": 70
+  },
+  "newsFeeds": [
+    {
+      "url": "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
+      "name": "BBC",
+      "unfiltered": true
+    },
+    {
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml",
+      "name": "NYT",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "name": "Al Jazeera"
+    },
+    {
+      "url": "https://feeds.reuters.com/Reuters/worldNews",
+      "name": "Reuters"
+    },
+    {
+      "url": "https://www.timesofisrael.com/feed/",
+      "name": "Times of Israel",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.jpost.com/rss/rssfeedsfrontpage.aspx",
+      "name": "JPost",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.ynetnews.com/Integration/StoryRss2.xml",
+      "name": "Ynet",
+      "unfiltered": true
+    },
+    {
+      "url": "https://rcs.mako.co.il/rss/news-military.xml",
+      "name": "N12",
+      "unfiltered": true
+    },
+    {
+      "url": "https://rss.walla.co.il/feed/22",
+      "name": "Walla",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml",
+      "name": "The National"
+    },
+    {
+      "url": "http://rss.cnn.com/rss/edition_meast.rss",
+      "name": "CNN"
+    },
+    {
+      "url": "https://moxie.foxnews.com/google-publisher/world.xml",
+      "name": "Fox News"
+    },
+    {
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+      "name": "WSJ"
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=Iran+Israel+war+military&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=Iran+missile+strike+drone&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22+OR+%22Red+Sea%22+military&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://breakingdefense.com/feed/",
+      "name": "Breaking Def"
+    },
+    {
+      "url": "https://www.longwarjournal.org/feed",
+      "name": "Long War Jrnl"
+    },
+    {
+      "url": "https://www.militarytimes.com/arc/outboundfeeds/rss/?outputType=xml",
+      "name": "Mil Times"
+    },
+    {
+      "url": "https://warontherocks.com/feed/",
+      "name": "War on Rocks"
+    },
+    {
+      "url": "https://www.centcom.mil/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=808&max=20",
+      "name": "CENTCOM",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=10",
+      "name": "DoD",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.haaretz.com/srv/haaretz-latest-headlines",
+      "name": "Haaretz",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.haaretz.com/srv/middle-east-news-rss",
+      "name": "Haaretz",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.dropsitenews.com/feed",
+      "name": "Drop Site"
+    },
+    {
+      "url": "https://www.presstv.ir/rss.xml",
+      "name": "PressTV",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.presstv.ir/rss/rss-102.xml",
+      "name": "PressTV",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.presstv.ir/rss/rss-101.xml",
+      "name": "PressTV",
+      "unfiltered": true
+    }
+  ],
+  "newsRelevanceKeywords": {
+    "regex": "iran|israel|idf|irgc|hezbollah|hamas|houthi|lebanon|gaza|tehran|tel\\s?aviv|jerusalem|yemen|iraq|syria|gulf|hormuz|red\\s?sea|missile|strike|interception|nuclear|sanction|centcom|pentagon|middle\\s?east|west\\s?bank|golan|sinai|negev|dimona|natanz|isfahan|khamenei|netanyahu|nasrallah|raisi|ayatollah|mossad|shin\\s?bet|quds|basij|proxy|ceasefire|escalat|retaliat|iron\\s?dome|arrow|david.s\\s?sling|patriot|drone|uav|saudi|emirates|uae|bahrain|qatar|kuwait|oman|gcc|opec",
+    "flags": "i"
+  },
+  "telegramChannels": [
+    {
+      "name": "IDFofficial",
+      "label": "IDF Official",
+      "color": "#3388ff"
+    },
+    {
+      "name": "RocketAlert",
+      "label": "Rocket Alert",
+      "color": "#ff3366"
+    },
+    {
+      "name": "PressTV",
+      "label": "PressTV (Iran)",
+      "color": "#cc3333"
+    },
+    {
+      "name": "OSINTdefender",
+      "label": "OSINT Defender",
+      "color": "#00aaff"
+    },
+    {
+      "name": "middle_east_spectator",
+      "label": "ME Spectator",
+      "color": "#ff6600"
+    },
+    {
+      "name": "iranintl_en",
+      "label": "Iran Intl",
+      "color": "#00ff88"
+    },
+    {
+      "name": "Alertisrael",
+      "label": "Alert Israel",
+      "color": "#ff6688"
+    },
+    {
+      "name": "QudsNen",
+      "label": "Quds News",
+      "color": "#33cc66"
+    },
+    {
+      "name": "TimesofIsrael",
+      "label": "Times of Israel",
+      "color": "#0066cc"
+    },
+    {
+      "name": "FarsNews_EN",
+      "label": "Fars News",
+      "color": "#669933"
+    },
+    {
+      "name": "FotrosResistancee",
+      "label": "Fotros Resist.",
+      "color": "#dd4444"
+    },
+    {
+      "name": "Alsaa_plus_EN",
+      "label": "Al-Saa EN",
+      "color": "#ee8833"
+    },
+    {
+      "name": "warfareanalysis",
+      "label": "Warfare Analysis",
+      "color": "#8888cc"
+    },
+    {
+      "name": "rnintel",
+      "label": "RN Intel",
+      "color": "#44aacc"
+    },
+    {
+      "name": "GeoPWatch",
+      "label": "GeoPol Watch",
+      "color": "#cc66aa"
+    },
+    {
+      "name": "thecradlemedia",
+      "label": "The Cradle",
+      "color": "#aa8844"
+    },
+    {
+      "name": "Middle_East_Spectator",
+      "label": "ME Spectator 2",
+      "color": "#ff8844"
+    },
+    {
+      "name": "HAMASW",
+      "label": "Hamas-Israel War",
+      "color": "#339933"
+    },
+    {
+      "name": "TasnimNewsEN",
+      "label": "Tasnim News",
+      "color": "#557733"
+    },
+    {
+      "name": "AbuAliExpress",
+      "label": "Abu Ali Express",
+      "color": "#dd7733"
+    },
+    {
+      "name": "dropsitenews",
+      "label": "Drop Site News",
+      "color": "#e63946"
+    },
+    {
+      "name": "france24_en",
+      "label": "France 24",
+      "color": "#2266bb"
+    },
+    {
+      "name": "SaberinFa",
+      "label": "Saberin (IRGC)",
+      "color": "#884422"
+    },
+    {
+      "name": "defapress_ir",
+      "label": "DefaPress (Iran MOD)",
+      "color": "#556644"
+    },
+    {
+      "name": "sepah",
+      "label": "IRGC Official",
+      "color": "#774433"
+    },
+    {
+      "name": "wamnews_en",
+      "label": "WAM (UAE)",
+      "color": "#c4a535"
+    },
+    {
+      "name": "gulfnewsUAE",
+      "label": "Gulf News",
+      "color": "#e6b800"
+    },
+    {
+      "name": "Alibk3",
+      "label": "Ali Bk",
+      "color": "#44bb88"
+    },
+    {
+      "name": "aljazeeraglobal",
+      "label": "Al Jazeera",
+      "color": "#d4a843"
+    },
+    {
+      "name": "bintjbeilnews",
+      "label": "Bint Jbeil",
+      "color": "#55aa77"
+    },
+    {
+      "name": "kianmeli1",
+      "label": "Kian Meli (Iran)",
+      "color": "#7744aa"
+    }
+  ],
+  "ships": [
+    {
+      "name": "USS Bataan",
+      "hull": "LHD-5",
+      "type": "Amphibious Assault Ship",
+      "class": "Wasp-class",
+      "navy": "US Navy",
+      "lat": 26.1,
+      "lon": 50.5,
+      "status": "Deployed",
+      "region": "Persian Gulf",
+      "group": "5th Fleet"
+    },
+    {
+      "name": "USS Mason",
+      "hull": "DDG-87",
+      "type": "Destroyer",
+      "class": "Arleigh Burke-class",
+      "navy": "US Navy",
+      "lat": 14.5,
+      "lon": 42.8,
+      "status": "Active",
+      "region": "Red Sea",
+      "group": "Red Sea Task Force"
+    },
+    {
+      "name": "USS Carney",
+      "hull": "DDG-64",
+      "type": "Destroyer",
+      "class": "Arleigh Burke-class",
+      "navy": "US Navy",
+      "lat": 13.8,
+      "lon": 43.2,
+      "status": "Active",
+      "region": "Red Sea",
+      "group": "Red Sea Task Force"
+    },
+    {
+      "name": "USS Laboon",
+      "hull": "DDG-58",
+      "type": "Destroyer",
+      "class": "Arleigh Burke-class",
+      "navy": "US Navy",
+      "lat": 25.8,
+      "lon": 52.1,
+      "status": "Deployed",
+      "region": "Persian Gulf",
+      "group": "5th Fleet"
+    },
+    {
+      "name": "USS Philippine Sea",
+      "hull": "CG-58",
+      "type": "Cruiser",
+      "class": "Ticonderoga-class",
+      "navy": "US Navy",
+      "lat": 25.2,
+      "lon": 56.8,
+      "status": "Deployed",
+      "region": "Strait of Hormuz",
+      "group": "Carrier Strike Group"
+    },
+    {
+      "name": "USS Florida",
+      "hull": "SSGN-728",
+      "type": "Guided Missile Submarine",
+      "class": "Ohio-class",
+      "navy": "US Navy",
+      "lat": 26.5,
+      "lon": 56.2,
+      "status": "Deployed",
+      "region": "Strait of Hormuz",
+      "group": "CENTCOM"
+    },
+    {
+      "name": "HMS Diamond",
+      "hull": "D34",
+      "type": "Destroyer",
+      "class": "Type 45",
+      "navy": "Royal Navy",
+      "lat": 14.2,
+      "lon": 42.5,
+      "status": "Active",
+      "region": "Red Sea",
+      "group": "Op Prosperity Guardian"
+    },
+    {
+      "name": "FS Alsace",
+      "hull": "D656",
+      "type": "Frigate",
+      "class": "FREMM-class",
+      "navy": "French Navy",
+      "lat": 34.5,
+      "lon": 33.2,
+      "status": "Deployed",
+      "region": "Eastern Med"
+    },
+    {
+      "name": "INS Magen",
+      "hull": "Sa'ar 6",
+      "type": "Corvette",
+      "class": "Sa'ar 6-class",
+      "navy": "Israeli Navy",
+      "lat": 32.8,
+      "lon": 34.5,
+      "status": "Patrol",
+      "region": "Eastern Med"
+    },
+    {
+      "name": "INS Dolphin",
+      "hull": "Submarine",
+      "type": "Submarine",
+      "class": "Dolphin-class",
+      "navy": "Israeli Navy",
+      "lat": 31.5,
+      "lon": 33.8,
+      "status": "Patrol",
+      "region": "Eastern Med"
+    },
+    {
+      "name": "IRIS Makran",
+      "hull": "Forward Base Ship",
+      "type": "Forward Base Ship",
+      "class": "Makran-class",
+      "navy": "Iran Navy",
+      "lat": 25.4,
+      "lon": 57.5,
+      "status": "Active",
+      "region": "Strait of Hormuz"
+    },
+    {
+      "name": "IRIS Sahand",
+      "hull": "F-74",
+      "type": "Frigate",
+      "class": "Moudge-class",
+      "navy": "Iran Navy",
+      "lat": 27.1,
+      "lon": 56.3,
+      "status": "Active",
+      "region": "Persian Gulf"
+    },
+    {
+      "name": "IRGCN Fast Boats",
+      "hull": "Various",
+      "type": "Fast Attack Craft",
+      "class": "Various",
+      "navy": "IRGC Navy",
+      "lat": 26.8,
+      "lon": 56.1,
+      "status": "Active",
+      "region": "Strait of Hormuz",
+      "group": "IRGCN Patrol"
+    },
+    {
+      "name": "HMS Al Riyadh",
+      "hull": "F-3000S",
+      "type": "Frigate",
+      "class": "Al Riyadh-class",
+      "navy": "Saudi Navy",
+      "lat": 20.5,
+      "lon": 39.8,
+      "status": "Patrol",
+      "region": "Red Sea"
+    }
+  ],
+  "shipRegions": [
+    "Persian Gulf",
+    "Red Sea",
+    "Eastern Med",
+    "Arabian Sea"
+  ],
+  "alertProvider": "tzevaadom",
+  "client": {
+    "mapCenter": [
+      30,
+      48
+    ],
+    "strikeLocations": {
+      "tehran": [
+        35.69,
+        51.39
+      ],
+      "isfahan": [
+        32.65,
+        51.67
+      ],
+      "natanz": [
+        33.51,
+        51.73
+      ],
+      "shiraz": [
+        29.59,
+        52.58
+      ],
+      "tabriz": [
+        38.08,
+        46.29
+      ],
+      "bushehr": [
+        28.97,
+        50.84
+      ],
+      "bandar abbas": [
+        27.19,
+        56.28
+      ],
+      "kharg island": [
+        29.24,
+        50.31
+      ],
+      "south pars": [
+        27.5,
+        52.6
+      ],
+      "iran": [
+        32.5,
+        53
+      ],
+      "tel aviv": [
+        32.09,
+        34.78
+      ],
+      "haifa": [
+        32.79,
+        34.99
+      ],
+      "dimona": [
+        31.07,
+        35.03
+      ],
+      "jerusalem": [
+        31.77,
+        35.21
+      ],
+      "beer sheva": [
+        31.25,
+        34.79
+      ],
+      "eilat": [
+        29.56,
+        34.95
+      ],
+      "negev": [
+        30.85,
+        34.78
+      ],
+      "arad": [
+        31.26,
+        35.21
+      ],
+      "ashdod": [
+        31.8,
+        34.66
+      ],
+      "ashkelon": [
+        31.67,
+        34.57
+      ],
+      "ben gurion": [
+        32.01,
+        34.87
+      ],
+      "nuclear": [
+        31.07,
+        35.03
+      ],
+      "israel": [
+        31.5,
+        34.8
+      ],
+      "beirut": [
+        33.89,
+        35.5
+      ],
+      "hezbollah": [
+        33.6,
+        35.5
+      ],
+      "litani": [
+        33.35,
+        35.3
+      ],
+      "south lebanon": [
+        33.3,
+        35.4
+      ],
+      "lebanon": [
+        33.85,
+        35.86
+      ],
+      "syria": [
+        34.8,
+        38.99
+      ],
+      "damascus": [
+        33.51,
+        36.28
+      ],
+      "iraq": [
+        33.31,
+        44.37
+      ],
+      "baghdad": [
+        33.31,
+        44.37
+      ],
+      "yemen": [
+        15.37,
+        44.19
+      ],
+      "houthi": [
+        15.37,
+        44.19
+      ],
+      "red sea": [
+        14.5,
+        42.5
+      ],
+      "gaza": [
+        31.42,
+        34.36
+      ],
+      "strait of hormuz": [
+        26.56,
+        56.25
+      ],
+      "qatar": [
+        25.29,
+        51.53
+      ],
+      "doha": [
+        25.29,
+        51.53
+      ],
+      "saudi": [
+        24.71,
+        46.68
+      ],
+      "diego garcia": [
+        -7.32,
+        72.42
+      ],
+      "kuwait": [
+        29.38,
+        47.98
+      ]
+    }
+  }
+}

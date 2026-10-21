@@ -1,0 +1,967 @@
+{
+  "key": "russia-ukraine",
+  "label": "RUSSIA / UKRAINE",
+  "strikeQueries": [
+    "Russia+OR+Ukraine+missile+strike+OR+airstrike+OR+drone",
+    "Ukraine+Shahed+OR+missile+OR+glide+bomb+OR+Russian+strike+OR+attack"
+  ],
+  "countryAttribution": [
+    {
+      "match": [
+        "ukraine",
+        "kyiv",
+        "kharkiv",
+        "odesa",
+        "dnipro",
+        "kherson"
+      ],
+      "country": "Ukraine"
+    },
+    {
+      "match": [
+        "russia",
+        "moscow",
+        "belgorod",
+        "kursk",
+        "bryansk"
+      ],
+      "country": "Russia"
+    },
+    {
+      "match": [
+        "crimea",
+        "sevastopol"
+      ],
+      "country": "Crimea"
+    },
+    {
+      "match": [
+        "belarus"
+      ],
+      "country": "Belarus"
+    }
+  ],
+  "defaultCountry": "Eastern Europe",
+  "conflictQueries": [
+    "Russia Ukraine war military conflict strike attack",
+    "missile OR drone OR Shahed strike OR attack Kyiv OR Kharkiv OR Odesa OR Dnipro OR Zaporizhzhia OR Kherson OR Bakhmut OR Moscow OR Belgorod OR Kursk OR Crimea OR Sevastopol"
+  ],
+  "conflictLocations": [
+    {
+      "match": [
+        "kyiv"
+      ],
+      "location": "Kyiv, Ukraine"
+    },
+    {
+      "match": [
+        "kharkiv"
+      ],
+      "location": "Kharkiv, Ukraine"
+    },
+    {
+      "match": [
+        "odesa",
+        "odessa"
+      ],
+      "location": "Odesa, Ukraine"
+    },
+    {
+      "match": [
+        "dnipro"
+      ],
+      "location": "Dnipro, Ukraine"
+    },
+    {
+      "match": [
+        "lviv"
+      ],
+      "location": "Lviv, Ukraine"
+    },
+    {
+      "match": [
+        "zaporizhzhia"
+      ],
+      "location": "Zaporizhzhia, Ukraine"
+    },
+    {
+      "match": [
+        "mykolaiv"
+      ],
+      "location": "Mykolaiv, Ukraine"
+    },
+    {
+      "match": [
+        "kherson"
+      ],
+      "location": "Kherson, Ukraine"
+    },
+    {
+      "match": [
+        "mariupol"
+      ],
+      "location": "Mariupol, Ukraine"
+    },
+    {
+      "match": [
+        "bakhmut"
+      ],
+      "location": "Bakhmut, Ukraine"
+    },
+    {
+      "match": [
+        "avdiivka"
+      ],
+      "location": "Avdiivka, Ukraine"
+    },
+    {
+      "match": [
+        "kramatorsk"
+      ],
+      "location": "Kramatorsk, Ukraine"
+    },
+    {
+      "match": [
+        "pokrovsk"
+      ],
+      "location": "Pokrovsk, Ukraine"
+    },
+    {
+      "match": [
+        "sumy"
+      ],
+      "location": "Sumy, Ukraine"
+    },
+    {
+      "match": [
+        "chernihiv"
+      ],
+      "location": "Chernihiv, Ukraine"
+    },
+    {
+      "match": [
+        "donetsk"
+      ],
+      "location": "Donetsk, Ukraine"
+    },
+    {
+      "match": [
+        "luhansk"
+      ],
+      "location": "Luhansk, Ukraine"
+    },
+    {
+      "match": [
+        "enerhodar",
+        "zaporizhzhia npp"
+      ],
+      "location": "Zaporizhzhia NPP, Ukraine"
+    },
+    {
+      "match": [
+        "moscow"
+      ],
+      "location": "Moscow, Russia"
+    },
+    {
+      "match": [
+        "belgorod"
+      ],
+      "location": "Belgorod, Russia"
+    },
+    {
+      "match": [
+        "kursk"
+      ],
+      "location": "Kursk, Russia"
+    },
+    {
+      "match": [
+        "bryansk"
+      ],
+      "location": "Bryansk, Russia"
+    },
+    {
+      "match": [
+        "rostov"
+      ],
+      "location": "Rostov-on-Don, Russia"
+    },
+    {
+      "match": [
+        "voronezh"
+      ],
+      "location": "Voronezh, Russia"
+    },
+    {
+      "match": [
+        "engels"
+      ],
+      "location": "Engels, Russia"
+    },
+    {
+      "match": [
+        "novorossiysk"
+      ],
+      "location": "Novorossiysk, Russia"
+    },
+    {
+      "match": [
+        "sevastopol"
+      ],
+      "location": "Sevastopol, Crimea"
+    },
+    {
+      "match": [
+        "simferopol"
+      ],
+      "location": "Simferopol, Crimea"
+    },
+    {
+      "match": [
+        "kerch"
+      ],
+      "location": "Kerch, Crimea"
+    },
+    {
+      "match": [
+        "crimea"
+      ],
+      "location": "Crimea"
+    },
+    {
+      "match": [
+        "belarus"
+      ],
+      "location": "Belarus"
+    },
+    {
+      "match": [
+        "black sea"
+      ],
+      "location": "Black Sea"
+    },
+    {
+      "match": [
+        "ukraine"
+      ],
+      "location": "Ukraine"
+    },
+    {
+      "match": [
+        "russia"
+      ],
+      "location": "Russia"
+    }
+  ],
+  "countryQueries": [
+    {
+      "country": "Russia",
+      "flag": "🇷🇺",
+      "query": "Russia+strike+OR+drone+OR+attack+OR+Belgorod+OR+Kursk+OR+Moscow+attack+OR+explosion"
+    },
+    {
+      "country": "Belarus",
+      "flag": "🇧🇾",
+      "query": "Belarus+military+OR+airspace+OR+troops+OR+Russia+OR+border+OR+drone"
+    },
+    {
+      "country": "Poland",
+      "flag": "🇵🇱",
+      "query": "Poland+airspace+OR+drone+OR+missile+OR+NATO+OR+border+OR+scramble+jets"
+    },
+    {
+      "country": "Moldova",
+      "flag": "🇲🇩",
+      "query": "Moldova+OR+Transnistria+drone+OR+missile+OR+airspace+OR+debris+OR+tension"
+    },
+    {
+      "country": "Romania",
+      "flag": "🇷🇴",
+      "query": "Romania+drone+OR+airspace+OR+missile+OR+NATO+OR+Danube+OR+debris"
+    },
+    {
+      "country": "Slovakia",
+      "flag": "🇸🇰",
+      "query": "Slovakia+Ukraine+OR+military+OR+NATO+OR+border+OR+airspace"
+    },
+    {
+      "country": "Lithuania",
+      "flag": "🇱🇹",
+      "query": "Lithuania+NATO+OR+Russia+OR+Belarus+OR+airspace+OR+Suwalki+OR+drone"
+    },
+    {
+      "country": "Latvia",
+      "flag": "🇱🇻",
+      "query": "Latvia+NATO+OR+Russia+OR+airspace+OR+border+OR+drone+OR+military"
+    },
+    {
+      "country": "Estonia",
+      "flag": "🇪🇪",
+      "query": "Estonia+NATO+OR+Russia+OR+airspace+OR+border+OR+drone+OR+military"
+    },
+    {
+      "country": "Hungary",
+      "flag": "🇭🇺",
+      "query": "Hungary+Ukraine+OR+NATO+OR+Russia+OR+border+OR+airspace"
+    }
+  ],
+  "polymarketKeywords": {
+    "regex": "ukraine|russia|russian|putin|zelensky|zelenskyy|kyiv|kremlin|donbas|donbass|crimea|kharkiv|bakhmut|wagner|belarus|moscow|nato.*(?:ukraine|russia)|ceasefire.*(?:ukraine|russia)|\\bwar\\b.*(?:ukraine|russia)|sanction.*russia|f-?16.*ukraine|himars|atacms|storm\\s?shadow|drone.*(?:ukraine|russia)|missile.*(?:ukraine|russia)",
+    "flags": "i"
+  },
+  "polymarketExclude": {
+    "regex": "nba|nfl|mlb|nhl|fifa|world.?cup|premier.?league|champions.?league|super.?bowl|oscar|grammy|emmy|election.*governor|mayor|warriors|lakers|celtics|yankees|dodgers|iran|israel|gaza|hezbollah|hamas|houthi|china|taiwan|north.?korea|tariff|crypto|bitcoin|ethereum|solana",
+    "flags": "i"
+  },
+  "firesBBox": {
+    "latMin": 44,
+    "latMax": 56,
+    "lonMin": 22,
+    "lonMax": 48
+  },
+  "flightsCenter": {
+    "lat": 49,
+    "lon": 32,
+    "dist": 2500
+  },
+  "flightsBBox": {
+    "latMin": 44,
+    "latMax": 58,
+    "lonMin": 18,
+    "lonMax": 50
+  },
+  "newsFeeds": [
+    {
+      "url": "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+      "name": "BBC"
+    },
+    {
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml",
+      "name": "NYT"
+    },
+    {
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "name": "Al Jazeera"
+    },
+    {
+      "url": "https://feeds.reuters.com/Reuters/worldNews",
+      "name": "Reuters"
+    },
+    {
+      "url": "https://kyivindependent.com/feed/",
+      "name": "Kyiv Independent",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.pravda.com.ua/eng/rss/",
+      "name": "Ukrainska Pravda",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.kyivpost.com/feed",
+      "name": "Kyiv Post",
+      "unfiltered": true
+    },
+    {
+      "url": "https://english.nv.ua/rss/all.xml",
+      "name": "NV",
+      "unfiltered": true
+    },
+    {
+      "url": "https://www.ukrinform.net/rss/block-lastnews",
+      "name": "Ukrinform",
+      "unfiltered": true
+    },
+    {
+      "url": "https://tass.com/rss/v2.xml",
+      "name": "TASS"
+    },
+    {
+      "url": "https://www.rt.com/rss/news/",
+      "name": "RT"
+    },
+    {
+      "url": "https://www.themoscowtimes.com/rss/news",
+      "name": "Moscow Times"
+    },
+    {
+      "url": "https://meduza.io/rss/en/all",
+      "name": "Meduza"
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=Russia+Ukraine+war+military&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=Ukraine+missile+OR+drone+strike&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://news.google.com/rss/search?q=Ukraine+front+line+OR+offensive+Russia&hl=en-US&gl=US&ceid=US:en",
+      "name": "Google News",
+      "unfiltered": true
+    },
+    {
+      "url": "https://breakingdefense.com/feed/",
+      "name": "Breaking Def"
+    },
+    {
+      "url": "https://www.militarytimes.com/arc/outboundfeeds/rss/?outputType=xml",
+      "name": "Mil Times"
+    },
+    {
+      "url": "https://warontherocks.com/feed/",
+      "name": "War on Rocks"
+    },
+    {
+      "url": "https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=10",
+      "name": "DoD"
+    },
+    {
+      "url": "https://moxie.foxnews.com/google-publisher/world.xml",
+      "name": "Fox News"
+    },
+    {
+      "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews",
+      "name": "WSJ"
+    }
+  ],
+  "newsRelevanceKeywords": {
+    "regex": "ukrain|russia|russian|putin|zelensky|kyiv|kharkiv|odesa|odessa|dnipro|zaporizhzhia|kherson|mykolaiv|mariupol|bakhmut|avdiivka|pokrovsk|kramatorsk|kupiansk|sumy|chernihiv|donbas|donetsk|luhansk|crimea|sevastopol|kremlin|moscow|belgorod|kursk|bryansk|belarus|wagner|himars|atacms|storm\\s?shadow|shahed",
+    "flags": "i"
+  },
+  "telegramChannels": [
+    {
+      "name": "DeepStateUA",
+      "label": "DeepState UA",
+      "color": "#ffd500"
+    },
+    {
+      "name": "war_monitor",
+      "label": "War Monitor",
+      "color": "#00aaff"
+    },
+    {
+      "name": "OSINTdefender",
+      "label": "OSINT Defender",
+      "color": "#00aaff"
+    },
+    {
+      "name": "rybar",
+      "label": "Rybar (RU)",
+      "color": "#cc3333"
+    },
+    {
+      "name": "UkraineNow",
+      "label": "Ukraine NOW",
+      "color": "#0057b7"
+    },
+    {
+      "name": "GeneralStaffZSU",
+      "label": "UA General Staff",
+      "color": "#005bbb"
+    },
+    {
+      "name": "V_Zelenskiy_official",
+      "label": "Zelensky Official",
+      "color": "#1f6fb2"
+    },
+    {
+      "name": "mod_russia",
+      "label": "Russian MoD (RU)",
+      "color": "#cc3333"
+    },
+    {
+      "name": "nexta_live",
+      "label": "NEXTA",
+      "color": "#ffd500"
+    },
+    {
+      "name": "uniannet",
+      "label": "UNIAN",
+      "color": "#1f6fb2"
+    },
+    {
+      "name": "ukrpravda_news",
+      "label": "Ukrainska Pravda",
+      "color": "#c00000"
+    },
+    {
+      "name": "suspilnenews",
+      "label": "Suspilne",
+      "color": "#6a1b9a"
+    },
+    {
+      "name": "truexanewsua",
+      "label": "Trukha UA",
+      "color": "#ff6600"
+    },
+    {
+      "name": "ssternenko",
+      "label": "Sternenko",
+      "color": "#33aa77"
+    },
+    {
+      "name": "readovkanews",
+      "label": "Readovka (RU)",
+      "color": "#884422"
+    },
+    {
+      "name": "epoddubny",
+      "label": "Poddubny (RU)",
+      "color": "#774433"
+    },
+    {
+      "name": "boris_rozhin",
+      "label": "Colonel Cassad (RU)",
+      "color": "#dd4444"
+    },
+    {
+      "name": "wargonzo",
+      "label": "WarGonzo (RU)",
+      "color": "#aa4444"
+    },
+    {
+      "name": "rvvoenkor",
+      "label": "RV Voenkor (RU)",
+      "color": "#cc5544"
+    },
+    {
+      "name": "grey_zone",
+      "label": "Grey Zone (RU)",
+      "color": "#888888"
+    },
+    {
+      "name": "meduzalive",
+      "label": "Meduza (RU)",
+      "color": "#333388"
+    },
+    {
+      "name": "tsaplienko",
+      "label": "Tsaplienko",
+      "color": "#2266bb"
+    },
+    {
+      "name": "insiderUKR",
+      "label": "Insider UA",
+      "color": "#44aacc"
+    },
+    {
+      "name": "motolkohelp",
+      "label": "Motolko (Belarus)",
+      "color": "#c4a535"
+    },
+    {
+      "name": "kpszsu",
+      "label": "UA Air Force",
+      "color": "#4fb0d8"
+    },
+    {
+      "name": "pravdaGerashchenko_en",
+      "label": "Gerashchenko",
+      "color": "#3a7bd5"
+    },
+    {
+      "name": "KyivIndependent_official",
+      "label": "Kyiv Independent TG",
+      "color": "#ffd500"
+    },
+    {
+      "name": "butusovplus",
+      "label": "Butusov",
+      "color": "#2e8bc0"
+    },
+    {
+      "name": "lachentyt",
+      "label": "Lachen",
+      "color": "#e0a800"
+    },
+    {
+      "name": "serhii_flash",
+      "label": "Serhii Flash",
+      "color": "#00a0a0"
+    },
+    {
+      "name": "operativnoZSU",
+      "label": "Operatyvno ZSU",
+      "color": "#005bbb"
+    },
+    {
+      "name": "bbcukrainian",
+      "label": "BBC Ukraine",
+      "color": "#bb1919"
+    },
+    {
+      "name": "radiosvoboda",
+      "label": "Radio Svoboda",
+      "color": "#2a7fff"
+    },
+    {
+      "name": "astrapress",
+      "label": "Astra (indep)",
+      "color": "#8e44ad"
+    },
+    {
+      "name": "mediazzzona",
+      "label": "Mediazona",
+      "color": "#b02a37"
+    },
+    {
+      "name": "agentstvonews",
+      "label": "Agentstvo",
+      "color": "#16a085"
+    },
+    {
+      "name": "holodmedia",
+      "label": "Holod",
+      "color": "#34495e"
+    },
+    {
+      "name": "maximkatz",
+      "label": "Maxim Katz",
+      "color": "#e67e22"
+    },
+    {
+      "name": "dva_majors",
+      "label": "Two Majors (RU)",
+      "color": "#8b3a3a"
+    },
+    {
+      "name": "sashakots",
+      "label": "Kots (RU)",
+      "color": "#a0522d"
+    },
+    {
+      "name": "voenkorKotenok",
+      "label": "Kotenok (RU)",
+      "color": "#994444"
+    },
+    {
+      "name": "rian_ru",
+      "label": "RIA Novosti (RU)",
+      "color": "#c8102e"
+    }
+  ],
+  "ships": [
+    {
+      "name": "Admiral Makarov",
+      "hull": "799",
+      "type": "Frigate",
+      "class": "Admiral Grigorovich-class",
+      "navy": "Russian Navy",
+      "lat": 44.6,
+      "lon": 37.8,
+      "status": "Kalibr Carrier",
+      "region": "Black Sea",
+      "group": "Black Sea Fleet"
+    },
+    {
+      "name": "Admiral Essen",
+      "hull": "751",
+      "type": "Frigate",
+      "class": "Admiral Grigorovich-class",
+      "navy": "Russian Navy",
+      "lat": 43.4,
+      "lon": 36.9,
+      "status": "Active",
+      "region": "Black Sea",
+      "group": "Black Sea Fleet"
+    },
+    {
+      "name": "Rostov-on-Don",
+      "hull": "B-237",
+      "type": "Submarine",
+      "class": "Kilo-class (Improved)",
+      "navy": "Russian Navy",
+      "lat": 44.72,
+      "lon": 37.79,
+      "status": "In Port (Novorossiysk)",
+      "region": "Black Sea",
+      "group": "Black Sea Fleet"
+    },
+    {
+      "name": "Ivan Khurs",
+      "hull": "208",
+      "type": "Intelligence Ship",
+      "class": "Yuriy Ivanov-class",
+      "navy": "Russian Navy",
+      "lat": 44.5,
+      "lon": 38.1,
+      "status": "Active",
+      "region": "Black Sea"
+    },
+    {
+      "name": "Vyshny Volochek",
+      "hull": "609",
+      "type": "Corvette",
+      "class": "Buyan-M-class",
+      "navy": "Russian Navy",
+      "lat": 44.1,
+      "lon": 37.4,
+      "status": "Kalibr Carrier",
+      "region": "Black Sea",
+      "group": "Black Sea Fleet"
+    },
+    {
+      "name": "Grayvoron",
+      "hull": "616",
+      "type": "Corvette",
+      "class": "Buyan-M-class",
+      "navy": "Russian Navy",
+      "lat": 43.9,
+      "lon": 37.1,
+      "status": "Active",
+      "region": "Black Sea"
+    },
+    {
+      "name": "Azov Flotilla",
+      "hull": "Various",
+      "type": "Fast Attack Craft",
+      "class": "Various",
+      "navy": "Russian Navy",
+      "lat": 46.3,
+      "lon": 36.6,
+      "status": "Active",
+      "region": "Sea of Azov",
+      "group": "Azov Flotilla"
+    },
+    {
+      "name": "Hetman Ivan Mazepa",
+      "hull": "F211",
+      "type": "Corvette",
+      "class": "Ada-class",
+      "navy": "Ukrainian Navy",
+      "lat": 46.45,
+      "lon": 30.75,
+      "status": "Fitting Out",
+      "region": "Black Sea",
+      "group": "UA Navy"
+    },
+    {
+      "name": "Magura V5 USVs",
+      "hull": "USV",
+      "type": "Naval Drone (USV)",
+      "class": "Magura V5",
+      "navy": "Ukrainian Navy",
+      "lat": 45,
+      "lon": 31.5,
+      "status": "Active Ops",
+      "region": "Black Sea",
+      "group": "UA Navy"
+    },
+    {
+      "name": "TCG Kinaliada",
+      "hull": "F-514",
+      "type": "Corvette",
+      "class": "Ada-class",
+      "navy": "Turkish Navy",
+      "lat": 41.2,
+      "lon": 29.1,
+      "status": "Patrol (Bosphorus)",
+      "region": "Black Sea"
+    },
+    {
+      "name": "USS Arleigh Burke",
+      "hull": "DDG-51",
+      "type": "Destroyer",
+      "class": "Arleigh Burke-class",
+      "navy": "US Navy",
+      "lat": 34.5,
+      "lon": 28,
+      "status": "Deployed",
+      "region": "Eastern Med",
+      "group": "6th Fleet"
+    },
+    {
+      "name": "FS Auvergne",
+      "hull": "D654",
+      "type": "Frigate",
+      "class": "FREMM-class",
+      "navy": "NATO",
+      "lat": 35.2,
+      "lon": 26.5,
+      "status": "Deployed",
+      "region": "Eastern Med",
+      "group": "NATO SNMG2"
+    }
+  ],
+  "shipRegions": [
+    "Black Sea",
+    "Sea of Azov",
+    "Eastern Med",
+    "Kerch Strait"
+  ],
+  "alertProvider": "alertsua",
+  "droneProvider": "neptun",
+  "client": {
+    "mapCenter": [
+      49,
+      33
+    ],
+    "strikeLocations": {
+      "kyiv": [
+        50.45,
+        30.52
+      ],
+      "kharkiv": [
+        49.99,
+        36.23
+      ],
+      "odesa": [
+        46.48,
+        30.72
+      ],
+      "odessa": [
+        46.48,
+        30.72
+      ],
+      "dnipro": [
+        48.46,
+        35.05
+      ],
+      "lviv": [
+        49.84,
+        24.03
+      ],
+      "zaporizhzhia": [
+        47.84,
+        35.14
+      ],
+      "mykolaiv": [
+        46.98,
+        31.99
+      ],
+      "kherson": [
+        46.64,
+        32.62
+      ],
+      "mariupol": [
+        47.1,
+        37.54
+      ],
+      "bakhmut": [
+        48.6,
+        38
+      ],
+      "avdiivka": [
+        48.14,
+        37.75
+      ],
+      "kramatorsk": [
+        48.72,
+        37.58
+      ],
+      "sumy": [
+        50.91,
+        34.8
+      ],
+      "chernihiv": [
+        51.49,
+        31.29
+      ],
+      "donetsk": [
+        48.02,
+        37.8
+      ],
+      "luhansk": [
+        48.57,
+        39.31
+      ],
+      "pokrovsk": [
+        48.28,
+        37.18
+      ],
+      "enerhodar": [
+        47.5,
+        34.66
+      ],
+      "ukraine": [
+        49,
+        32
+      ],
+      "moscow": [
+        55.76,
+        37.62
+      ],
+      "belgorod": [
+        50.6,
+        36.59
+      ],
+      "kursk": [
+        51.74,
+        36.19
+      ],
+      "bryansk": [
+        53.24,
+        34.36
+      ],
+      "rostov": [
+        47.24,
+        39.7
+      ],
+      "voronezh": [
+        51.67,
+        39.18
+      ],
+      "krasnodar": [
+        45.04,
+        38.98
+      ],
+      "engels": [
+        51.48,
+        46.19
+      ],
+      "novorossiysk": [
+        44.72,
+        37.79
+      ],
+      "russia": [
+        55,
+        40
+      ],
+      "crimea": [
+        45.3,
+        34.4
+      ],
+      "sevastopol": [
+        44.62,
+        33.53
+      ],
+      "simferopol": [
+        44.95,
+        34.1
+      ],
+      "kerch": [
+        45.36,
+        36.47
+      ],
+      "dzhankoi": [
+        45.71,
+        34.39
+      ],
+      "belarus": [
+        53.9,
+        27.56
+      ],
+      "black sea": [
+        44,
+        31.5
+      ],
+      "sea of azov": [
+        46.3,
+        36.5
+      ],
+      "transnistria": [
+        46.84,
+        29.64
+      ],
+      "moldova": [
+        47.01,
+        28.86
+      ]
+    }
+  }
+}

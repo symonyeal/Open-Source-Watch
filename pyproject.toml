@@ -1,0 +1,16 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+markers = ["network: polls live public endpoints"]
+
+[tool.ruff]
+line-length = 100
+extend-exclude = ["node_modules", ".next"]
+
+[tool.ruff.lint]
+# E501 is not in ruff's default selection; select it so line-length is enforced.
+extend-select = ["E501"]
+# E741 rejects l, I and O as names; the sources use them as symbols.
+# I001 wraps imports one name per line, against the compact register of these files.
+ignore = ["E741", "I001"]

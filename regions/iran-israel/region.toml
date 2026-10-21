@@ -1,0 +1,136 @@
+# Engine-owned configuration for the Iran / Israel theater.
+# Feeds, channels and keywords come from conflict.json, exported from
+# src/lib/conflicts/iran-israel.ts (spec § Seam). This file holds what the
+# engine alone decides: geography, grades, ownership, PIRs, indicators.
+
+id = "iran-israel"
+name = "Iran / Israel"
+bbox = [20.0, 42.0, 25.0, 65.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "he", "ar", "fa"]
+
+# Admiralty source reliability A-F (spec § Sources). Key: "<adapter>:<name>".
+[reliability]
+"rss:BBC" = "B"
+"rss:NYT" = "B"
+"rss:Al Jazeera" = "C"
+"rss:Reuters" = "B"
+"rss:Times of Israel" = "C"
+"rss:JPost" = "C"
+"rss:Ynet" = "C"
+"rss:N12" = "C"
+"rss:Walla" = "C"
+"rss:The National" = "C"
+"rss:CNN" = "B"
+"rss:Fox News" = "C"
+"rss:WSJ" = "B"
+"rss:Google News" = "C"
+"rss:Breaking Def" = "C"
+"rss:Long War Jrnl" = "C"
+"rss:Mil Times" = "C"
+"rss:War on Rocks" = "C"
+"rss:CENTCOM" = "B"
+"rss:DoD" = "B"
+"rss:Haaretz" = "C"
+"rss:Drop Site" = "D"
+"rss:PressTV" = "D"
+"telegram:IDFofficial" = "B"
+"telegram:RocketAlert" = "C"
+"telegram:PressTV" = "D"
+"telegram:OSINTdefender" = "E"
+"telegram:middle_east_spectator" = "E"
+"telegram:iranintl_en" = "D"
+"telegram:Alertisrael" = "E"
+"telegram:QudsNen" = "D"
+"telegram:TimesofIsrael" = "C"
+"telegram:FarsNews_EN" = "D"
+"telegram:FotrosResistancee" = "E"
+"telegram:Alsaa_plus_EN" = "E"
+"telegram:warfareanalysis" = "E"
+"telegram:rnintel" = "E"
+"telegram:GeoPWatch" = "E"
+"telegram:thecradlemedia" = "D"
+"telegram:Middle_East_Spectator" = "E"
+"telegram:HAMASW" = "E"
+"telegram:TasnimNewsEN" = "D"
+"telegram:AbuAliExpress" = "E"
+"telegram:dropsitenews" = "D"
+"telegram:france24_en" = "B"
+"telegram:SaberinFa" = "E"
+"telegram:defapress_ir" = "D"
+"telegram:sepah" = "D"
+"telegram:wamnews_en" = "D"
+"telegram:gulfnewsUAE" = "C"
+"telegram:Alibk3" = "E"
+"telegram:aljazeeraglobal" = "C"
+"telegram:bintjbeilnews" = "E"
+"telegram:kianmeli1" = "E"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"alerts:tzevaadom" = "A"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+# Owner, where it differs from the source name; sources sharing an owner are
+# not independent (spec § Credibility).
+[owner]
+"telegram:PressTV" = "PressTV"
+"telegram:TimesofIsrael" = "Times of Israel"
+"telegram:dropsitenews" = "Drop Site"
+"telegram:aljazeeraglobal" = "Al Jazeera"
+"telegram:middle_east_spectator" = "Middle East Spectator"
+"telegram:Middle_East_Spectator" = "Middle East Spectator"
+"telegram:sepah" = "IRGC"
+"telegram:SaberinFa" = "IRGC"
+
+# Priority intelligence requirements and their indicators (spec § Data model).
+# An indicator counts events of `kind` with credibility <= max_credibility in
+# the last window_h hours: >= watch -> watch, >= trigger -> triggered.
+
+[[pir]]
+id = "II-1"
+question = "Is a direct missile or drone exchange between Iran and Israel under way?"
+
+  [[pir.indicator]]
+  id = "II-1a"
+  name = "Air-raid alerts in Israel"
+  kind = "air_raid_alert"
+  window_h = 6
+  watch = 1
+  trigger = 10
+  max_credibility = 3
+
+  [[pir.indicator]]
+  id = "II-1b"
+  name = "Reported strikes or explosions"
+  kind = "explosions_remote_violence"
+  window_h = 6
+  watch = 2
+  trigger = 6
+  max_credibility = 3
+
+[[pir]]
+id = "II-2"
+question = "Is maritime traffic through Hormuz or the Red Sea under attack?"
+
+  [[pir.indicator]]
+  id = "II-2a"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 24
+  watch = 1
+  trigger = 3
+  max_credibility = 3
+
+[[pir]]
+id = "II-3"
+question = "Are there unusual thermal detections consistent with strikes?"
+
+  [[pir.indicator]]
+  id = "II-3a"
+  name = "High-confidence thermal anomalies"
+  kind = "thermal_anomaly"
+  window_h = 12
+  watch = 5
+  trigger = 25
+  max_credibility = 3

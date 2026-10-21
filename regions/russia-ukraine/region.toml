@@ -1,0 +1,146 @@
+# Engine-owned configuration for the Russia / Ukraine theater.
+# Feeds, channels and keywords come from conflict.json, exported from
+# src/lib/conflicts/russia-ukraine.ts (spec § Seam).
+
+id = "russia-ukraine"
+name = "Russia / Ukraine"
+bbox = [44.0, 56.0, 22.0, 48.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "uk", "ru"]
+
+[reliability]
+"rss:BBC" = "B"
+"rss:NYT" = "B"
+"rss:Al Jazeera" = "C"
+"rss:Reuters" = "B"
+"rss:Kyiv Independent" = "C"
+"rss:Ukrainska Pravda" = "C"
+"rss:Kyiv Post" = "C"
+"rss:NV" = "C"
+"rss:Ukrinform" = "D"
+"rss:TASS" = "D"
+"rss:RT" = "D"
+"rss:Moscow Times" = "C"
+"rss:Meduza" = "C"
+"rss:Google News" = "C"
+"rss:Breaking Def" = "C"
+"rss:Mil Times" = "C"
+"rss:War on Rocks" = "C"
+"rss:DoD" = "B"
+"rss:Fox News" = "C"
+"rss:WSJ" = "B"
+"telegram:DeepStateUA" = "C"
+"telegram:war_monitor" = "E"
+"telegram:OSINTdefender" = "E"
+"telegram:rybar" = "E"
+"telegram:UkraineNow" = "E"
+"telegram:GeneralStaffZSU" = "B"
+"telegram:V_Zelenskiy_official" = "B"
+"telegram:mod_russia" = "D"
+"telegram:nexta_live" = "D"
+"telegram:uniannet" = "C"
+"telegram:ukrpravda_news" = "C"
+"telegram:suspilnenews" = "C"
+"telegram:truexanewsua" = "E"
+"telegram:ssternenko" = "E"
+"telegram:readovkanews" = "E"
+"telegram:epoddubny" = "E"
+"telegram:boris_rozhin" = "E"
+"telegram:wargonzo" = "E"
+"telegram:rvvoenkor" = "E"
+"telegram:grey_zone" = "E"
+"telegram:meduzalive" = "C"
+"telegram:tsaplienko" = "E"
+"telegram:insiderUKR" = "E"
+"telegram:motolkohelp" = "E"
+"telegram:kpszsu" = "B"
+"telegram:pravdaGerashchenko_en" = "D"
+"telegram:KyivIndependent_official" = "C"
+"telegram:butusovplus" = "E"
+"telegram:lachentyt" = "E"
+"telegram:serhii_flash" = "E"
+"telegram:operativnoZSU" = "E"
+"telegram:bbcukrainian" = "B"
+"telegram:radiosvoboda" = "B"
+"telegram:astrapress" = "C"
+"telegram:mediazzzona" = "C"
+"telegram:agentstvonews" = "C"
+"telegram:holodmedia" = "C"
+"telegram:maximkatz" = "E"
+"telegram:dva_majors" = "E"
+"telegram:sashakots" = "E"
+"telegram:voenkorKotenok" = "E"
+"telegram:rian_ru" = "D"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"alerts:alertsua" = "A"
+"drones:neptun" = "C"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+[owner]
+"telegram:ukrpravda_news" = "Ukrainska Pravda"
+"telegram:meduzalive" = "Meduza"
+"telegram:KyivIndependent_official" = "Kyiv Independent"
+"telegram:bbcukrainian" = "BBC"
+"telegram:GeneralStaffZSU" = "Armed Forces of Ukraine"
+"telegram:kpszsu" = "Armed Forces of Ukraine"
+"telegram:rian_ru" = "Rossiya Segodnya"
+"rss:RT" = "Rossiya Segodnya"
+
+[[pir]]
+id = "RU-1"
+question = "Is a large Russian missile or drone strike on Ukraine under way?"
+
+  [[pir.indicator]]
+  id = "RU-1a"
+  name = "Oblast air-raid alerts"
+  kind = "air_raid_alert"
+  window_h = 3
+  watch = 3
+  trigger = 12
+  max_credibility = 3
+
+  [[pir.indicator]]
+  id = "RU-1b"
+  name = "Tracked drones and missiles"
+  kind = "airspace_activity"
+  window_h = 3
+  watch = 5
+  trigger = 30
+  max_credibility = 4
+
+[[pir]]
+id = "RU-2"
+question = "Are strikes hitting energy or industrial sites?"
+
+  [[pir.indicator]]
+  id = "RU-2a"
+  name = "Reported strikes or explosions"
+  kind = "explosions_remote_violence"
+  window_h = 12
+  watch = 3
+  trigger = 10
+  max_credibility = 3
+
+  [[pir.indicator]]
+  id = "RU-2b"
+  name = "High-confidence thermal anomalies"
+  kind = "thermal_anomaly"
+  window_h = 12
+  watch = 10
+  trigger = 40
+  max_credibility = 3
+
+[[pir]]
+id = "RU-3"
+question = "Is there naval or maritime activity in the Black Sea?"
+
+  [[pir.indicator]]
+  id = "RU-3a"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 24
+  watch = 1
+  trigger = 3
+  max_credibility = 3

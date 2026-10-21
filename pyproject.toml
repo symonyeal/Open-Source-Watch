@@ -6,7 +6,7 @@ markers = ["network: polls live public endpoints"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["node_modules", ".next"]
+extend-exclude = ["node_modules", ".next", ".github/scripts", "site"]  # upstream files
 
 [tool.ruff.lint]
 # E501 is not in ruff's default selection; select it so line-length is enforced.

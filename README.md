@@ -13,6 +13,11 @@ every feed of the two starting regions (Iran/Israel, Russia/Ukraine) is collecte
 graded and stored by the Python engine, which serves it to the dashboard. That covers
 news, Telegram, satellite fire detections, aircraft, air-raid alerts, drone tracks and
 markets. The footer shows the health of each source.
+Phase 2 adds fusion: reports of the same kind close in time and place are merged
+into events, each graded by how many independent, reliable sources support it. The
+header shows each region's priority intelligence requirements as indicators. A
+scheduled GitHub job collects the slower feeds every 15 minutes into the `data`
+branch, so history builds while the laptop is off.
 
 **What this does not show.** Nothing here is verified ground truth. Each item is a
 claim by its source; the grade says how reliable the source has been judged, not whether

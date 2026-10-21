@@ -53,9 +53,34 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   hour it merges each past day's directory into one file, under a lock that queries
   share.
 
+- **Google News independence by outlet** (2026-10-21). A Google News item's owner is
+  the outlet in its " - Outlet" suffix (`payload.outlet`), not the aggregator.
+- **Country-level observations do not link** (2026-10-21). In the first live fusion,
+  1,036 events in total, observations located only to "Ukraine" merged unrelated
+  reports, because they share one coordinate. A country is not an administrative unit
+  for fusion, so these observations now form single-observation events.
+- **Contradiction deferred to P3** (2026-10-21). The narrowed rule (no A/B siren within
+  30 minutes) fired once on live data, and falsely: reports published at 06:07 and
+  07:21 UTC described an alert at 02:20 UTC. Text observations carry publication time,
+  not event time. Credibility 5 stays defined and tested; no rule assigns it.
+- **Events and entities are recomputed, not appended** (2026-10-21). `fuse` replaces
+  both tables atomically from the store every 10 minutes (2.0 s on 4,589
+  observations). The cron does not commit them, since a recomputed table would churn
+  the `data` branch; `engine fuse` rebuilds them locally.
+- **Indicator status on demand** (2026-10-21). `/api/indicators` evaluates each
+  indicator over the event table when asked. Status history is the P3 indicator board.
+
 ## Open
 
-- Source independence for Google News items should use the outlet (" - Outlet"
-  suffix, stored as `payload.outlet`), not the aggregator. Needed by fusion (P2).
+- Thermal indicators are miscalibrated: II-3a counted 228 events in 12 h on
+  2026-10-21 (triggered at 25), because persistent oil-field gas flares in Iraq and
+  Iran are daily VIIRS detections. A per-location baseline (P4 anomaly model) should
+  replace fixed thresholds; until then II-3 and RU-2b read as always triggered.
+- Live-only feeds (alerts, aircraft, drone tracks) have history only while a local
+  engine runs.
+- A local engine and the cron both write the `data` branch's tables when `./data` is
+  its worktree. Raw reports and observations deduplicate by id on read;
+  `collection_run` rows do not, but they never collide, since each run writes its own
+  rows.
 
 ## Tested and refused

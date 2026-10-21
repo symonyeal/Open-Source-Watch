@@ -1,0 +1,56 @@
+name: Collect
+
+# Open-Source-Watch collection cron (design § Phases, P2). Every 15 minutes the
+# slow feeds are polled by the same engine code that runs locally, and the new raw
+# reports, observations and run records are committed to the orphan `data` branch.
+# Fast feeds (alerts, aircraft, drone tracks) are collected only by a local engine.
+# Events and entities are derived tables: `py -3.14 -m engine fuse` rebuilds them.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+
+      - name: Check out the data branch at ./data
+        run: |
+          git config --global user.name "open-source-watch-collector"
+          git config --global user.email "symonyeal@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin data > /dev/null; then
+            git fetch --depth 1 origin data
+            git worktree add -B data data origin/data
+          else
+            git worktree add --orphan -b data data
+          fi
+
+      - name: Collect slow feeds
+        run: python -m engine collect --adapter rss gnews firms markets telegram --runner cron
+
+      - name: Compact past days
+        run: python -m engine compact
+
+      - name: Commit and push
+        working-directory: data
+        run: |
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -q -m "collect $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q origin data

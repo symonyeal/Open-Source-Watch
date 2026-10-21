@@ -31,21 +31,39 @@ def _day(row):
     return t.date().isoformat() if t else "undated"
 
 
-def append(table, rows):
-    """Write rows (dicts) to `table`, one file per (region, date). Returns len(rows)."""
+def _write(root, table, rows):
+    """One file per (region, date) of rows under root/<region>/<date>/."""
     parts = defaultdict(list)
     for r in rows:
         parts[(r.get("region") or "global", _day(r))].append(r)
     for (region, day), rs in parts.items():
-        d = data_dir() / table / region / day
+        d = root / region / day
         d.mkdir(parents=True, exist_ok=True)
         pq.write_table(pa.Table.from_pylist(rs, SCHEMA[table]), d / f"{uuid.uuid4().hex}.parquet")
     return len(rows)
 
 
+def append(table, rows):
+    """Write rows (dicts) to `table`. Returns len(rows)."""
+    return _write(data_dir() / table, table, rows)
+
+
 def drop(table):
     with LOCK:
         shutil.rmtree(data_dir() / table, ignore_errors=True)
+
+
+def replace(table, rows):
+    """Swap `table` for exactly `rows` (a recomputed derived table), atomically
+    with respect to queries."""
+    tmp = data_dir() / f".{table}.new"
+    shutil.rmtree(tmp, ignore_errors=True)
+    n = _write(tmp, table, rows)
+    with LOCK:
+        shutil.rmtree(data_dir() / table, ignore_errors=True)
+        if tmp.exists():
+            tmp.rename(data_dir() / table)
+    return n
 
 
 def compact(before=None):

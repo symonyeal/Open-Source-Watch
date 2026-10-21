@@ -3,7 +3,8 @@
 /fetch?url=U   the recording proxy: the latest stored response for an upstream URL
                (src/lib/fetcher.ts forwards here when ENGINE_URL is set)
 /api/telegram  upstream's TelegramData shape (src/lib/types/api.ts), from the store
-/regions, /observations, /sources, /stream   engine-native views
+/api/indicators PIR and indicator status of a region
+/regions, /observations, /events, /tracks, /sources, /stream   engine-native views
 """
 import asyncio
 import json
@@ -17,7 +18,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from engine import cycle, regions, store
+from engine import analyze, cycle, regions, store
 
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
@@ -60,6 +61,29 @@ async def observations(req):
     p = [r["id"], since(req)] + ([q["kind"]] if q.get("kind") else []) \
         + ([q["source"] + "%"] if q.get("source") else []) + [int(q.get("limit", 500))]
     return js(await run_in_threadpool(store.query, sql, p))
+
+
+async def events(req):
+    r, q = region_of(req), req.query_params
+    sql = ("SELECT * FROM event WHERE region = ? AND t_end > ?"
+           + (" AND kind = ?" if q.get("kind") else "") + " ORDER BY t_end DESC LIMIT ?")
+    p = [r["id"], since(req)] + ([q["kind"]] if q.get("kind") else []) + [int(q.get("limit", 500))]
+    return js(await run_in_threadpool(store.query, sql, p))
+
+
+async def tracks(req):
+    r = region_of(req)
+    return js(await run_in_threadpool(
+        store.query, "SELECT * FROM track_point WHERE region = ? AND t > ? ORDER BY entity_id, t",
+        (r["id"], since(req, 6))))
+
+
+def indicator_board(r):
+    return analyze.board(r, {s["id"]: s["health"] for s in source_table(r)})
+
+
+async def indicators(req):
+    return js(await run_in_threadpool(indicator_board, region_of(req)))
 
 
 def health(runs, cadence, t):
@@ -151,7 +175,9 @@ def app(collect=True):
         stop.set()
 
     return Starlette(lifespan=life, routes=[
-        Route("/fetch", fetch), Route("/api/telegram", telegram), Route("/regions", regions_),
-        Route("/observations", observations), Route("/sources", sources),
+        Route("/fetch", fetch), Route("/api/telegram", telegram),
+        Route("/api/sources", sources), Route("/api/indicators", indicators),
+        Route("/regions", regions_), Route("/observations", observations),
+        Route("/events", events), Route("/tracks", tracks), Route("/sources", sources),
         Route("/stream", stream),
     ])

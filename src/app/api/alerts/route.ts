@@ -22,9 +22,10 @@ export async function GET(req: Request) {
   let stickyAlerts = stickyByConflict[key] || [];
 
   const alerts: AlertEvent[] =
-    server.alertProvider === 'alertsua'
-      ? await fetchUkraineAlerts(sourceLabel)
-      : await fetchTzevaAdomAlerts(sourceLabel);
+    server.alertProvider === 'none' ? []
+      : server.alertProvider === 'alertsua'
+        ? await fetchUkraineAlerts(sourceLabel)
+        : await fetchTzevaAdomAlerts(sourceLabel);
 
   // Add new alerts to sticky cache
   const now = Date.now();

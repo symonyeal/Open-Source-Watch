@@ -4,12 +4,14 @@
 import type { ConflictConfig, ConflictKey } from './types';
 import { iranIsrael } from './iran-israel';
 import { russiaUkraine } from './russia-ukraine';
+import { GENERATED } from './generated';
 
 export * from './types';
 
 export const CONFLICTS: Record<ConflictKey, ConflictConfig> = {
   'iran-israel': iranIsrael,
   'russia-ukraine': russiaUkraine,
+  ...Object.fromEntries(GENERATED.map(c => [c.key, c])),
 };
 
 export const DEFAULT_CONFLICT: ConflictKey = 'iran-israel';

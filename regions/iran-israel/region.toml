@@ -7,6 +7,7 @@ id = "iran-israel"
 name = "Iran / Israel"
 bbox = [20.0, 42.0, 25.0, 65.0]  # lat_min, lat_max, lon_min, lon_max
 languages = ["en", "he", "ar", "fa"]
+timezone = "Asia/Jerusalem"  # local time of reports (engine.process.when)
 
 # Admiralty source reliability A-F (spec § Sources). Key: "<adapter>:<name>".
 [reliability]

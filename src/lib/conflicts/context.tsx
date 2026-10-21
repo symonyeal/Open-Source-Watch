@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { CONFLICTS, DEFAULT_CONFLICT, isConflictKey } from './index';
+import { CONFLICTS, CONFLICT_KEYS, DEFAULT_CONFLICT, isConflictKey } from './index';
 import type { ConflictConfig, ConflictKey } from './types';
 
 const STORAGE_KEY = 'ironsight-conflict';
@@ -40,7 +40,7 @@ export function ConflictProvider({ children }: { children: React.ReactNode }) {
 
   const toggle = useCallback(() => {
     setKey(prev => {
-      const next: ConflictKey = prev === 'iran-israel' ? 'russia-ukraine' : 'iran-israel';
+      const next: ConflictKey = CONFLICT_KEYS[(CONFLICT_KEYS.indexOf(prev) + 1) % CONFLICT_KEYS.length];
       try { localStorage.setItem(STORAGE_KEY, next); } catch { /* ignore */ }
       return next;
     });

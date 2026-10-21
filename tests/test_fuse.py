@@ -137,7 +137,9 @@ def test_indicator_board():
     B = {p["pir"]: p for p in analyze.board(r, {"alerts:tzevaadom": "ok"})}
     i = B["II-1"]["indicators"][0]
     assert (i["count"], i["status"], B["II-1"]["status"]) == (10, "triggered", "answered")
-    assert B["II-2"]["status"] == "gap"           # no source produced maritime incidents
+    assert B["II-2"]["status"] == "gap"           # no healthy text source can report them
+    B = {p["pir"]: p for p in analyze.board(r, {"rss:BBC": "ok"})}
+    assert B["II-2"]["status"] == "open"          # healthy, and nothing happened: no gap
     B = {p["pir"]: p for p in analyze.board(r, {"alerts:tzevaadom": "failed"})}
     assert B["II-1"]["status"] == "answered"      # triggered takes precedence over a gap
     assert analyze.status(0, 1, 3) == "inactive" and analyze.status(1, 1, 3) == "watch"

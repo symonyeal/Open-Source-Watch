@@ -24,7 +24,7 @@ SCHEMA = {
         ("id", S), ("raw_id", S), ("source_id", S), ("region", S), ("t", T),
         ("lat", pa.float64()), ("lon", pa.float64()), ("geo_precision", S),
         ("kind", S), ("text_en", S), ("lang", S), ("credibility", pa.int8()),
-        ("names", pa.list_(S)),
+        ("names", pa.list_(S)), ("t_event", T),   # stated event time (process.when), if any
     ]),
     "event": pa.schema([
         ("id", S), ("region", S), ("t_start", T), ("t_end", T),
@@ -35,6 +35,13 @@ SCHEMA = {
     "entity": pa.schema([
         ("id", S), ("type", S), ("names", pa.list_(S)), ("identifiers", S),
         ("attributes", S),
+    ]),
+    "indicator_status": pa.schema([
+        ("region", S), ("t", T), ("pir", S), ("indicator", S), ("status", S),
+        ("count", pa.int32()),
+    ]),
+    "product": pa.schema([
+        ("id", S), ("region", S), ("kind", S), ("t", T), ("period_h", pa.int16()), ("text", S),
     ]),
     "track_point": pa.schema([
         ("entity_id", S), ("region", S), ("t", T), ("lat", pa.float64()),

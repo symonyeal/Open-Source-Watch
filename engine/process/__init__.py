@@ -161,8 +161,19 @@ RULES = [
 RULES = [(k, re.compile(p, re.IGNORECASE)) for k, p in RULES]
 
 
-def classify(s):
+def rules(s):
+    """Kind by the first matching keyword rule (the P0 classifier, now fallback)."""
     return next((k for k, p in RULES if p.search(s)), "report")
+
+
+def classify(s):
+    """Kind of an English text: the trained classifier (engine.classifier), which
+    beat the rules 0.68 to 0.54 in weighted accuracy; the rules without sklearn."""
+    try:
+        from engine.classifier import predict
+    except ImportError:
+        return rules(s)
+    return predict(s)
 
 
 def credibility_single(r, source_id):
@@ -177,10 +188,13 @@ def obs_id(raw_id, k=0):
 
 def observation(r, x, text):
     """Observation of raw report x whose claim is `text`: translated, geocoded,
-    classified, graded (spec § Processing)."""
+    classified, graded, with the event time it states (spec § Processing)."""
+    from engine.process.when import event_time
     en = translate(text)
     lat, lon, prec, names = geocode(gazetteer(r), en)
+    t = x["published_at"] or x["fetched_at"]
     return {"id": obs_id(x["id"]), "raw_id": x["id"], "source_id": x["source_id"],
-            "region": r["id"], "t": x["published_at"] or x["fetched_at"], "lat": lat, "lon": lon,
+            "region": r["id"], "t": t, "lat": lat, "lon": lon,
             "geo_precision": prec, "kind": classify(en), "text_en": en, "lang": lang(text),
-            "credibility": credibility_single(r, x["source_id"]), "names": names}
+            "credibility": credibility_single(r, x["source_id"]), "names": names,
+            "t_event": event_time(en, t, r["timezone"])}

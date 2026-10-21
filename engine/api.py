@@ -18,7 +18,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from engine import analyze, cycle, regions, store
+from engine import cycle, produce, regions, store
 
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
@@ -78,43 +78,23 @@ async def tracks(req):
         (r["id"], since(req, 6))))
 
 
-def indicator_board(r):
-    return analyze.board(r, {s["id"]: s["health"] for s in source_table(r)})
-
-
 async def indicators(req):
-    return js(await run_in_threadpool(indicator_board, region_of(req)))
+    return js(await run_in_threadpool(cycle.board, region_of(req)))
 
 
-def health(runs, cadence, t):
-    """ok | stale | failed | unknown (spec § Errors); runs newest first."""
-    if not runs:
-        return "unknown"
-    good = [x for x in runs if x["status"] in ("ok", "empty")]
-    if len(runs) >= 3 and not any(x in good for x in runs[:3]):
-        return "failed"
-    if not good or (t - good[0]["started_at"]).total_seconds() > 3 * cadence:
-        return "stale"
-    return "ok"
+def product_text(r, kind):
+    return {"region": r["id"], "kind": kind, "t": datetime.now(UTC),
+            "text": produce.report(r, cycle.board(r), cycle.source_table(r), kind)}
 
 
-def source_table(r):
-    t = datetime.now(UTC)
-    runs = defaultdict(list)
-    for x in store.query("SELECT * FROM collection_run WHERE region IN (?, 'global') "
-                         "AND started_at > ? ORDER BY started_at DESC",
-                         (r["id"], t - timedelta(days=1))):
-        runs[x["source_id"]].append(x)
-    return [{"id": s["id"], "region": s["region"], "url": s["url"],
-             "reliability": regions.reliability(r, s["id"]), "owner": regions.owner(r, s["id"]),
-             "cadence_s": s["cadence"], "health": health(runs[s["id"]], s["cadence"], t),
-             "last_status": runs[s["id"]][0]["status"] if runs[s["id"]] else None,
-             "last_run": runs[s["id"]][0]["started_at"] if runs[s["id"]] else None}
-            for s in cycle.sources([r["id"], "global"])]
+async def products(req):
+    """A fresh INTSUM (default) or SITREP of the region (engine.produce)."""
+    kind = "sitrep" if req.query_params.get("kind") == "sitrep" else "intsum"
+    return js(await run_in_threadpool(product_text, region_of(req), kind))
 
 
 async def sources(req):
-    return js(await run_in_threadpool(source_table, region_of(req)))
+    return js(await run_in_threadpool(cycle.source_table, region_of(req)))
 
 
 def telegram_data(r, t):
@@ -177,6 +157,7 @@ def app(collect=True):
     return Starlette(lifespan=life, routes=[
         Route("/fetch", fetch), Route("/api/telegram", telegram),
         Route("/api/sources", sources), Route("/api/indicators", indicators),
+        Route("/api/products", products),
         Route("/regions", regions_), Route("/observations", observations),
         Route("/events", events), Route("/tracks", tracks), Route("/sources", sources),
         Route("/stream", stream),

@@ -1,0 +1,136 @@
+# Strait of Hormuz and the Gulf of Oman (chokepoint region, spec P4).
+
+id = "hormuz"
+name = "Strait of Hormuz"
+bbox = [23.0, 28.5, 53.0, 60.0]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "fa", "ar"]
+timezone = "Asia/Tehran"  # local time of reports (engine.process.when)
+
+[gate.hormuz]
+# Across the narrows, Musandam (Oman) to Larak island (Iran), approximate.
+line = [[26.40, 56.42], [26.90, 56.33]]
+
+[reliability]
+"rss:gCaptain" = "C"
+"rss:Splash247" = "C"
+"rss:Maritime Executive" = "C"
+"rss:The National" = "C"
+"rss:Arab News" = "D"
+"rss:BBC" = "B"
+"rss:PressTV" = "D"
+"rss:Google News" = "C"
+"gnews:strike" = "C"
+"gnews:conflict" = "C"
+"gnews:country" = "C"
+"telegram:OSINTdefender" = "E"
+"telegram:middle_east_spectator" = "E"
+"telegram:iranintl_en" = "D"
+"telegram:rnintel" = "E"
+"telegram:Liveuamap" = "E"
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"ais:aisstream" = "B"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+[owner]
+"telegram:middle_east_spectator" = "Middle East Spectator"
+
+[[link]]
+title = "Supply-Chain-Cuts"
+url = "https://symonyeal.github.io/Supply-Chain-Cuts/"
+note = "Energy for battery and solar production stages; oil and LNG from the Gulf pass Hormuz (EIA estimates about a fifth of world oil consumption)."
+
+[[pir]]
+id = "HZ-1"
+question = "Are vessels being seized or attacked near the Strait of Hormuz?"
+
+  [[pir.indicator]]
+  id = "HZ-1a"
+  name = "Maritime incidents"
+  kind = "maritime_incident"
+  window_h = 72
+  watch = 1
+  trigger = 3
+  max_credibility = 4
+
+[[pir]]
+id = "HZ-2"
+question = "Is tanker traffic through Hormuz disrupted?"
+
+  [[pir.indicator]]
+  id = "HZ-2a"
+  name = "Daily transits, z-score against 14 days"
+  metric = "transit"
+  gate = "hormuz"
+  window_days = 14
+  watch_z = -1.0
+  trigger_z = -2.0
+
+  [[pir.hypothesis]]
+  id = "HZ-2-H1"
+  text = "Traffic is disrupted by seizures or attacks"
+  expect = { "HZ-1a" = "present", "HZ-2a" = "present" }
+
+  [[pir.hypothesis]]
+  id = "HZ-2-H2"
+  text = "Traffic is normal"
+  expect = { "HZ-1a" = "absent", "HZ-2a" = "absent" }
+
+[conflict]
+label = "HORMUZ"
+
+[conflict.client]
+mapCenter = [26.2, 56.3]
+mapZoom = 7
+cities = [
+  { name = "Bandar Abbas", lat = 27.1865, lon = 56.2808, country = "Iran", capital = false },
+  { name = "Qeshm", lat = 26.9581, lon = 56.2719, country = "Iran", capital = false },
+  { name = "Jask", lat = 25.6386, lon = 57.7700, country = "Iran", capital = false },
+  { name = "Khasab", lat = 26.1799, lon = 56.2477, country = "Oman", capital = false },
+  { name = "Muscat", lat = 23.588, lon = 58.3829, country = "Oman", capital = true },
+  { name = "Fujairah", lat = 25.1288, lon = 56.3265, country = "UAE", capital = false },
+  { name = "Dubai", lat = 25.2048, lon = 55.2708, country = "UAE", capital = false },
+  { name = "Ras al-Khaimah", lat = 25.7895, lon = 55.9432, country = "UAE", capital = false },
+]
+cityColors = { Iran = "#ff6666", default = "#999999" }
+strikeLocations = { "hormuz" = [26.57, 56.25], "strait of hormuz" = [26.57, 56.25], "bandar abbas" = [27.19, 56.28], "qeshm" = [26.96, 56.27], "larak" = [26.86, 56.36], "jask" = [25.64, 57.77], "fujairah" = [25.13, 56.33], "khasab" = [26.18, 56.25], "musandam" = [26.2, 56.25], "gulf of oman" = [24.5, 58.5], "muscat" = [23.59, 58.38], "iran" = [32.5, 53.0] }
+timeZones = [
+  { label = "TEHRAN", zone = "Asia/Tehran", flag = "🇮🇷" },
+  { label = "MUSCAT", zone = "Asia/Muscat", flag = "🇴🇲" },
+  { label = "UTC", zone = "UTC", flag = "🌐" },
+]
+maritimeRegions = ["Strait of Hormuz", "Gulf of Oman", "Persian Gulf"]
+
+[conflict.server]
+strikeQueries = ["Hormuz+tanker+seized+OR+attack", "Gulf+of+Oman+ship+attack"]
+conflictQueries = ["Strait of Hormuz tanker", "IRGC navy vessel seized"]
+countryQueries = [
+  { country = "Iran", flag = "🇮🇷", query = "Iran+navy+Hormuz" },
+  { country = "Oman", flag = "🇴🇲", query = "Oman+Musandam+shipping" },
+  { country = "UAE", flag = "🇦🇪", query = "Fujairah+tanker" },
+]
+countryAttribution = [{ match = ["iran", "irgc"], country = "Iran" }]
+defaultCountry = "Hormuz"
+conflictLocations = [{ match = ["hormuz"], location = "Strait of Hormuz" }]
+newsFeeds = [
+  { url = "https://gcaptain.com/feed/", name = "gCaptain" },
+  { url = "https://splash247.com/feed/", name = "Splash247" },
+  { url = "https://www.maritime-executive.com/articles.rss", name = "Maritime Executive" },
+  { url = "https://www.thenationalnews.com/arc/outboundfeeds/rss/?outputType=xml", name = "The National" },
+  { url = "https://www.arabnews.com/rss.xml", name = "Arab News" },
+  { url = "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml", name = "BBC" },
+  { url = "https://www.presstv.ir/rss.xml", name = "PressTV" },
+  { url = "https://news.google.com/rss/search?q=%22Strait+of+Hormuz%22&hl=en-US&gl=US&ceid=US:en", name = "Google News", unfiltered = true },
+]
+newsRelevanceKeywords = { regex = "hormuz|gulf of oman|persian gulf|irgc|iran|tanker|vessel|ship|maritime|navy|naval|seiz|fujairah|bandar abbas|oman|lng|crude", flags = "i" }
+polymarketKeywords = { regex = "hormuz|iran.*(?:navy|ship|tanker|strait)|oil.*(?:\\$|price)", flags = "i" }
+polymarketExclude = { regex = "nba|nfl|mlb|nhl|fifa|world.?cup|oscar|grammy|crypto|bitcoin", flags = "i" }
+telegramChannels = [
+  { name = "OSINTdefender", label = "OSINT Defender", color = "#00aaff" },
+  { name = "middle_east_spectator", label = "ME Spectator", color = "#ff6600" },
+  { name = "iranintl_en", label = "Iran Intl", color = "#00ff88" },
+  { name = "rnintel", label = "RN Intel", color = "#66ccff" },
+  { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
+]

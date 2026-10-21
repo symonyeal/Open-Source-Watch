@@ -84,7 +84,8 @@ def compact(before=None):
     return n
 
 
-ORDER = {"raw_report": "fetched_at", "observation": "t", "event": "t_start", "entity": "id"}
+ORDER = {"raw_report": "fetched_at", "observation": "t", "event": "t_start", "entity": "id",
+         "product": "t"}
 
 
 def connect():

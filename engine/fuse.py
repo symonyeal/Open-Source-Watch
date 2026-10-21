@@ -76,9 +76,30 @@ def owner(r, x):
     return regions.owner(r, x["source_id"])
 
 
-def events(r, X):
-    """Event rows of region r from its observations X (dicts with outlet). No
-    contradiction rule applies before P3 (docs/DECISIONS.md), so none reaches 5."""
+def contradicted(r, M, alerts, runs):
+    """Contradiction of an air-raid-alert event M claimed by no warning source
+    (spec § Fusion, amendment): some member states an event time τ
+    (engine.process.when) such that the region's A/B warning source ran at least
+    twice, without failure, within 10 min of τ, and recorded no alert within
+    30 min of τ. A report without a stated time is never contradicted."""
+    if any(x["source_id"].startswith("alerts:") for x in M):
+        return False
+    for x in M:
+        tau = x.get("t_event")
+        if tau is None:
+            continue
+        R = [y for y in runs if abs((y["started_at"] - tau).total_seconds()) <= 600]
+        if len(R) >= 2 and all(y["status"] in ("ok", "empty") for y in R) \
+                and regions.reliability(r, R[0]["source_id"]) in "AB" \
+                and not any(abs((a - tau).total_seconds()) <= 1800 for a in alerts):
+            return True
+    return False
+
+
+def events(r, X, runs=()):
+    """Event rows of region r from its observations X (dicts with outlet and
+    t_event) and its warning source's collection runs."""
+    alerts = [x["t"] for x in X if x["source_id"].startswith("alerts:")]
     out = []
     for kind in sorted({x["kind"] for x in X} - {"report"}):
         Y = sorted((x for x in X if x["kind"] == kind and x["lat"] is not None),
@@ -101,12 +122,14 @@ def events(r, X):
                 "lat": float(lat[F].mean()), "lon": float(lon[F].mean()), "kind": kind,
                 "observation_ids": [x["id"] for x in M],
                 "n_independent": len({o for g, o in S if g in "AB"}),
-                "credibility": credibility(S)})
+                "credibility": credibility(S, kind == "air_raid_alert"
+                                           and contradicted(r, M, alerts, runs))})
     return out
 
 
 def entities(raws):
-    """Aircraft entities from ADS-B and Neptun raw reports, latest attributes win."""
+    """Aircraft (ADS-B, Neptun) and vessel (AIS) entities from raw reports, latest
+    attributes win."""
     E = {}
     for x in sorted(raws, key=lambda x: x["fetched_at"]):
         p = json.loads(x["payload"])
@@ -119,6 +142,11 @@ def entities(raws):
                 e["identifiers"]["registration"] = p["r"]
             e["attributes"] |= {k: p[k] for k in ("t", "desc", "ownOp") if p.get(k)} | \
                 {"military": bool((p.get("dbFlags") or 0) & 1)}
+        elif x["source_id"].startswith("ais:"):
+            k = f"mmsi:{p['mmsi']}"
+            e = E.setdefault(k, {"id": k, "type": "vessel", "names": set(),
+                                 "identifiers": {"mmsi": p["mmsi"]}, "attributes": {}})
+            e["names"] |= {p["name"]} if p.get("name") else set()
         else:
             k = f"neptun:{p['track']}"
             e = E.setdefault(k, {"id": k, "type": "aircraft", "names": set(),
@@ -135,11 +163,14 @@ def fuse():
     X = store.query(
         "SELECT o.*, json_extract_string(r.payload, '$.outlet') AS outlet FROM observation o "
         "JOIN raw_report r ON r.id = o.raw_id WHERE o.kind <> 'report'")
+    runs = store.query("SELECT region, source_id, started_at, status FROM collection_run "
+                       "WHERE source_id LIKE 'alerts:%'")
     E = []
     for rid, r in R.items():
-        E += events(r, [x for x in X if x["region"] == rid])
+        E += events(r, [x for x in X if x["region"] == rid],
+                    [x for x in runs if x["region"] == rid])
     store.replace("event", E)
     T = store.query("SELECT * FROM raw_report WHERE source_id LIKE 'adsb:%' "
-                    "OR source_id LIKE 'drones:%'")
+                    "OR source_id LIKE 'drones:%' OR source_id LIKE 'ais:%'")
     store.replace("entity", entities(T))
     return len(E)

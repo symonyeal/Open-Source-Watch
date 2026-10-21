@@ -8,7 +8,7 @@ prices. Open-Source-Watch gathers that trail for a region, keeps every item with
 of where it came from and how far that source can be trusted, and shows it on one live
 map.
 
-**Status.** Phase 1 of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
+**Status.** All four phases of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
 every feed of the two starting regions (Iran/Israel, Russia/Ukraine) is collected,
 graded and stored by the Python engine, which serves it to the dashboard. That covers
 news, Telegram, satellite fire detections, aircraft, air-raid alerts, drone tracks and
@@ -18,6 +18,13 @@ into events, each graded by how many independent, reliable sources support it. T
 header shows each region's priority intelligence requirements as indicators. A
 scheduled GitHub job collects the slower feeds every 15 minutes into the `data`
 branch, so history builds while the laptop is off.
+Phases 3 and 4 add four shipping chokepoints (Red Sea, Strait of Hormuz, Taiwan Strait,
+Black Sea), each defined by one file, and written products: a daily intelligence
+summary (INTSUM) and a six-hourly situation report (SITREP), with competing hypotheses
+weighed against the evidence. Fire detections at permanent heat sources such as gas
+flares no longer count as anomalies, and a trained classifier replaced keyword rules
+after measuring better. Ship traffic through each strait is counted from AIS data
+when a free aisstream.io key is set.
 
 **What this does not show.** Nothing here is verified ground truth. Each item is a
 claim by its source; the grade says how reliable the source has been judged, not whether
@@ -51,7 +58,10 @@ npm install
 ENGINE_URL=http://127.0.0.1:8790 npm run dev      # dashboard on http://localhost:3000
 ```
 
-Without `ENGINE_URL` the dashboard runs exactly as upstream IRONSIGHT. Data is written
+Without `ENGINE_URL` the dashboard runs exactly as upstream IRONSIGHT. Set
+`AISSTREAM_KEY` (free at aisstream.io) before `engine serve` to count ship transits.
+To add a region, copy `regions/red-sea/region.toml`, edit it, and run
+`py -3.14 -m engine regions`. Data is written
 to `./data` (or `$OSW_DATA`).
 
 Tests: `py -3.14 -m pytest -q` and `npm test`.

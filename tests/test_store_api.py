@@ -4,7 +4,8 @@ from types import SimpleNamespace
 from starlette.testclient import TestClient
 
 from engine import collect, cycle, fuse, store
-from engine.api import app, health
+from engine.api import app
+from engine.cycle import health
 from tests.conftest import FIX
 
 FILES = {"rss:BBC": "bbc_rss.xml", "rss:Google News#1": "google_news.xml",
@@ -104,3 +105,13 @@ def test_source_health():
     assert health([run("ok", 20)], 300, t) == "stale"
     assert health([run("http_error", 1), run("http_error", 2), run("blocked", 3),
                    run("ok", 4)], 300, t) == "failed"
+
+
+def test_due_skips_sources_polled_within_their_cadence(monkeypatch):
+    S = offline(monkeypatch)
+    assert cycle.due(S) == S
+    cycle.collect(S)
+    assert cycle.due(S) == []
+    later = datetime.now(UTC) + timedelta(seconds=301)
+    assert {s["id"] for s in cycle.due(S, later)} == \
+        {s["id"] for s in S if 0.9 * s["cadence"] <= 301}

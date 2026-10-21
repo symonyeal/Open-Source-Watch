@@ -22,4 +22,9 @@ records. Status is **inspected** (read for this project) or **cited** (not yet r
 | Yahoo Finance chart v8; CoinGecko `simple/price`; Polymarket Gamma `markets` | market signals | inspected 2026-10-21 (live responses) |
 | Telegram public channel preview `t.me/s/<channel>` | Telegram posts | inspected 2026-10-21 (73 channels probed) |
 | ECMA-262, §19.2.6.4 `encodeURIComponent` | URL parity with upstream | cited; checked against Node in tests |
+| Heuer, R. J., *Psychology of Intelligence Analysis*, CIA Center for the Study of Intelligence, 1999, ch. 8 | ACH ranking by inconsistent evidence | cited |
+| Elvidge, C. D. et al., "Methods for global survey of natural gas flaring from VIIRS data", *Energies* 9(1), 2016 | persistent heat sources (flares) in VIIRS detections | cited |
+| U.S. EIA, *World Oil Transit Chokepoints*, 2024 | Hormuz carries about a fifth of world petroleum liquids consumption (link note) | cited |
+| aisstream.io documentation, websocket API, PositionReport message | AIS adapter | cited (format only; no key, no live message) |
+| scikit-learn 1.9: `TfidfVectorizer`, `LogisticRegression`, `StratifiedKFold` | kind classifier | inspected 2026-10-21 |
 | Unicode 15.0 code charts: Hebrew U+0590, Arabic U+0600, Cyrillic U+0400 | language guess by script | cited |

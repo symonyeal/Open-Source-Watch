@@ -29,8 +29,9 @@ def epoch(ms):
     return datetime.fromtimestamp(ms / 1000, UTC)
 
 
-def raw_id(source_id, native_id):
-    return hashlib.sha256(f"{source_id}\0{native_id}".encode()).hexdigest()[:32]
+def raw_id(region, source_id, native_id):
+    """Content hash of one item; regions sharing a source keep separate reports."""
+    return hashlib.sha256(f"{region}\0{source_id}\0{native_id}".encode()).hexdigest()[:32]
 
 
 def fetch(src, timeout=10.0):
@@ -71,7 +72,7 @@ def run(S, parse, runner="local", get=fetch):
         except ERRORS as e:
             items, status = [], status_of(e)
         rows = [{
-            "id": raw_id(src["id"], it["native_id"]), "source_id": src["id"],
+            "id": raw_id(src["region"], src["id"], it["native_id"]), "source_id": src["id"],
             "region": src["region"], "fetched_at": started,
             "published_at": it.get("published_at"), "url": it.get("url"),
             "payload": json.dumps(it["payload"], ensure_ascii=False, default=str),

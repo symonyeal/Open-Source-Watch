@@ -254,8 +254,76 @@ history are recorded in `collection_run`, never read as inactivity.
 | P0 | fork, clone, rename; house layout; `engine/` skeleton; full schema; region TOMLs for both theaters; Google News adapter → observations → store; news route proxied | with `ENGINE_URL` set, the news panel shows engine-served items that persist across restarts; gate green |
 | P1 | remaining P1 sources as adapters; translation, geolocation, classification; every route proxied; source-health panel | each panel matches upstream behaviour with `ENGINE_URL` set; every adapter has a fixture test |
 | P2 | collection cron onto `data`; fusion into events and entities; credibility; PIRs and indicators for both theaters | the cron runs at least 24 h without manual repair; events carry credibility; the indicator panel shows live status |
-| P3 (direction) | registry served by the engine; indicator board; INTSUM and SITREP templates; ACH worksheet; classifier | set by its own spec |
-| P4 (direction) | AIS adapter (aisstream.io, free key in `.env` and an Actions secret); chokepoint regions; transit and thermal anomaly models; Supply-Chain-Cuts link | set by its own spec |
+| P3 | region registry from TOML; indicator board history; INTSUM and SITREP; ACH; classifier; event-time extraction and contradiction | see § P3 and P4 addendum |
+| P4 | AIS adapter; four chokepoint regions; transit and thermal baseline models; Supply-Chain-Cuts link | see § P3 and P4 addendum |
+
+## P3 and P4 addendum (2026-10-21)
+
+The user asked to finish the project. This addendum fixes the scope that the table above
+gave only as direction.
+
+**Region registry.**
+- A region after the first two is one file, `regions/<id>/region.toml`. Its `[conflict]`
+  table is the dashboard's `ConflictConfig`; display fields may be omitted, and
+  `engine/regions.py` supplies defaults and derives the fires and flights boxes.
+- `py -3.14 -m engine regions` writes `src/lib/conflicts/generated.ts`, which is typed,
+  so `tsc` checks every TOML region against upstream's interface. A test fails when
+  the file is stale.
+- `ConflictKey` becomes `string`, the theater selector becomes a drop-down, and
+  `alertProvider = 'none'` means no air-raid feed.
+- This replaces "registry served by the engine": the dashboard's routes read the
+  registry synchronously, and a build-time registry keeps that upstream code
+  unchanged.
+
+**Chokepoint regions:** Red Sea / Bab el-Mandeb, Strait of Hormuz, Taiwan Strait and
+Black Sea. Each has:
+- feeds and channels that were checked live (two misleadingly named channels were
+  rejected);
+- PIRs with event indicators;
+- a gate line and a transit indicator;
+- ACH hypotheses and a link note.
+
+**Analysis.**
+- **Transit indicator:** crossings of the gate per UTC day by AIS tracks. The last
+  complete day is scored by z against the previous 14 days: watch at z ≤ −1,
+  triggered at z ≤ −2. Fewer than 7 covered prior days gives no data.
+- **Thermal baseline:** a VIIRS detection in a 0.1° cell that had detections on at
+  least 3 of the 7 preceding days is a persistent heat source (kind `report`), not a
+  thermal anomaly. History comes from the FIRMS 7-day file, fetched daily and
+  processed before the 24-hour file.
+- **ACH** after Heuer (1999, ch. 8): evidence is any indicator of the region, present
+  if at watch or triggered and absent if inactive. Hypotheses are ranked by fewest
+  inconsistencies.
+- **Board history:** an `indicator_status` snapshot after every fusion.
+- **Collection gap:** no healthy source can produce the indicator's kind. A kind that
+  simply did not occur is not a gap.
+
+**Production.**
+- An INTSUM (24 h) and a SITREP (6 h) per region, filled from templates. Events are
+  described in Admiralty words; each PIR judgement carries an ICD 203 confidence (high
+  if a supporting event is credibility 1–2, moderate if 3, low otherwise).
+- Products are stored in `product` on the same cadences and are served fresh by
+  `/api/products`.
+
+**Classifier.** TF-IDF and logistic regression, trained on 200 hand-labelled live
+observations (`docs/labels/`). It replaces the keyword rules only because it measured
+better: population-weighted accuracy 0.68 against 0.54 under 3-fold cross-validation.
+The rules remain the fallback.
+
+**Contradiction.**
+- `engine/process/when.py` extracts an event time stated in text: a clock time with
+  an optional date, in the region's time zone. A dated time after publication is an
+  announcement, and vaguer phrases yield nothing.
+- An `air_raid_alert` event supported by no warning source is contradicted (5) when a
+  member states an event time τ, the region's A/B warning source ran at least twice
+  without failure within 10 minutes of τ, and it recorded no alert within 30 minutes
+  of τ.
+
+**AIS.** aisstream.io is a websocket, used only when `AISSTREAM_KEY` is set. Each
+minute the buffered messages are stored through the same path as a poll. Without a key
+the source records `blocked`, and the transit PIRs read as a collection gap. The cron
+does not stream AIS, because a 15-minute job cannot hold a websocket open; AIS history
+accrues only while a local engine runs with a key.
 
 ## Out of scope
 

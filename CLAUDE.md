@@ -48,6 +48,8 @@ exception.
 ```text
 py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
 py -3.14 -m engine collect [--region R]  # one poll of every source
+py -3.14 -m engine fuse                  # recompute events and entities
+git worktree add data data               # once: ./data = the cron's `data` branch
 npm run dev                              # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790
 ```
 

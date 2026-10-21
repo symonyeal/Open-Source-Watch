@@ -2,6 +2,7 @@
 py -3.14 -m engine serve [--port 8790] [--no-collect]
 py -3.14 -m engine rebuild
 py -3.14 -m engine compact
+py -3.14 -m engine fuse
 py -3.14 -m engine gazetteer cities15000.zip"""
 import argparse
 from collections import Counter
@@ -19,6 +20,7 @@ s.add_argument("--port", type=int, default=8790)
 s.add_argument("--no-collect", action="store_true")
 sub.add_parser("rebuild")
 sub.add_parser("compact")
+sub.add_parser("fuse")
 sub.add_parser("gazetteer").add_argument("zip")
 a = p.parse_args()
 
@@ -34,6 +36,9 @@ elif a.cmd == "rebuild":
     print(cycle.rebuild(), "raw reports reprocessed")
 elif a.cmd == "compact":
     print(store.compact(), "files merged")
+elif a.cmd == "fuse":
+    from engine import fuse
+    print(fuse.fuse(), "events")
 else:
     from engine.process import build_geonames
     print(build_geonames(a.zip), "gazetteer names written")

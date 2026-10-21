@@ -165,10 +165,9 @@ independent when their `owner` fields differ.
 
 An unfused observation carries the credibility of a one-observation event.
 
-**"Contradicted" in P2:** an A/B warning or sensor source covering the same place and
-window reports no activity of that kind. Examples are no siren in an alert zone, or no
-thermal detection where a strike is claimed. Text-based contradiction is out of scope
-until P3.
+**"Contradicted":** an A/B warning or sensor source covering the same place and window
+reports no activity of that kind. No rule assigns it before P3 (see § Fusion,
+amendment).
 
 ### Fusion
 
@@ -180,6 +179,19 @@ Two observations are linked when all three conditions hold:
 
 Events are the connected components of this graph (single linkage), so the result
 doesn't depend on input order. Thresholds live in config.
+
+(Amended 2026-10-21.) A country-level observation links to nothing and forms a
+single-observation event. An unlocated observation forms no event. In the first live
+fusion, treating every observation located only to "Ukraine" as one administrative
+unit merged unrelated reports.
+
+**Contradiction is deferred to P3 (amended 2026-10-21).** Text observations carry
+their publication time, not the time of what they describe. In the first live fusion,
+the one narrowed rule tried (no A/B siren within 30 minutes) fired once, and falsely:
+Kyiv reports published at 06:07 and 07:21 UTC described an alert at 02:20 UTC. The
+absence of a VIIRS detection is not evidence either, because the satellite passes about
+twice a day. Credibility 5 stays defined; no rule assigns it until P3 extracts event
+times.
 
 ## Processing (no language models)
 

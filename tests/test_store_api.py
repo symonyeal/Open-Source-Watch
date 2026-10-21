@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from starlette.testclient import TestClient
 
-from engine import collect, cycle, store
+from engine import collect, cycle, fuse, store
 from engine.api import app, health
 from tests.conftest import FIX
 
@@ -46,6 +46,7 @@ def test_every_adapter_derives(monkeypatch):
     K = {x["kind"] for x in store.query("SELECT DISTINCT kind FROM observation")}
     assert {"thermal_anomaly", "air_raid_alert", "airspace_activity"} <= K
     assert count("track_point") > 0
+    assert fuse.fuse() == count("event") > 0 and count("entity") > 0
 
 
 def test_rebuild_reproduces_derived_tables(monkeypatch):

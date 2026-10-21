@@ -17,6 +17,7 @@ import RegionalAlertsPanel from '@/components/panels/RegionalAlertsPanel';
 import CryptoPanel from '@/components/panels/CryptoPanel';
 import PolymarketPanel from '@/components/panels/PolymarketPanel';
 import SourceHealth from '@/components/panels/SourceHealth';
+import IndicatorStrip from '@/components/panels/IndicatorStrip';
 import ConflictToggle from '@/components/ConflictToggle';
 import { useConflict } from '@/lib/conflicts/context';
 import { useState, useEffect } from 'react';
@@ -80,6 +81,7 @@ export default function Dashboard() {
         <div className="border-t border-[var(--border-color)]">
           <ThreatClock />
         </div>
+        <IndicatorStrip />
       </header>
 
       {/* Main grid - 3 rows */}

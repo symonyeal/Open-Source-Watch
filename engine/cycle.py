@@ -16,7 +16,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from engine import regions, store
+from engine import fuse, regions, store
 from engine.collect import adsb, alerts, firms, markets, neptun, now, rss, run, telegram
 from engine.process import feeds, news
 from engine.schema import DERIVED
@@ -132,10 +132,11 @@ def proxy(url):
     return res
 
 
-def schedule(stop, runner="local", tick=15, housekeeping=3600):
+def schedule(stop, runner="local", tick=15, fusion=600, housekeeping=3600):
     """Collect each source whenever its cadence has elapsed, until stop is set;
-    compact the store and prune the seen set every `housekeeping` seconds."""
-    S, due, last = sources(), {}, time.monotonic()
+    recompute events every `fusion` seconds; compact the store and prune the seen set
+    every `housekeeping` seconds."""
+    S, due, fused, kept = sources(), {}, 0.0, time.monotonic()
     while not stop.is_set():
         t = time.monotonic()
         D = [s for s in S if due.get(s["id"], 0) <= t]
@@ -143,10 +144,13 @@ def schedule(stop, runner="local", tick=15, housekeeping=3600):
             collect(D, runner)
             for s in D:
                 due[s["id"]] = t + s["cadence"]
-        if t - last > housekeeping:
+        if t - fused > fusion:
+            fuse.fuse()
+            fused = t
+        if t - kept > housekeeping:
             store.compact()
             prune()
-            last = t
+            kept = t
         stop.wait(tick)
 
 
@@ -156,5 +160,7 @@ def rebuild():
         store.drop(t)
     raws = store.query("SELECT * FROM raw_report ORDER BY fetched_at")
     for t, rows in derive(raws).items():
-        store.append(t, rows)
+        if t not in ("event", "entity"):
+            store.append(t, rows)
+    fuse.fuse()
     return len(raws)

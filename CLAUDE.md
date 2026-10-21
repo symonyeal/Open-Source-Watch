@@ -1,40 +1,70 @@
-# IRONSIGHT
+# Working contract
 
-## Overview
-Real-time OSINT command center for monitoring active conflicts - two theaters, Iran/Israel (Middle East) and Russia/Ukraine (`src/lib/conflicts/`). Aggregates open-source intelligence from 50+ sources across news, Telegram, military tracking, financial markets, and more into a single dashboard.
+Read before changing anything. [README](README.md) states what the platform is;
+[Design](docs/specs/2026-10-20-open-source-watch-design.md) states how it is built;
+[Decisions](docs/DECISIONS.md) states why; [Validation](docs/VALIDATION.md) states what
+must be, and has been, checked. This file states the rules a change must not break.
+Codex reads the same file through [AGENTS.md](AGENTS.md).
 
-## Environment
-- **Status**: Open Source / Development
-- **Live URL**: Local only (no hosted version; `npm run dev` or `docker compose up --build`)
-- **Cloud**: None
+Open-Source-Watch is a fork of [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT)
+(MIT, Nobler Works). The Next.js front end is upstream's, in upstream's layout; the
+Python engine in `engine/` runs the intelligence cycle behind it.
 
-## Tech Stack
-- Next.js + TypeScript + Tailwind CSS; maps: Leaflet
-- Data: RSS feeds, Telegram scraping, Yahoo Finance, NASA FIRMS
-- No database and no separate backend - upstream calls are proxied by Next API routes (`src/app/api/*/route.ts`)
+## Always on
 
-## Common Commands
-```bash
-npm install
-npm run dev      # development
-npm run build    # build
-npm start        # start production
+| Rule | Reason |
+| --- | --- |
+| Report no outcome that was not read back from the result that produced it. | A requested behaviour is not a result. |
+| Name a failed collection by its status, never by its cause until the cause is shown. | A blocked endpoint and a changed format both end as an empty feed. |
+| Cite only what [Sources](docs/SOURCES.md) records, and add the entry in the change that uses it. | Grades, taxonomies and endpoints are justified by their source. |
+| Add a dependency only after measurement. Use the system Python 3.14; no virtual environment. | One environment on this machine. |
+| State what was measured and what was not. | "Not measured" is a finding. |
+| Leave upstream files in place; edit them minimally. | `git merge upstream/main` must keep working. |
+| A route forwards to the engine only through `fromEngine` (`src/lib/engine.ts`). | With `ENGINE_URL` unset the app is plain IRONSIGHT. |
+| Store at most 280 characters of article or post text. | The repository and its `data` branch are public. |
+| Grades come from `regions/*/region.toml`; credibility is computed, never assigned by an adapter. | Admiralty grading separates the source from the claim. |
+
+## The model is written once
+
+- Feeds, channels and keywords live in `src/lib/conflicts/*.ts`. The engine reads their
+  export `regions/<id>/conflict.json` (`node scripts/export-regions.mjs`); never edit
+  that JSON by hand.
+- The table schemas live in `engine/schema.py`, the event taxonomy in `KINDS` there.
+- Each `/api/*` engine route reproduces one upstream route's JSON
+  (`src/lib/types/api.ts`); the upstream route stays the definition of that shape.
+- Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
+  regenerates every derived table from them.
+
+## Code
+
+Code transcribes the method: names from the design document, the rule stated in each
+public docstring, comments that cite the source. A failed collection is a status, not an
+exception.
+
+## Run
+
+```text
+py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
+py -3.14 -m engine collect [--region R]  # one poll of every source
+npm run dev                              # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790
 ```
 
-## Project Structure
-```
-src/
-├── app/           # Next.js app router; api/ = one route per upstream feed
-├── components/    # React components (map/, panels/)
-├── lib/           # data fetching utilities; conflicts/ = one config per theater; types/api.ts = /api/* response shapes (defined once)
-├── data/          # static data (city-data.json)
-└── types/
+## Before a change is finished
+
+```text
+py -3.14 -m pytest -q
+py -3.14 -m ruff check .
+py -3.14 -m pip check
+npm run lint
+npm test
+npm run build
 ```
 
-## Notes
-- No API keys required - all free data sources
-- Open source under MIT license
-- Features, data sources and polling intervals: `README.md`
+## Upstream notes
 
-## Docs stay current
-- Update README, `docs/`, this CLAUDE.md and TODO.md **in the same commit** as the change that makes them wrong, never in a later cleanup. A stale doc is a bug.
+- Next.js + TypeScript + Tailwind; Leaflet maps. Upstream API routes in
+  `src/app/api/*/route.ts`, one per feed; panels in `src/components/panels/`; theater
+  configs in `src/lib/conflicts/`; response types in `src/lib/types/api.ts`.
+- No API keys required; features and polling intervals are in the README.
+- Update README, `docs/`, this file and TODO.md in the same commit as the change that
+  makes them wrong. A stale doc is a bug.

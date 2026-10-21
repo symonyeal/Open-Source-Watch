@@ -1,31 +1,61 @@
-<div align="center">
+# Open-Source-Watch
 
-<a href="https://noblerworks.com/"><img src="https://raw.githubusercontent.com/NoblerWorks-HQ/IRONSIGHT/main/nobler-works-banner.JPG" alt="Nobler Works" width="400"></a>
+## In plain terms
 
-### Built by [Nobler Works](https://noblerworks.com/)
+Wars and crises leave a trail in public information: news reports, official Telegram
+channels, air-raid sirens, aircraft transponders, satellite fire detections and market
+prices. Open-Source-Watch gathers that trail for a region, keeps every item with a note
+of where it came from and how far that source can be trusted, and shows it on one live
+map.
 
-We build OSINT tools, real-time dashboards, and custom software for clients who need to move fast and see clearly.<br>
-If you want something like IRONSIGHT built for your domain, [get in touch](https://noblerworks.com/).
+**Status.** Phase 0 of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
+news for the two starting regions (Iran/Israel, Russia/Ukraine) is collected, graded,
+stored and served to the dashboard by the Python engine. The other feeds still run
+through the original dashboard code.
 
-[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://noblerworks.com/)
-[![X](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/Nobler_Works)
-[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@NoblerWorks)
-[![TikTok](https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@noblerworks)
-[![Threads](https://img.shields.io/badge/Threads-000000?style=for-the-badge&logo=threads&logoColor=white)](https://www.threads.com/@noblerworks)
+**What this does not show.** Nothing here is verified ground truth. Each item is a
+claim by its source; the grade says how reliable the source has been judged, not whether
+the claim is true. Gaps in collection are recorded, and are not quiet periods.
 
-</div>
+## Overview
+
+A fork of [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by
+[Nobler Works](https://noblerworks.com/) (MIT). IRONSIGHT's Next.js dashboard is kept as
+the common operational picture. A Python engine (`engine/`) adds the stages of the
+intelligence cycle that a live viewer lacks:
+
+| stage | module | output |
+| --- | --- | --- |
+| direction | `regions/<id>/region.toml` | PIRs, indicators, source grades |
+| collection | `engine/collect` | immutable raw reports with provenance |
+| processing | `engine/process` | observations: English text, place, time, kind |
+| fusion, analysis, production | `engine/fuse`, `analyze`, `produce` | events, indicator status, summaries (phases 2–3) |
+| dissemination | IRONSIGHT front end, engine API | map, panels, alerts |
+
+Sources carry Admiralty reliability grades (A–F); observations carry credibility (1–6),
+computed from corroboration. Events use ACLED's taxonomy. Coverage grows chokepoint by
+chokepoint: the Red Sea, Hormuz, the Taiwan Strait and the Black Sea come next.
+
+### Run
+
+```text
+py -3.14 -m pip install -r requirements.txt
+py -3.14 -m engine serve                          # engine on http://127.0.0.1:8790
+npm install
+ENGINE_URL=http://127.0.0.1:8790 npm run dev      # dashboard on http://localhost:3000
+```
+
+Without `ENGINE_URL` the dashboard runs exactly as upstream IRONSIGHT. Data is written
+to `./data` (or `$OSW_DATA`).
+
+Tests: `py -3.14 -m pytest -q` and `npm test`.
 
 ---
 
-# IRONSIGHT
+## Upstream: IRONSIGHT
 
-<div align="center">
-
-[![Visit the website](https://img.shields.io/badge/Visit_the_website-noblerworks--hq.github.io%2FIRONSIGHT-ff4d3d?style=for-the-badge&logo=googlechrome&logoColor=white)](https://noblerworks-hq.github.io/IRONSIGHT/)
-
-**[→ noblerworks-hq.github.io/IRONSIGHT](https://noblerworks-hq.github.io/IRONSIGHT/)**
-
-</div>
+The rest of this README is IRONSIGHT's own, kept for its feature list, data sources and
+attribution.
 
 ![IRONSIGHT Dashboard](https://raw.githubusercontent.com/NoblerWorks-HQ/IRONSIGHT/main/ironsight2.png)
 

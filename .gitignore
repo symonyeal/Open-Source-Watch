@@ -30,3 +30,9 @@ Thumbs.db
 # claude code
 .claude/
 graphify-out/
+
+# open-source-watch engine
+data/
+__pycache__/
+.pytest_cache/
+.ruff_cache/

@@ -1,7 +1,7 @@
 """Kind classifier for text observations (spec P3): TF-IDF (1-2-grams, sublinear
 tf) and multinomial logistic regression (C = 4, balanced class weights), trained
 on docs/labels/kinds-sample.jsonl, a stratified sample of 200 live observations
-labelled by hand against the ACLED definitions (docs/DECISIONS.md).
+labelled against the ACLED definitions (docs/DECISIONS.md).
 
 `compare` is the measurement behind the choice: 3-fold stratified cross-validation,
 with each item weighted by its stratum's population share (the sample is stratified

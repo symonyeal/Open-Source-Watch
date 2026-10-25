@@ -1,0 +1,75 @@
+name: Pages
+
+# The dashboard as a static snapshot on GitHub Pages, rebuilt after each collection
+# and on each push to main. The engine and dashboard serve the stored data once,
+# scripts/snapshot.mjs writes every route of every region to JSON, and a static
+# export reads those files. Pages keeps only the latest deployment; nothing is
+# committed.
+
+on:
+  workflow_run:
+    workflows: [Collect]
+    types: [completed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: python -m pip install -r requirements.txt ./kernels
+      - run: npm ci
+
+      - name: Fuse the stored data and serve it
+        run: |
+          git fetch --depth 1 origin data
+          git worktree add --detach data origin/data
+          python -m engine fuse
+          python -c "from engine import cycle; cycle.analyse(('intsum', 'sitrep'))"
+          python -m engine serve --no-collect > engine.log 2>&1 &
+          timeout 60 sh -c 'until curl -sf http://127.0.0.1:8790/regions > /dev/null; do sleep 1; done'
+
+      - name: Snapshot every route
+        env:
+          ENGINE_URL: http://127.0.0.1:8790
+        run: |
+          npm run build
+          npx next start -p 3000 > next.log 2>&1 &
+          timeout 60 sh -c 'until curl -sf http://127.0.0.1:3000/ > /dev/null; do sleep 1; done'
+          node scripts/snapshot.mjs http://127.0.0.1:3000 public
+
+      - name: Static export
+        run: |
+          rm -rf src/app/api .next
+          NEXT_PUBLIC_SNAPSHOT=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+          NEXT_PUBLIC_BASE_PATH=/${{ github.event.repository.name }} npm run build
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: out
+          retention-days: 1
+      - id: deploy
+        uses: actions/deploy-pages@v4

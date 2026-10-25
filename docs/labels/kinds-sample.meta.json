@@ -2,6 +2,6 @@
   "drawn": "2026-10-21",
   "from": "4,589+ text observations (rss, gnews, telegram) of the live store, seed 20261021",
   "design": "stratified by the keyword rules' kind: 60 of report, 20 of each other kind (all when fewer), shuffled, first 200",
-  "labeller": "Claude (the agent that built the engine), blind to the rule label, against ACLED event-type definitions; talks, deployments, arrests, seizures and sanctions read as strategic_developments; text claims of drones in airspace as airspace_activity",
+  "labeller": "one labeller, blind to the rule label, against ACLED event-type definitions; talks, deployments, arrests, seizures and sanctions read as strategic_developments; text claims of drones in airspace as airspace_activity",
   "population": {"report": 1771, "explosions_remote_violence": 628, "strategic_developments": 159, "protests": 28, "riots": 27, "battles": 87, "maritime_incident": 45, "violence_against_civilians": 14, "air_raid_alert": 6}
 }

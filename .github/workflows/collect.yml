@@ -1,8 +1,9 @@
 name: Collect
 
 # Open-Source-Watch collection cron (design § Phases, P2). Twice a day (06:00 and
-# 18:00 UTC; GitHub may start a scheduled run late) the slow feeds are polled by the same engine code that runs locally, and the new raw
-# reports, observations and run records are committed to the orphan `data` branch.
+# 18:00 UTC; GitHub may start a scheduled run late) the slow feeds are polled by the
+# same engine code that runs locally, and the new raw reports, observations and run
+# records are committed to the orphan `data` branch.
 # Fast feeds (alerts, aircraft, drone tracks) are collected only by a local engine.
 # Events and entities are derived tables: `py -3.14 -m engine fuse` rebuilds them.
 

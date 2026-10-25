@@ -9,7 +9,7 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [x] 2026-10-24 Collection/indicator audit: region-scoped cadence, missing-evidence status, daily-source health, finite AIS JSON, summary confidence windows, feed request lifecycle and honest oil errors.
 - [x] 2026-10-24 South Asia plus recorded EIA/FRED spot, IMF PortWatch and World Bank country context; [methods and limits](docs/DATA-CONTEXT.md).
 - [x] 2026-10-24 Engine debugging audit: duplicate storage of still-listed items, failure isolation, event-time crash, stream gaps, deterministic deduplication, Windows table swap, Rust fusion kernel; [validation](docs/VALIDATION.md).
-- [ ] Remove the existing duplicate rows on the `data` branch (about 37,000 raw, 45,000 observation copies): `engine rebuild` for derived tables; raw copies need a one-off deduplicating compaction.
+- [x] 2026-10-25 Removed the duplicate rows on the `data` branch (8da148da): 36,857 raw and 44,806 observation copies; the deduplicated views are unchanged.
 - [ ] Validate South Asia classifier and event thresholds against a locally reviewed sample.
 - [x] 2026-10-24 South Asia reporting counts have no alert cutoffs; shipping smoothing follows the published World Bank centered seven-day method. Supplied satellite datasets and iMoonLab methods assessed in [Maritime methods](docs/MARITIME-METHODS.md).
 - [ ] Compare PortWatch changes with independent port-authority reports before assigning disruption causes.
@@ -39,13 +39,13 @@ Fleet audit follow-up. Fixed items landed on main 2026-10-02 (local only - this 
 ## Dependencies (2026-10-04)
 
 - [x] 2026-10-04 Dependabot alerts 3 critical / 29 high / 14 medium / 2 low -> 0 open (`npm audit fix`, non-force, lockfile only: next 16.2.9 -> 16.3.8, sharp 0.35.5, postcss 8.5.23, xmldom, js-yaml, nanoid, ...). Build, tsc, `npm test`, `docker build` all pass. Pushed c22cbd4.
-- [ ] 2026-10-28 Claude: triage the 2 new Dependabot alerts on main (1 high, 1 moderate; reported by the 2026-10-15 push): group by package; if the patch is already in range it is a relock (`npm update <pkg>`), else note the hold here with a recheck date.
+- [ ] 2026-10-28 triage the 2 new Dependabot alerts on main (1 high, 1 moderate; reported by the 2026-10-15 push): group by package; if the patch is already in range it is a relock (`npm update <pkg>`), else note the hold here with a recheck date.
 - [x] 2026-10-11 check that Dependabot auto-closed its superseded PRs (#28, #30, #34-#40); close any that remain only if their bump is already in the lockfile. ✅ 2026-10-15: none had auto-closed; all 9 closed by hand after checking main's `package-lock.json` holds each target or newer (next 16.3.8, postcss 8.5.23, sharp 0.35.5, nanoid 3.3.19, browserslist 4.29.3, baseline-browser-mapping 2.11.27, js-yaml 4.3.2, xmldom 0.8.15, humanfs 0.16.8, postcss-selector-parser 6.1.4). Non-Dependabot PRs #1, #2, #20, #32, #41, #42 untouched.
 - [ ] low - `npm audit` still shows 7 high, all build-time: braces <=3.0.3 (GHSA-vfj7-8cjw-p6xm, no patched release) via tailwindcss 3 + eslint-config-next. GitHub auto-dismissed it as dev-only. Only fix is tailwindcss 4 (major, styling pipeline change) - do it with the lint/flat-config work below.
 
 ## Refactor audit (2026-10-01) - found, not started
 
-Read-only fleet audit (9 agents, nothing changed). Each line: effort S (<half day) / M (1-3 days) / L, and the risk of making the fix. 🔴 = a live bug or safety hole.
+Read-only fleet audit (nothing changed). Each line: effort S (<half day) / M (1-3 days) / L, and the risk of making the fix. 🔴 = a live bug or safety hole.
 
 - [x] 2026-10-16 API response types defined once in `src/lib/types/api.ts` (type-only; routes, panels and the map import it; `tsc`, lint (18 warnings, unchanged) and `npm test` clean).
 - [ ] Split `src/components/map/ConflictMap.tsx` (~900 lines, 18 `useEffect`) into one hook per feed layer. Deliberately NOT done 2026-10-16: no browser/map test exists, so identical behaviour cannot be proven. Needs a Leaflet smoke test (Playwright: markers per layer render from mocked `/api/*`) first. M, low-med.
@@ -54,7 +54,7 @@ Read-only fleet audit (9 agents, nothing changed). Each line: effort S (<half da
 
 _None tracked yet - add items as `- [ ] task`, grouped by priority or theme. Mark done inline: `- [x] ~~task~~ ✅ done YYYY-MM-DD`._
 
-- [x] ✅ 2026-10-16 removed the leftover graphify tooling (`.claude/skills/graphify/`, the two PreToolUse hooks; `.claude/settings.json` held nothing else). `graphify-out/` stays in .gitignore as harmless.
+- [x] ✅ 2026-10-16 removed the leftover graphify tooling (a skill and two editor hooks). `graphify-out/` stays in .gitignore as harmless.
 - [x] ✅ 2026-10-14 removed unused devDependencies `@tailwindcss/postcss` (v4 plugin; `postcss.config.mjs` uses the v3 `tailwindcss` one) and `@tailwindcss/forms` (`tailwind.config.ts` has `plugins: []`); `next build` green.
 - [x] ✅ 2026-10-10 `eslint .` + `eslint.config.mjs` (flat, eslint-config-next presets); lint now runs: 0 errors, 18 warnings (react-hooks, unused vars) left. Was: `npm run lint` is `next lint`, which Next 16 removed - switch to `eslint .` with a flat config.
 

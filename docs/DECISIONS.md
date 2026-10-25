@@ -125,8 +125,8 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   synchronously, so serving it would mean an async rewrite of every route. A generated,
   typed `generated.ts` keeps upstream code unchanged and lets `tsc` validate each
   region.
-- **Classifier replaces keyword rules** (2026-10-21). On 200 observations labelled by
-  hand, blind to the rule label (`docs/labels/`), the measured population-weighted
+- **Classifier replaces keyword rules** (2026-10-21). On 200 labelled observations,
+  blind to the rule label (`docs/labels/`), the measured population-weighted
   accuracy was rules 0.543 against TF-IDF + logistic regression 0.68 (5 seeds,
   0.67–0.69) under 3-fold cross-validation; event-vs-report precision was 0.63 against
   0.79. C = 4 was chosen from {1, 4, 16} on the same folds, a mild selection bias. Rare

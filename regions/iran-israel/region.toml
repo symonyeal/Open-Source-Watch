@@ -11,6 +11,9 @@ timezone = "Asia/Jerusalem"  # local time of reports (engine.process.when)
 
 # Admiralty source reliability A-F (spec § Sources). Key: "<adapter>:<name>".
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:BBC" = "B"
 "rss:NYT" = "B"
 "rss:Al Jazeera" = "C"

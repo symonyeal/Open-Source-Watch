@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { fetchWithTimeout } from '@/lib/fetcher';
+import { quoteError, quoteFromChart } from '@/lib/quotes';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,33 +25,10 @@ export async function GET() {
           });
           if (!res.ok) throw new Error('Failed');
           const data = await res.json();
-          const meta = data?.chart?.result?.[0]?.meta;
-          if (!meta) throw new Error('No data');
-
-          const price = meta.regularMarketPrice ?? 0;
-          const prev = meta.chartPreviousClose ?? price;
-          const change = Math.round((price - prev) * 100) / 100;
-          const pct = prev ? Math.round(((price - prev) / prev) * 10000) / 100 : 0;
-
-          return {
-            type: c.type,
-            name: c.name,
-            price: Math.round(price * 100) / 100,
-            change,
-            changePercent: pct,
-            currency: 'USD',
-            updated: new Date().toISOString(),
-          };
+          const chart = data?.chart?.result?.[0];
+          return quoteFromChart(c, chart);
         } catch {
-          return {
-            type: c.type,
-            name: c.name,
-            price: 0,
-            change: 0,
-            changePercent: 0,
-            currency: 'USD',
-            updated: new Date().toISOString(),
-          };
+          return quoteError(c);
         }
       })
     );

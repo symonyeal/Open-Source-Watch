@@ -1,6 +1,10 @@
 # Open-Source-Watch: design
 
-Date: 2026-10-20. Status: approved 2026-10-20; amended 2026-10-21 (see docs/DECISIONS.md).
+Date: 2026-10-20. Status: approved 2026-10-20; amended 2026-10-21 and 2026-10-24
+(see docs/DECISIONS.md). The 2026-10-24 [economic context](../DATA-CONTEXT.md)
+extends collection with FRED, PortWatch and World Bank series, an engine-native
+`/api/context` view, and the South Asia region. Economic series stay outside
+event fusion and PIR thresholds. Gaps remain unassessed in indicators and ACH.
 
 ## Purpose
 
@@ -284,9 +288,13 @@ Black Sea. Each has:
 - ACH hypotheses and a link note.
 
 **Analysis.**
-- **Transit indicator:** crossings of the gate per UTC day by AIS tracks. The last
-  complete day is scored by z against the previous 14 days: watch at z ≤ −1,
-  triggered at z ≤ −2. Fewer than 7 covered prior days gives no data.
+- **Transit indicator:** observed crossings of the gate per UTC day by AIS tracks. A crossing
+  counts only when consecutive positions are no more than 15 minutes apart; longer
+  gaps do not establish a route. This is a conservative analysis policy, not validated
+  against live AIS data. A day is sampled when one valid segment has an endpoint on it;
+  that does not establish full-day coverage. The last complete day's observed crossings
+  are scored by z against the previous 14 sampled days: watch at z ≤ −1, triggered at
+  z ≤ −2. Fewer than 7 sampled prior days gives no data.
 - **Thermal baseline:** a VIIRS detection in a 0.1° cell that had detections on at
   least 3 of the 7 preceding days is a persistent heat source (kind `report`), not a
   thermal anomaly. History comes from the FIRMS 7-day file, fetched daily and
@@ -302,8 +310,8 @@ Black Sea. Each has:
 - An INTSUM (24 h) and a SITREP (6 h) per region, filled from templates. Events are
   described in Admiralty words; each PIR judgement carries an ICD 203 confidence (high
   if a supporting event is credibility 1–2, moderate if 3, low otherwise).
-- Products are stored in `product` on the same cadences and are served fresh by
-  `/api/products`.
+- Products are stored in `product` on the same cadences; `/api/products` serves the
+  latest stored product of the requested kind and region.
 
 **Classifier.** TF-IDF and logistic regression, trained on 200 hand-labelled live
 observations (`docs/labels/`). It replaces the keyword rules only because it measured

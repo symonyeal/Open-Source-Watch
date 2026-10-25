@@ -19,6 +19,7 @@ import PolymarketPanel from '@/components/panels/PolymarketPanel';
 import SourceHealth from '@/components/panels/SourceHealth';
 import IndicatorStrip from '@/components/panels/IndicatorStrip';
 import ConflictToggle from '@/components/ConflictToggle';
+import ContextBoard from '@/components/panels/ContextBoard';
 import { useConflict } from '@/lib/conflicts/context';
 import { useState, useEffect } from 'react';
 
@@ -30,6 +31,7 @@ const ConflictMap = dynamic(() => import('@/components/map/ConflictMap'), {
 export default function Dashboard() {
   const { key: conflictKey, config } = useConflict();
   const [uptime, setUptime] = useState(0);
+  const [view, setView] = useState<'monitor' | 'context'>('monitor');
 
   useEffect(() => {
     const start = Date.now();
@@ -50,8 +52,8 @@ export default function Dashboard() {
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Top bar */}
       <header className="border-b border-[var(--border-color)] bg-[var(--bg-secondary)] shrink-0">
-        <div className="flex items-center justify-between px-4 py-1.5">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
+          <div className="flex shrink-0 items-center gap-3">
             <div className="relative w-8 h-8">
               <div className="absolute inset-0 rounded-full border border-[var(--cyan)] opacity-30" />
               <div className="absolute inset-1 rounded-full border border-[var(--cyan)] opacity-20" />
@@ -68,13 +70,21 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-          <MetricsBar />
-          <div className="flex items-center gap-4 text-[9px] text-[var(--text-secondary)]">
+          <div className="hidden lg:block min-w-0 flex-1"><MetricsBar /></div>
+          <div className="flex flex-wrap items-center gap-3 text-[9px] text-[var(--text-secondary)]">
             <ConflictToggle />
-            <span>SESSION {formatUptime(uptime)}</span>
-            <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse" />
-              LIVE
+            <nav aria-label="Dashboard view" className="flex gap-2">
+              {(['monitor', 'context'] as const).map(v => (
+                <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
+                  className={`whitespace-nowrap px-2 py-1 border rounded ${view === v ? 'text-[var(--cyan)] border-[var(--cyan)]' : 'border-[var(--border-color)]'}`}>
+                  {v === 'monitor' ? 'MONITOR' : 'ENERGY & TRADE'}
+                </button>
+              ))}
+            </nav>
+            <span className="hidden xl:inline">SESSION {formatUptime(uptime)}</span>
+            <span className="hidden md:flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--cyan)]" />
+              POLLING
             </span>
           </div>
         </div>
@@ -85,6 +95,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main grid - 3 rows */}
+      {view === 'context' ? <main className="flex-1 min-h-0 overflow-auto p-3"><ContextBoard /></main> : (
       <main className="flex-1 grid grid-cols-12 gap-1 p-1 overflow-hidden"
         style={{ gridTemplateRows: '2fr 1.5fr 1.5fr' }}
       >
@@ -138,15 +149,16 @@ export default function Dashboard() {
           <SatellitePanel />
         </div>
       </main>
+      )}
 
       {/* Bottom status bar */}
-      <footer className="border-t border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-1 flex items-center justify-between text-[9px] text-[var(--text-secondary)] shrink-0">
-        <span>FEEDS: NEWS | GDELT | TELEGRAM | OPENSKY | OCHA | YAHOO FIN | {config.client.alertSystemName.toUpperCase()} | NASA FIRMS | ADSB.LOL</span>
+      <footer className="hidden md:flex border-t border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-1 items-center justify-between text-[9px] text-[var(--text-secondary)] shrink-0">
+        <span>PUBLIC SOURCES: NEWS | TELEGRAM | YAHOO | EIA / FRED | IMF PORTWATCH | WORLD BANK | NASA FIRMS | ADSB.LOL</span>
         <div className="flex items-center gap-4">
           <SourceHealth />
-          <span>ALERTS: 5s | NEWS: 2m | MARKETS: 5m</span>
+          <span>ALERTS: 15s | NEWS: 90s | MARKETS: 10m</span>
           <span>ALL DATA: PUBLIC / OSINT</span>
-          <span>CLASSIFICATION: UNCLASSIFIED // FOUO</span>
+          <span>{config.label} · PUBLIC DATA</span>
         </div>
       </footer>
     </div>

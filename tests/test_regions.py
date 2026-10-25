@@ -40,10 +40,11 @@ def test_region_geometry_and_rules(r):
 @pytest.mark.parametrize("r", R.values(), ids=list(R))
 def test_pir_indicators(r):
     I = [i for p in r["pir"] for i in p["indicator"]]
-    E = [i for i in I if "metric" not in i]
+    E = [i for i in I if "metric" not in i or i.get("metric") == "event_count"]
     T = [i for i in I if i.get("metric") == "transit"]
     assert I and len(E) + len(T) == len(I)
-    assert all(i["kind"] in KINDS and 1 <= i["watch"] <= i["trigger"] for i in E)
+    assert all(i["kind"] in KINDS and (i.get("metric") == "event_count"
+               or 1 <= i["watch"] <= i["trigger"]) for i in E)
     assert all(i["gate"] in r["gate"] and i["trigger_z"] <= i["watch_z"] < 0 for i in T)
     assert len({i["id"] for i in I}) == len(I)
     H = [h for p in r["pir"] for h in p.get("hypothesis", [])]

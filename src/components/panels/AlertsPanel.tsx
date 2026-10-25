@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<string, string> = {
 export default function AlertsPanel() {
   const { config } = useConflict();
   const alertSystemName = config.client.alertSystemName;
-  const { data, loading } = useConflictFeed<AlertData>('/api/alerts', 15000);
+  const { data, loading, error } = useConflictFeed<AlertData>('/api/alerts', 15000);
   const { data: droneData } = useConflictFeed<DroneData>('/api/drones', 20000);
   const drones = droneData?.drones || [];
   const prevStatus = useRef<string>('CLEAR');
@@ -44,12 +44,12 @@ export default function AlertsPanel() {
   useEffect(() => {
     if (!data) return;
 
-    if (data.status === 'ACTIVE' && prevStatus.current === 'CLEAR' && soundEnabled && hasInteracted) {
+    if (data.status === 'ACTIVE' && prevStatus.current !== 'ACTIVE' && soundEnabled && hasInteracted) {
       // Play urgent sound for new alerts
       playAlertSound('urgent');
 
       // Also send browser notification if permitted
-      if (Notification.permission === 'granted') {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         new Notification('IRONSIGHT ALERT', {
           body: `${data.activeCount} active alert(s) - ${data.alerts[0]?.type}: ${data.alerts[0]?.threat}`,
           icon: '/favicon.ico',
@@ -68,8 +68,19 @@ export default function AlertsPanel() {
     }
   }, []);
 
-  const isActive = data?.status === 'ACTIVE';
-  const hasThreat = isActive || drones.length > 0;
+  const isActive = !error && data?.status === 'ACTIVE';
+  const isClear = !error && data?.status === 'CLEAR';
+  const isUnavailable = data?.status === 'UNAVAILABLE';
+  const isUnknown = !!error || data?.status === 'UNKNOWN' || (!loading && !data);
+  const statusUnknown = isUnknown || isUnavailable || loading;
+  const hasThreat = isActive || (!statusUnknown && drones.length > 0);
+  const stateColor = hasThreat ? 'var(--red)' : isClear ? 'var(--green)' : 'var(--text-secondary)';
+  const stateLabel = isActive
+    ? `${data.activeCount} ALERT${drones.length ? ` · ${drones.length} TRK` : ''}`
+    : isClear
+      ? drones.length ? `${drones.length} TRK` : 'ALL CLEAR'
+      : isUnavailable ? 'UNAVAILABLE'
+        : loading ? 'CHECKING' : `STATUS UNKNOWN${drones.length ? ` · ${drones.length} TRK` : ''}`;
 
   return (
     <div
@@ -80,7 +91,7 @@ export default function AlertsPanel() {
         <span
           className="status-dot"
           style={{
-            background: hasThreat ? 'var(--red)' : 'var(--green)',
+            background: stateColor,
             animation: hasThreat ? 'pulse-dot 0.5s ease-in-out infinite' : undefined,
           }}
         />
@@ -105,11 +116,9 @@ export default function AlertsPanel() {
             {soundEnabled ? '🔔' : '🔕'}
           </button>
           <span className="text-[9px] font-normal normal-case tracking-normal"
-            style={{ color: hasThreat ? 'var(--red)' : 'var(--green)' }}
+            style={{ color: stateColor }}
           >
-            {hasThreat
-              ? `${data?.activeCount || 0} ALERT${drones.length ? ` · ${drones.length} TRK` : ''}`
-              : 'ALL CLEAR'}
+            {stateLabel}
           </span>
         </div>
       </div>
@@ -140,6 +149,23 @@ export default function AlertsPanel() {
           <div className="p-3">
             <div className="loading-shimmer h-20 rounded" />
           </div>
+        ) : isUnknown ? (
+          <div className="p-3 text-[var(--text-secondary)]">
+            <div className="text-xs font-bold mb-1">ALERT STATUS UNKNOWN</div>
+            <div className="text-[9px]">
+              {error ? 'The latest provider check failed.' : 'The provider response could not be confirmed.'}
+              {drones.length ? ` ${drones.length} threat track(s) are shown above.` : ''}
+            </div>
+            {!!data?.alerts.length && (
+              <AlertRows alerts={data.alerts} label="Last observed" />
+            )}
+          </div>
+        ) : isUnavailable ? (
+          <div className="p-3 text-[9px] text-[var(--text-secondary)]">
+            <div className="text-xs font-bold mb-1">ALERT FEED UNAVAILABLE</div>
+            No alert provider is configured for {alertSystemName}.
+            {drones.length ? ` ${drones.length} threat track(s) are shown above.` : ''}
+          </div>
         ) : isActive ? (
           <>
             {/* Active alert banner */}
@@ -157,32 +183,16 @@ export default function AlertsPanel() {
               </div>
             </div>
 
-            {data?.alerts.map((alert, i) => (
-              <div key={i} className="data-row">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm">{TYPE_ICONS[alert.type] || '🔴'}</span>
-                  <span className="text-[10px] font-bold text-[var(--red)]">
-                    {alert.type}
-                  </span>
-                  <span className="text-[9px] text-[var(--text-secondary)]">
-                    {new Date(alert.time).toLocaleTimeString()}
-                  </span>
-                </div>
-                <div className="text-[11px] text-[var(--text-primary)]">
-                  {alert.threat}
-                </div>
-                <div className="text-[9px] text-[var(--text-secondary)] mt-0.5">
-                  {alert.locations.join(', ')}
-                </div>
-              </div>
-            ))}
+            <AlertRows alerts={data?.alerts || []} />
           </>
         ) : drones.length > 0 ? (
           // Drones inbound but no oblast siren active — the LIVE TRACKS section above covers it
           <div className="px-3 py-2 text-[9px] text-[var(--text-secondary)]">
-            No oblast air-raid sirens active · tracking {drones.length} inbound threat{drones.length > 1 ? 's' : ''} above
+            {isClear
+              ? `No oblast air-raid sirens active · tracking ${drones.length} inbound threat${drones.length > 1 ? 's' : ''} above`
+              : `Alert status is ${isUnavailable ? 'unavailable' : 'unknown'} · tracking ${drones.length} inbound threat${drones.length > 1 ? 's' : ''} above`}
           </div>
-        ) : (
+        ) : isClear ? (
           <div className="flex flex-col items-center justify-center h-full p-4">
             <div className="relative w-16 h-16 mb-3">
               <svg viewBox="0 0 24 24" fill="none" className="w-full h-full" stroke="var(--green)" strokeWidth="1.5">
@@ -194,15 +204,39 @@ export default function AlertsPanel() {
             <div className="text-[9px] text-[var(--text-secondary)] text-center">
               No active alerts from {alertSystemName}
             </div>
+            {!!data.alerts.length && <AlertRows alerts={data.alerts} label="Recently ended" />}
             <div className="text-[8px] text-[var(--text-secondary)] mt-2">
-              Polling every 5s • Last: {data?.lastChecked ? new Date(data.lastChecked).toLocaleTimeString() : '...'}
+              Polling every 15s • Last: {data?.lastChecked ? new Date(data.lastChecked).toLocaleTimeString() : '...'}
             </div>
             <div className="text-[8px] mt-1" style={{ color: soundEnabled ? 'var(--cyan)' : 'var(--text-secondary)' }}>
               Sound: {soundEnabled ? 'ON' : 'OFF'} {!hasInteracted && soundEnabled ? '(click anywhere to enable)' : ''}
             </div>
           </div>
+        ) : (
+          <div className="p-3 text-[9px] text-[var(--text-secondary)]">Alert status unknown.</div>
         )}
       </div>
     </div>
   );
+}
+
+function AlertRows({ alerts, label }: { alerts: AlertData['alerts']; label?: string }) {
+  return <div className="mt-2">
+    {label && <div className="text-[8px] tracking-wider mb-1">{label.toUpperCase()}</div>}
+    {alerts.map((alert, i) => (
+      <div key={i} className="data-row">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm">{TYPE_ICONS[alert.type] || '🔴'}</span>
+          <span className={`text-[10px] font-bold ${alert.active ? 'text-[var(--red)]' : 'text-[var(--text-secondary)]'}`}>
+            {alert.type}{!alert.active ? ' · ENDED' : ''}
+          </span>
+          <span className="text-[9px] text-[var(--text-secondary)]">
+            {new Date(alert.time).toLocaleTimeString()}
+          </span>
+        </div>
+        <div className="text-[11px] text-[var(--text-primary)]">{alert.threat}</div>
+        <div className="text-[9px] text-[var(--text-secondary)] mt-0.5">{alert.locations.join(', ')}</div>
+      </div>
+    ))}
+  </div>;
 }

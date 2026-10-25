@@ -43,23 +43,14 @@ export default function NavalPanel() {
         <span className="status-dot" style={{ background: 'var(--blue)' }} />
         NAVAL TRACKER
         <span className="ml-auto text-[9px] text-[var(--text-secondary)] font-normal normal-case tracking-normal">
-          {data?.totalTracked || 0} vessels // OSINT
+          {data?.totalTracked ?? 0} dated positions
         </span>
       </div>
 
-      {/* Region summary */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-[var(--border-color)] bg-[var(--bg-panel-header)]">
-        {config.client.maritimeRegions.map(region => {
-          const count = data?.ships.filter(s => s.region === region).length || 0;
-          return count > 0 ? (
-            <div key={region} className="text-[8px] text-[var(--text-secondary)]">
-              <span className="text-[var(--cyan)]">{count}</span> {region}
-            </div>
-          ) : null;
-        })}
-      </div>
-
       <div className="flex-1 overflow-y-auto">
+        {!loading && !data?.ships.length && (
+          <div className="p-3 text-[9px] text-[var(--text-secondary)]">{data?.note}</div>
+        )}
         {loading ? (
           <div className="space-y-2 p-3">
             {[...Array(5)].map((_, i) => (

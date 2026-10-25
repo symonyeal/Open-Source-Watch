@@ -1,0 +1,162 @@
+# South Asia: country and coastal reporting context.
+# Coverage is geographic, not the World Bank's changeable region aggregate.
+
+id = "south-asia"
+name = "South Asia"
+bbox = [-1.5, 38.5, 60.0, 101.5]  # lat_min, lat_max, lon_min, lon_max
+languages = ["en", "bn", "hi", "ur", "si", "my", "ne", "dz"]
+timezone = "Asia/Kolkata"
+
+# Explicit scope includes Myanmar; do not derive these from a WB region code.
+[context]
+countries = ["BGD", "IND", "PAK", "LKA", "MMR", "NPL", "BTN", "MDV"]
+# Identifiers checked against IMF PortWatch reference layer, 2026-10-24.
+ports = [
+  { id = "port241", name = "Chattogram" },
+  { id = "port759", name = "Mongla" },
+  { id = "port543", name = "Karachi" },
+  { id = "port775", name = "Port Qasim" },
+  { id = "port254", name = "Colombo" },
+  { id = "port777", name = "Mundra" },
+  { id = "port776", name = "Mumbai / Jawaharlal Nehru" },
+  { id = "port1086", name = "Yangon" },
+  { id = "port689", name = "Male" },
+]
+
+# F means reliability cannot yet be judged. No source-specific assessment
+# supports assigning new publishers a better grade in this theater.
+[reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
+"rss:BBC Asia" = "F"
+"rss:Al Jazeera" = "F"
+"rss:gCaptain" = "F"
+"rss:Splash247" = "F"
+"gnews:strike" = "F"
+"gnews:conflict" = "F"
+"gnews:country" = "F"
+# Existing global adapters are graded here too because each is shared with regions.
+"firms:VIIRS" = "A"
+"adsb:adsb.lol" = "B"
+"ais:aisstream" = "B"
+"markets:Yahoo Finance" = "B"
+"markets:CoinGecko" = "B"
+"markets:Polymarket" = "B"
+
+# Descriptive reporting counts only. No local validation supports alert cutoffs.
+[[pir]]
+id = "SA-1"
+question = "Are maritime incidents affecting South Asian ports or sea lanes being reported?"
+
+  [[pir.indicator]]
+  id = "SA-1a"
+  name = "Reported maritime incidents"
+  metric = "event_count"
+  kind = "maritime_incident"
+  window_h = 48
+  max_credibility = 6
+
+[[pir]]
+id = "SA-2"
+question = "Are armed clashes or attacks on civilians being reported in the region?"
+
+  [[pir.indicator]]
+  id = "SA-2a"
+  name = "Reported battles"
+  metric = "event_count"
+  kind = "battles"
+  window_h = 24
+  max_credibility = 6
+
+  [[pir.indicator]]
+  id = "SA-2b"
+  name = "Reported violence against civilians"
+  metric = "event_count"
+  kind = "violence_against_civilians"
+  window_h = 24
+  max_credibility = 6
+
+[[pir]]
+id = "SA-3"
+question = "Are public protests or riots being reported that may disrupt daily activity?"
+
+  [[pir.indicator]]
+  id = "SA-3a"
+  name = "Reported protests"
+  metric = "event_count"
+  kind = "protests"
+  window_h = 24
+  max_credibility = 6
+
+[conflict]
+label = "SOUTH ASIA"
+
+[conflict.client]
+mapCenter = [21.0, 82.0]
+mapZoom = 3
+cities = [
+  { name = "Dhaka", lat = 23.8103, lon = 90.4125, country = "Bangladesh", capital = true },
+  { name = "Chattogram", lat = 22.3569, lon = 91.7832, country = "Bangladesh", capital = false },
+  { name = "New Delhi", lat = 28.6139, lon = 77.2090, country = "India", capital = true },
+  { name = "Mumbai", lat = 19.0760, lon = 72.8777, country = "India", capital = false },
+  { name = "Mundra", lat = 22.8390, lon = 69.7210, country = "India", capital = false },
+  { name = "Chennai", lat = 13.0827, lon = 80.2707, country = "India", capital = false },
+  { name = "Karachi", lat = 24.8607, lon = 67.0011, country = "Pakistan", capital = false },
+  { name = "Gwadar", lat = 25.1264, lon = 62.3225, country = "Pakistan", capital = false },
+  { name = "Islamabad", lat = 33.6844, lon = 73.0479, country = "Pakistan", capital = true },
+  { name = "Colombo", lat = 6.9271, lon = 79.8612, country = "Sri Lanka", capital = false },
+  { name = "Hambantota", lat = 6.1241, lon = 81.1185, country = "Sri Lanka", capital = false },
+  { name = "Yangon", lat = 16.8409, lon = 96.1735, country = "Myanmar", capital = false },
+  { name = "Thilawa", lat = 16.6490, lon = 96.2680, country = "Myanmar", capital = false },
+  { name = "Naypyidaw", lat = 19.7633, lon = 96.0785, country = "Myanmar", capital = true },
+  { name = "Kathmandu", lat = 27.7172, lon = 85.3240, country = "Nepal", capital = true },
+  { name = "Thimphu", lat = 27.4728, lon = 89.6390, country = "Bhutan", capital = true },
+  { name = "Malé", lat = 4.1755, lon = 73.5093, country = "Maldives", capital = true },
+]
+cityColors = { "Bangladesh" = "#2e9d70", "India" = "#e28a32", "Pakistan" = "#4d9f68", "Sri Lanka" = "#c19b32", "Myanmar" = "#d6b42c", "Nepal" = "#c64040", "Bhutan" = "#dc7b32", "Maldives" = "#378ac4", "default" = "#999999" }
+strikeLocations = { "dhaka" = [23.81, 90.41], "chattogram" = [22.36, 91.78], "chittagong" = [22.36, 91.78], "new delhi" = [28.61, 77.21], "mumbai" = [19.08, 72.88], "mundra" = [22.84, 69.72], "chennai" = [13.08, 80.27], "karachi" = [24.86, 67.00], "gwadar" = [25.13, 62.32], "islamabad" = [33.68, 73.05], "colombo" = [6.93, 79.86], "hambantota" = [6.12, 81.12], "yangon" = [16.84, 96.17], "thilawa" = [16.65, 96.27], "naypyidaw" = [19.76, 96.08], "kathmandu" = [27.72, 85.32], "thimphu" = [27.47, 89.64], "malé" = [4.18, 73.51] }
+timeZones = [
+  { label = "DHAKA", zone = "Asia/Dhaka", flag = "🇧🇩" },
+  { label = "INDIA", zone = "Asia/Kolkata", flag = "🇮🇳" },
+  { label = "KARACHI", zone = "Asia/Karachi", flag = "🇵🇰" },
+  { label = "COLOMBO", zone = "Asia/Colombo", flag = "🇱🇰" },
+  { label = "YANGON", zone = "Asia/Yangon", flag = "🇲🇲" },
+  { label = "KATHMANDU", zone = "Asia/Kathmandu", flag = "🇳🇵" },
+  { label = "THIMPHU", zone = "Asia/Thimphu", flag = "🇧🇹" },
+  { label = "MALÉ", zone = "Indian/Maldives", flag = "🇲🇻" },
+  { label = "UTC", zone = "UTC", flag = "🌐" },
+]
+
+[conflict.server]
+filterGoogleNews = true
+strikeQueries = [
+  "(Bangladesh+OR+India+OR+Pakistan+OR+%22Sri+Lanka%22+OR+Myanmar+OR+Nepal+OR+Bhutan+OR+Maldives)+(ship+attack+OR+maritime+incident+OR+port+attack)",
+  "(Bangladesh+OR+India+OR+Pakistan+OR+%22Sri+Lanka%22+OR+Myanmar+OR+Nepal+OR+Bhutan+OR+Maldives)+(armed+clash+OR+insurgent+attack+OR+civilian+attack)",
+]
+conflictQueries = [
+  "(Bangladesh OR India OR Pakistan OR \"Sri Lanka\" OR Myanmar OR Nepal OR Bhutan OR Maldives) (shipping disruption OR port closure OR port attack)",
+  "(Bangladesh OR India OR Pakistan OR \"Sri Lanka\" OR Myanmar OR Nepal OR Bhutan OR Maldives) (cyclone OR flood OR earthquake OR landslide)",
+]
+countryQueries = [
+  { country = "Bangladesh", flag = "🇧🇩", query = "Bangladesh+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "India", flag = "🇮🇳", query = "India+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Pakistan", flag = "🇵🇰", query = "Pakistan+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Sri Lanka", flag = "🇱🇰", query = "Sri+Lanka+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Myanmar", flag = "🇲🇲", query = "Myanmar+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Nepal", flag = "🇳🇵", query = "Nepal+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Bhutan", flag = "🇧🇹", query = "Bhutan+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+  { country = "Maldives", flag = "🇲🇻", query = "Maldives+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports" },
+]
+countryAttribution = []
+defaultCountry = "South Asia"
+conflictLocations = []
+newsFeeds = [
+  { url = "https://feeds.bbci.co.uk/news/world/asia/rss.xml", name = "BBC Asia" },
+  { url = "https://www.aljazeera.com/xml/rss/all.xml", name = "Al Jazeera" },
+  { url = "https://gcaptain.com/feed/", name = "gCaptain" },
+  { url = "https://splash247.com/feed/", name = "Splash247" },
+]
+newsRelevanceKeywords = { regex = "south asia|bangladesh|bangladeshi|\\bindia\\b|\\bindian\\b|indian ocean|pakistan|sri lanka|sri lankan|ceylon|myanmar|burma|burmese|nepal|nepali|nepalese|bhutan|bhutanese|maldives|maldivian|dhaka|chattogram|chittagong|karachi|gwadar|colombo|hambantota|yangon|thilawa|kathmandu|thimphu|mumbai|mundra|chennai|bay of bengal", flags = "i" }
+polymarketKeywords = { regex = "south asia|bangladesh|india|pakistan|sri lanka|myanmar|burma|nepal|bhutan|maldives", flags = "i" }
+polymarketExclude = { regex = "cricket|football|soccer|nba|nfl|mlb|nhl|fifa|world.?cup|ipl|election odds|crypto|bitcoin", flags = "i" }

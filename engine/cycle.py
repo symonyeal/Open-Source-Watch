@@ -19,14 +19,16 @@ from urllib.parse import urlsplit
 import httpx
 
 from engine import analyze, fuse, produce, regions, store
-from engine.collect import ais, adsb, alerts, firms, markets, neptun, now, rss, run, telegram
+from engine.collect import (
+    ais, adsb, alerts, context, firms, markets, neptun, now, rss, run, telegram,
+)
 from engine.process import feeds, news
 from engine.schema import DERIVED
 
-MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais)
+MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais, context)
 PARSE = {"rss": rss.parse, "gnews": rss.parse, "telegram": telegram.parse, "firms": firms.parse,
          "adsb": adsb.parse, "alerts": alerts.parse, "drones": neptun.parse,
-         "markets": markets.parse, "ais": ais.parse}
+         "markets": markets.parse, "ais": ais.parse, "context": context.parse}
 DERIVE = {"rss": news.derive, "gnews": news.derive, "telegram": feeds.telegram,
           "firms": feeds.firms, "adsb": feeds.adsb, "alerts": feeds.alerts,
           "drones": feeds.neptun, "ais": feeds.ais}
@@ -52,11 +54,11 @@ def due(S, t=None):
     successful run in the store (a stateless runner, such as the cron, polls only
     these; the 10 % absorbs its schedule jitter)."""
     t = t or now()
-    last = {x["source_id"]: x["t"] for x in store.query(
-        "SELECT source_id, max(started_at) t FROM collection_run WHERE status IN "
-        "('ok', 'empty') GROUP BY source_id")}
-    return [s for s in S if s["id"] not in last
-            or (t - last[s["id"]]).total_seconds() >= 0.9 * s["cadence"]]
+    last = {(x["region"], x["source_id"]): x["t"] for x in store.query(
+        "SELECT region, source_id, max(started_at) t FROM collection_run WHERE status IN "
+        "('ok', 'empty') GROUP BY region, source_id")}
+    return [s for s in S if (s["region"], s["id"]) not in last
+            or (t - last[s["region"], s["id"]]).total_seconds() >= 0.9 * s["cadence"]]
 
 
 def health(runs, cadence, t):
@@ -73,18 +75,22 @@ def health(runs, cadence, t):
 
 def source_table(r):
     """Every source serving region r, with its grade, owner and health."""
-    t = now()
+    t, S = now(), sources([r["id"], "global"])
+    horizon = max((3 * s["cadence"] for s in S), default=86400)
     runs = defaultdict(list)
     for x in store.query("SELECT * FROM collection_run WHERE region IN (?, 'global') "
                          "AND started_at > ? ORDER BY started_at DESC",
-                         (r["id"], t - timedelta(days=1))):
-        runs[x["source_id"]].append(x)
+                         (r["id"], t - timedelta(seconds=horizon))):
+        runs[x["region"], x["source_id"]].append(x)
     return [{"id": s["id"], "region": s["region"], "url": s["url"],
              "reliability": regions.reliability(r, s["id"]), "owner": regions.owner(r, s["id"]),
-             "cadence_s": s["cadence"], "health": health(runs[s["id"]], s["cadence"], t),
-             "last_status": runs[s["id"]][0]["status"] if runs[s["id"]] else None,
-             "last_run": runs[s["id"]][0]["started_at"] if runs[s["id"]] else None}
-            for s in sources([r["id"], "global"])]
+             "cadence_s": s["cadence"], "health": health(runs[s["region"], s["id"]],
+                                                         s["cadence"], t),
+             "last_status": runs[s["region"], s["id"]][0]["status"]
+                 if runs[s["region"], s["id"]] else None,
+             "last_run": runs[s["region"], s["id"]][0]["started_at"]
+                 if runs[s["region"], s["id"]] else None}
+            for s in S]
 
 
 def board(r):

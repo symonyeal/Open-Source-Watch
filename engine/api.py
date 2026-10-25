@@ -15,10 +15,11 @@ from datetime import UTC, datetime, timedelta
 
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
+from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from engine import cycle, produce, regions, store
+from engine import cycle, regions, store
 
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
@@ -26,12 +27,32 @@ NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 def region_of(req):
     rid = req.query_params.get("region") or req.query_params.get("conflict")
     R = regions.regions()
-    return R.get(rid) or R["iran-israel"]
+    if rid and rid not in R:
+        raise HTTPException(400, "Unknown region")
+    return R[rid or "iran-israel"]
 
 
 def since(req, hours=48):
     s = req.query_params.get("since")
-    return datetime.fromisoformat(s) if s else datetime.now(UTC) - timedelta(hours=hours)
+    if not s:
+        return datetime.now(UTC) - timedelta(hours=hours)
+    try:
+        t = datetime.fromisoformat(s)
+    except ValueError:
+        raise HTTPException(400, "since must be an ISO 8601 timestamp") from None
+    if t.tzinfo is None:
+        raise HTTPException(400, "since must include a timezone")
+    return t.astimezone(UTC)
+
+
+def limit(req):
+    try:
+        n = int(req.query_params.get("limit", 500))
+    except ValueError:
+        raise HTTPException(400, "limit must be an integer from 1 to 10000") from None
+    if not 1 <= n <= 10000:
+        raise HTTPException(400, "limit must be an integer from 1 to 10000")
+    return n
 
 
 def js(x):
@@ -59,7 +80,7 @@ async def observations(req):
            + (" AND source_id LIKE ?" if q.get("source") else "")
            + " ORDER BY t DESC LIMIT ?")
     p = [r["id"], since(req)] + ([q["kind"]] if q.get("kind") else []) \
-        + ([q["source"] + "%"] if q.get("source") else []) + [int(q.get("limit", 500))]
+        + ([q["source"] + "%"] if q.get("source") else []) + [limit(req)]
     return js(await run_in_threadpool(store.query, sql, p))
 
 
@@ -67,7 +88,7 @@ async def events(req):
     r, q = region_of(req), req.query_params
     sql = ("SELECT * FROM event WHERE region = ? AND t_end > ?"
            + (" AND kind = ?" if q.get("kind") else "") + " ORDER BY t_end DESC LIMIT ?")
-    p = [r["id"], since(req)] + ([q["kind"]] if q.get("kind") else []) + [int(q.get("limit", 500))]
+    p = [r["id"], since(req)] + ([q["kind"]] if q.get("kind") else []) + [limit(req)]
     return js(await run_in_threadpool(store.query, sql, p))
 
 
@@ -82,19 +103,23 @@ async def indicators(req):
     return js(await run_in_threadpool(cycle.board, region_of(req)))
 
 
-def product_text(r, kind):
-    return {"region": r["id"], "kind": kind, "t": datetime.now(UTC),
-            "text": produce.report(r, cycle.board(r), cycle.source_table(r), kind)}
-
-
 async def products(req):
-    """A fresh INTSUM (default) or SITREP of the region (engine.produce)."""
+    """Latest scheduled INTSUM (default) or SITREP of the region."""
     kind = "sitrep" if req.query_params.get("kind") == "sitrep" else "intsum"
-    return js(await run_in_threadpool(product_text, region_of(req), kind))
+    rows = await run_in_threadpool(
+        store.query,
+        "SELECT * FROM product WHERE region = ? AND kind = ? ORDER BY t DESC LIMIT 1",
+        (region_of(req)["id"], kind))
+    return js(rows[0] if rows else None)
 
 
 async def sources(req):
     return js(await run_in_threadpool(cycle.source_table, region_of(req)))
+
+
+async def context(req):
+    from engine.context import view
+    return js(await run_in_threadpool(view, region_of(req)))
 
 
 def telegram_data(r, t):
@@ -158,6 +183,7 @@ def app(collect=True):
         Route("/fetch", fetch), Route("/api/telegram", telegram),
         Route("/api/sources", sources), Route("/api/indicators", indicators),
         Route("/api/products", products),
+        Route("/api/context", context),
         Route("/regions", regions_), Route("/observations", observations),
         Route("/events", events), Route("/tracks", tracks), Route("/sources", sources),
         Route("/stream", stream),

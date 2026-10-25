@@ -11,6 +11,9 @@ timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
 line = [[41.083, 29.040], [41.086, 29.078]]
 
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:gCaptain" = "C"
 "rss:Splash247" = "C"
 "rss:Hellenic Shipping News" = "C"
@@ -112,7 +115,6 @@ timeZones = [
   { label = "ISTANBUL", zone = "Europe/Istanbul", flag = "🇹🇷" },
   { label = "UTC", zone = "UTC", flag = "🌐" },
 ]
-maritimeRegions = ["Black Sea", "Sea of Azov", "Bosphorus"]
 
 [conflict.server]
 strikeQueries = ["Black+Sea+port+strike+Odesa", "Black+Sea+Fleet+drone+attack"]

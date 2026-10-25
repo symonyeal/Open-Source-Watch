@@ -139,8 +139,6 @@ export const iranIsrael: ConflictConfig = {
     },
 
     navyOrder: ['US Navy', 'Royal Navy', 'French Navy', 'Israeli Navy', 'Saudi Navy', 'Iran Navy', 'IRGC Navy'],
-    maritimeRegions: ['Persian Gulf', 'Red Sea', 'Eastern Med', 'Strait of Hormuz'],
-
     countryColors: {
       'Lebanon': '#e06030', 'Iran': '#cc3355', 'Iraq': '#cc8833', 'Syria': '#aa7744',
       'Yemen': '#55aa55', 'Kuwait': '#44bbaa', 'Bahrain': '#dd6699', 'UAE': '#8866cc',
@@ -305,23 +303,6 @@ export const iranIsrael: ConflictConfig = {
       { name: 'kianmeli1', label: 'Kian Meli (Iran)', color: '#7744aa' },
     ],
 
-    ships: [
-      { name: 'USS Bataan', hull: 'LHD-5', type: 'Amphibious Assault Ship', class: 'Wasp-class', navy: 'US Navy', lat: 26.1, lon: 50.5, status: 'Deployed', region: 'Persian Gulf', group: '5th Fleet' },
-      { name: 'USS Mason', hull: 'DDG-87', type: 'Destroyer', class: 'Arleigh Burke-class', navy: 'US Navy', lat: 14.5, lon: 42.8, status: 'Active', region: 'Red Sea', group: 'Red Sea Task Force' },
-      { name: 'USS Carney', hull: 'DDG-64', type: 'Destroyer', class: 'Arleigh Burke-class', navy: 'US Navy', lat: 13.8, lon: 43.2, status: 'Active', region: 'Red Sea', group: 'Red Sea Task Force' },
-      { name: 'USS Laboon', hull: 'DDG-58', type: 'Destroyer', class: 'Arleigh Burke-class', navy: 'US Navy', lat: 25.8, lon: 52.1, status: 'Deployed', region: 'Persian Gulf', group: '5th Fleet' },
-      { name: 'USS Philippine Sea', hull: 'CG-58', type: 'Cruiser', class: 'Ticonderoga-class', navy: 'US Navy', lat: 25.2, lon: 56.8, status: 'Deployed', region: 'Strait of Hormuz', group: 'Carrier Strike Group' },
-      { name: 'USS Florida', hull: 'SSGN-728', type: 'Guided Missile Submarine', class: 'Ohio-class', navy: 'US Navy', lat: 26.5, lon: 56.2, status: 'Deployed', region: 'Strait of Hormuz', group: 'CENTCOM' },
-      { name: 'HMS Diamond', hull: 'D34', type: 'Destroyer', class: 'Type 45', navy: 'Royal Navy', lat: 14.2, lon: 42.5, status: 'Active', region: 'Red Sea', group: 'Op Prosperity Guardian' },
-      { name: 'FS Alsace', hull: 'D656', type: 'Frigate', class: 'FREMM-class', navy: 'French Navy', lat: 34.5, lon: 33.2, status: 'Deployed', region: 'Eastern Med' },
-      { name: 'INS Magen', hull: "Sa'ar 6", type: 'Corvette', class: "Sa'ar 6-class", navy: 'Israeli Navy', lat: 32.8, lon: 34.5, status: 'Patrol', region: 'Eastern Med' },
-      { name: 'INS Dolphin', hull: 'Submarine', type: 'Submarine', class: 'Dolphin-class', navy: 'Israeli Navy', lat: 31.5, lon: 33.8, status: 'Patrol', region: 'Eastern Med' },
-      { name: 'IRIS Makran', hull: 'Forward Base Ship', type: 'Forward Base Ship', class: 'Makran-class', navy: 'Iran Navy', lat: 25.4, lon: 57.5, status: 'Active', region: 'Strait of Hormuz' },
-      { name: 'IRIS Sahand', hull: 'F-74', type: 'Frigate', class: 'Moudge-class', navy: 'Iran Navy', lat: 27.1, lon: 56.3, status: 'Active', region: 'Persian Gulf' },
-      { name: 'IRGCN Fast Boats', hull: 'Various', type: 'Fast Attack Craft', class: 'Various', navy: 'IRGC Navy', lat: 26.8, lon: 56.1, status: 'Active', region: 'Strait of Hormuz', group: 'IRGCN Patrol' },
-      { name: 'HMS Al Riyadh', hull: 'F-3000S', type: 'Frigate', class: 'Al Riyadh-class', navy: 'Saudi Navy', lat: 20.5, lon: 39.8, status: 'Patrol', region: 'Red Sea' },
-    ],
-    shipRegions: ['Persian Gulf', 'Red Sea', 'Eastern Med', 'Arabian Sea'],
 
     alertProvider: 'tzevaadom',
     // No free real-time drone-track source for this theater

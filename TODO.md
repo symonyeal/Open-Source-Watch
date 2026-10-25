@@ -6,6 +6,12 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 
 ## Open-Source-Watch phases
 
+- [x] 2026-10-24 Collection/indicator audit: region-scoped cadence, missing-evidence status, daily-source health, finite AIS JSON, summary confidence windows, feed request lifecycle and honest oil errors.
+- [x] 2026-10-24 South Asia plus recorded EIA/FRED spot, IMF PortWatch and World Bank country context; [methods and limits](docs/DATA-CONTEXT.md).
+- [ ] Validate South Asia classifier and event thresholds against a locally reviewed sample.
+- [x] 2026-10-24 South Asia reporting counts have no alert cutoffs; shipping smoothing follows the published World Bank centered seven-day method. Supplied satellite datasets and iMoonLab methods assessed in [Maritime methods](docs/MARITIME-METHODS.md).
+- [ ] Compare PortWatch changes with independent port-authority reports before assigning disruption causes.
+
 Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items below are kept as found.
 
 - [x] 2026-10-21 P0: fork, house layout, engine skeleton, schema, region registry, RSS collector, news route via `ENGINE_URL`.

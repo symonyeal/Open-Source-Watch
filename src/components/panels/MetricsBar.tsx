@@ -12,26 +12,22 @@ export default function MetricsBar() {
 
   const metrics = [
     {
-      label: 'WTI CRUDE',
-      value: wti ? `$${formatPrice(wti.price)}` : '---',
-      change: wti?.changePercent || 0,
+      label: 'WTI FUTURES',
+      value: !wti ? '---' : wti.error ? 'N/A' : `${formatPrice(wti.price)} USD/bbl`,
+      change: wti?.error ? 0 : wti?.changePercent || 0,
+      error: wti?.error,
     },
     {
-      label: 'BRENT',
-      value: brent ? `$${formatPrice(brent.price)}` : '---',
-      change: brent?.changePercent || 0,
+      label: 'BRENT FUTURES',
+      value: !brent ? '---' : brent.error ? 'N/A' : `${formatPrice(brent.price)} USD/bbl`,
+      change: brent?.error ? 0 : brent?.changePercent || 0,
+      error: brent?.error,
     },
     {
-      label: 'NAT GAS',
-      value: natGas ? `$${formatPrice(natGas.price)}` : '---',
-      change: natGas?.changePercent || 0,
-    },
-    {
-      label: 'THREAT LEVEL',
-      value: 'ELEVATED',
-      change: 0,
-      isThreat: true,
-      threatClass: 'threat-elevated',
+      label: 'NAT GAS FUTURES',
+      value: !natGas ? '---' : natGas.error ? 'N/A' : `${formatPrice(natGas.price)} USD/MMBtu`,
+      change: natGas?.error ? 0 : natGas?.changePercent || 0,
+      error: natGas?.error,
     },
   ];
 
@@ -47,8 +43,8 @@ export default function MetricsBar() {
           </span>
           <span
             className={`text-sm font-bold ${
-              m.isThreat
-                ? m.threatClass
+              m.error
+                ? 'text-[var(--text-secondary)]'
                 : m.change > 0
                 ? 'value-up'
                 : m.change < 0
@@ -58,7 +54,7 @@ export default function MetricsBar() {
           >
             {m.value}
           </span>
-          {!m.isThreat && m.change !== 0 && (
+          {!m.error && m.change !== 0 && (
             <span
               className={`text-[10px] ${
                 m.change > 0 ? 'value-up' : 'value-down'

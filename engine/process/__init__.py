@@ -71,6 +71,8 @@ COUNTRIES = {
     "iran", "israel", "iraq", "syria", "lebanon", "yemen", "jordan", "egypt", "saudi arabia",
     "qatar", "kuwait", "bahrain", "oman", "uae", "turkey", "ukraine", "russia", "belarus",
     "moldova", "poland", "romania", "gaza", "west bank",
+    "bangladesh", "india", "pakistan", "sri lanka", "myanmar", "burma", "nepal", "bhutan",
+    "maldives",
 }
 
 

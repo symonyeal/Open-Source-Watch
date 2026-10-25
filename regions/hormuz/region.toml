@@ -11,6 +11,9 @@ timezone = "Asia/Tehran"  # local time of reports (engine.process.when)
 line = [[26.40, 56.42], [26.90, 56.33]]
 
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:gCaptain" = "C"
 "rss:Splash247" = "C"
 "rss:Maritime Executive" = "C"
@@ -101,7 +104,6 @@ timeZones = [
   { label = "MUSCAT", zone = "Asia/Muscat", flag = "🇴🇲" },
   { label = "UTC", zone = "UTC", flag = "🌐" },
 ]
-maritimeRegions = ["Strait of Hormuz", "Gulf of Oman", "Persian Gulf"]
 
 [conflict.server]
 strikeQueries = ["Hormuz+tanker+seized+OR+attack", "Gulf+of+Oman+ship+attack"]

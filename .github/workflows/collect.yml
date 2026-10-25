@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Collect slow feeds
-        run: python -m engine collect --adapter rss gnews firms markets telegram --runner cron --due
+        run: python -m engine collect --adapter rss gnews firms markets telegram context --runner cron --due
 
       - name: Compact past days
         run: python -m engine compact

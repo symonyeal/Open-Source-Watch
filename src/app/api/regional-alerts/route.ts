@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout, parseXML, getTextContent } from '@/lib/fetcher';
 import { getConflictFromRequest } from '@/lib/conflicts';
+import { acceptsGoogleNewsTitle } from '@/lib/regionalNews';
 import type { CountryEvent } from '@/lib/types/api';
 
 export const dynamic = 'force-dynamic';
@@ -87,6 +88,7 @@ export async function GET(req: Request) {
             const dashIdx = title.lastIndexOf(' - ');
             const source = dashIdx > 0 ? title.substring(dashIdx + 3) : 'Google News';
             if (dashIdx > 0) title = title.substring(0, dashIdx);
+            if (!acceptsGoogleNewsTitle(title, server, country.name)) continue;
 
             const pubTime = new Date(pubDate).getTime();
             const hoursAgo = (now - pubTime) / (1000 * 60 * 60);

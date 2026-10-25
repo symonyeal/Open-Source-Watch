@@ -13,6 +13,9 @@ timezone = "Asia/Aden"  # local time of reports (engine.process.when)
 line = [[12.70, 43.47], [12.47, 43.32]]
 
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:gCaptain" = "C"
 "rss:Splash247" = "C"
 "rss:Maritime Executive" = "C"
@@ -120,7 +123,6 @@ timeZones = [
   { label = "DJIBOUTI", zone = "Africa/Djibouti", flag = "🇩🇯" },
   { label = "UTC", zone = "UTC", flag = "🌐" },
 ]
-maritimeRegions = ["Red Sea", "Bab el-Mandeb", "Gulf of Aden"]
 regionBoxes = [
   { name = "Yemen", latMin = 12.0, latMax = 19.0, lonMin = 42.0, lonMax = 54.0 },
   { name = "Red Sea", latMin = 13.0, latMax = 28.0, lonMin = 33.0, lonMax = 43.0 },

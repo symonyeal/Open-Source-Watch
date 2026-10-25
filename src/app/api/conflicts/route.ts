@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout, parseXML, getTextContent } from '@/lib/fetcher';
 import { getConflictFromRequest } from '@/lib/conflicts';
+import { acceptsGoogleNewsTitle } from '@/lib/regionalNews';
 import type { ConflictEvent } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,7 @@ export async function GET(req: Request) {
         const dashIdx = title.lastIndexOf(' - ');
         const source = dashIdx > 0 ? title.substring(dashIdx + 3) : 'Google News';
         if (dashIdx > 0) title = title.substring(0, dashIdx);
+        if (!acceptsGoogleNewsTitle(title, server)) continue;
 
         // Dedup
         const key = title.toLowerCase().trim().substring(0, 50);

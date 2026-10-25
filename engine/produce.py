@@ -37,10 +37,6 @@ def report(r, board, sources, kind="intsum", t=None):
     ids = [e["observation_ids"][0] for e in E]
     O = {x["id"]: x for x in store.query(
         "SELECT id, text_en, names FROM observation WHERE id IN (SELECT unnest(?))", (ids,))}
-    best = {}
-    for e in store.query("SELECT kind, min(credibility) c FROM event WHERE region = ? "
-                         "AND t_end > ? GROUP BY kind", (r["id"], t0)):
-        best[e["kind"]] = e["c"]
     hist = store.query("SELECT indicator, status, t FROM indicator_status WHERE region = ? AND "
                        "t > ? ORDER BY t", (r["id"], t0))
     L = [f"# {kind.upper()}: {r['name']}",
@@ -50,11 +46,16 @@ def report(r, board, sources, kind="intsum", t=None):
     for p in board:
         if p["status"] == "answered":
             k = [i for i in p["indicators"] if i["status"] == "triggered"]
-            c = min((best.get(i.get("kind"), 6) for i in k), default=6)
+            grades = [i["best_credibility"] for i in k if i.get("best_credibility") is not None]
+            judgement = f"{confidence(min(grades))} confidence" if grades else \
+                "confidence not assessed (sampled AIS coverage)"
             L.append(f"- **{p['pir']}** {p['question']} Indicator threshold met "
-                     f"({', '.join(i['id'] for i in k)}); {confidence(c)} confidence.")
+                     f"({', '.join(i['id'] for i in k)}); {judgement}.")
         elif p["status"] == "gap":
             L.append(f"- **{p['pir']}** {p['question']} Cannot be assessed: collection gap.")
+        elif any(i.get("metric") == "event_count" for i in p["indicators"]):
+            L.append(f"- **{p['pir']}** {p['question']} Reporting counts only; "
+                     "no calibrated alert threshold.")
         else:
             L.append(f"- **{p['pir']}** {p['question']} No indicator at threshold.")
     L += ["", "## Indicators", "", "| PIR | Indicator | Value | Thresholds | Status |",
@@ -62,8 +63,11 @@ def report(r, board, sources, kind="intsum", t=None):
     for p in board:
         for i in p["indicators"]:
             if i.get("metric") == "transit":
-                v = f"{i['count']} transits, z {i['z']}" if i["z"] is not None else "no AIS data"
+                v = "no AIS data" if i["status"] == "no data" else \
+                    f"{i['count']} observed AIS crossings, z {i['z']}"
                 th = f"z ≤ {i['watch_z']} / {i['trigger_z']}"
+            elif i.get("metric") == "event_count":
+                v, th = f"{i['count']} in {i['window_h']} h", "not calibrated"
             else:
                 v, th = f"{i['count']} in {i['window_h']} h", f"{i['watch']} / {i['trigger']}"
             L.append(f"| {p['pir']} | {i['id']} {i['name']} | {v} | {th} | {i['status']} |")

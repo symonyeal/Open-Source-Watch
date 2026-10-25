@@ -3,11 +3,13 @@
 Event indicator i: the events of kind(i) with credibility ≤ c(i) whose t_end
 lies in the last window(i) hours are counted;
     count ≥ trigger(i) → triggered;  count ≥ watch(i) → watch;  else inactive.
-Transit indicator i (metric "transit"): crossings of gate(i) per UTC day by AIS
-tracks; the last complete day's count n is compared with the window(i) days
+Transit indicator i (metric "transit"): observed crossings of gate(i) per UTC day
+by AIS tracks; the last complete day's count n is compared with the window(i) days
 before it, z = (n − mean) / sd;
     z ≤ trigger_z → triggered;  z ≤ watch_z → watch;  else inactive;
-fewer than 7 prior days with AIS coverage → no data.
+A day has sampled AIS coverage when a valid consecutive segment has an endpoint on it;
+this does not establish full-day coverage. Fewer than 7 prior sampled days, or no
+sampled coverage on the last day, gives no data.
 A PIR is answered if one indicator is triggered; a collection gap if, for some
 indicator, no healthy source can produce its evidence (PRODUCERS); otherwise
 open. A kind that did not occur is not a gap.
@@ -24,6 +26,7 @@ import numpy as np
 from engine import store
 
 MIN_DAYS = 7
+MAX_AIS_GAP = timedelta(minutes=15)  # analysis policy; not validated against live coverage
 TEXT = ("rss", "gnews", "telegram")
 # Adapters whose sources can produce each kind; the rest come from text sources.
 PRODUCERS = {"thermal_anomaly": ("firms",), "airspace_activity": ("drones",) + TEXT,
@@ -50,27 +53,35 @@ def crosses(p, q, a, b):
     return orient(p, q, a) * orient(p, q, b) < 0 and orient(a, b, p) * orient(a, b, q) < 0
 
 
-def crossings(P, line):
-    """Crossing times of `line` by one vessel's track points P (sorted by t)."""
+def crossings(P, line, max_gap=MAX_AIS_GAP):
+    """Crossing times in points P sorted by t, for intervals 0 < dt <= `max_gap`."""
     a, b = line
-    return [y["t"] for x, y in pairwise(P)
+    return [y["t"] for x, y in sampled_segments(P, max_gap)
             if crosses((x["lat"], x["lon"]), (y["lat"], y["lon"]), a, b)]
 
 
+def sampled_segments(P, max_gap=MAX_AIS_GAP):
+    """Consecutive samples in sorted P with 0 < dt <= `max_gap`."""
+    return [(x, y) for x, y in pairwise(P) if timedelta(0) < y["t"] - x["t"] <= max_gap]
+
+
 def daily_transits(r, gate, t, days):
-    """({day: crossings}, {days with AIS coverage}) over the days + 1 complete UTC
-    days before t's day."""
+    """({day: observed crossings}, {days with sampled AIS coverage}) over the days
+    + 1 complete UTC days before t's day. Sampled coverage is not full-day uptime."""
     t0 = datetime.combine(t.date() - timedelta(days=days + 1), datetime.min.time(), UTC)
     T = store.query("SELECT entity_id, t, lat, lon FROM track_point WHERE region = ? AND "
                     "entity_id LIKE 'mmsi:%' AND t >= ? AND t < ? ORDER BY entity_id, t",
                     (r["id"], t0, datetime.combine(t.date(), datetime.min.time(), UTC)))
-    V, C = defaultdict(list), defaultdict(int)
+    V, C, covered = defaultdict(list), defaultdict(int), set()
     for x in T:
         V[x["entity_id"]].append(x)
     for P in V.values():
-        for c in crossings(P, r["gate"][gate]["line"]):
-            C[c.date()] += 1
-    return C, {x["t"].date() for x in T}
+        for x, y in sampled_segments(P):
+            covered.update((x["t"].date(), y["t"].date()))
+            if crosses((x["lat"], x["lon"]), (y["lat"], y["lon"]),
+                       *r["gate"][gate]["line"]):
+                C[y["t"].date()] += 1
+    return C, covered
 
 
 def transit_indicator(r, i, t):
@@ -87,7 +98,8 @@ def transit_indicator(r, i, t):
     z = 0.0 if sd == 0 and C[last] == x.mean() else (C[last] - x.mean()) / sd if sd else \
         float(np.sign(C[last] - x.mean()) * np.inf)
     s = "triggered" if z <= i["trigger_z"] else "watch" if z <= i["watch_z"] else "inactive"
-    return out | {"z": round(float(z), 2), "status": s}
+    return out | {"z": round(float(z), 2) if np.isfinite(z) else None, "status": s,
+                  "baseline_mean": float(x.mean()), "baseline_sd": float(sd)}
 
 
 def ach(p, I):
@@ -107,8 +119,9 @@ def board(r, health, t=None):
     """[{pir, question, status, indicators, hypotheses}] of region r; health maps
     source id → ok | stale | failed | unknown."""
     t = t or datetime.now(UTC)
-    E = store.query("SELECT kind, credibility, t_end FROM event WHERE region = ? AND t_end > ?",
-                    (r["id"], t - timedelta(days=7)))
+    hours = max((i.get("window_h", 0) for p in r["pir"] for i in p["indicator"]), default=0)
+    E = store.query("SELECT kind, credibility, t_end FROM event WHERE region = ? "
+                    "AND t_end > ? AND t_end <= ?", (r["id"], t - timedelta(hours=hours), t))
     P = store.query("SELECT DISTINCT kind, source_id FROM observation WHERE region = ? "
                     "AND t > ?", (r["id"], t - timedelta(days=7)))
     out = []
@@ -117,16 +130,27 @@ def board(r, health, t=None):
         for i in p["indicator"]:
             if i.get("metric") == "transit":
                 x = transit_indicator(r, i, t)
-                miss |= health.get("ais:aisstream") != "ok"
+                missing = health.get("ais:aisstream") != "ok" or x["status"] == "no data"
+                miss |= missing
+                if missing:
+                    x = x | {"status": "no data"}
             else:
                 w = t - timedelta(hours=i["window_h"])
-                n = sum(1 for e in E if e["kind"] == i["kind"]
-                        and e["credibility"] <= i["max_credibility"] and e["t_end"] > w)
+                matched = [e for e in E if e["kind"] == i["kind"]
+                           and e["credibility"] <= i["max_credibility"] and e["t_end"] > w]
+                n = len(matched)
                 S = {x["source_id"] for x in P if x["kind"] == i["kind"]}
-                miss |= gap(i["kind"], health)
+                missing = gap(i["kind"], health)
+                miss |= missing
+                descriptive = i.get("metric") == "event_count"
+                state = "observed" if descriptive else status(n, i["watch"], i["trigger"])
                 x = {"id": i["id"], "name": i["name"], "kind": i["kind"], "count": n,
-                     "window_h": i["window_h"], "watch": i["watch"], "trigger": i["trigger"],
-                     "status": status(n, i["watch"], i["trigger"]), "sources": sorted(S)}
+                     "window_h": i["window_h"],
+                     "status": "no data" if missing else state,
+                     "best_credibility": min((e["credibility"] for e in matched), default=None),
+                     "sources": sorted(S)}
+                x |= {"metric": "event_count"} if descriptive else {
+                    "watch": i["watch"], "trigger": i["trigger"]}
             I.append(x)
         s = "answered" if any(x["status"] == "triggered" for x in I) else \
             "gap" if miss else "open"

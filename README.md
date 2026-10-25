@@ -64,7 +64,7 @@ chokepoint: the Red Sea, Hormuz, the Taiwan Strait and the Black Sea come next.
 
 ```powershell
 py -3.14 -m pip install -r requirements.txt
-py -3.14 -m pip install ./kernels                 # optional: Rust fusion kernel (cargo)
+py -3.14 -m pip install ./kernels                 # Rust fusion kernel (needs cargo)
 py -3.14 -m engine serve                          # engine on http://127.0.0.1:8790
 ```
 
@@ -89,49 +89,14 @@ PortWatch or World Bank data. A local engine polls oil and shipping every six
 hours and country indicators daily; the twice-daily collection workflow includes them. These are
 publication cadences for collection, not promises about provider update times.
 
-Tests: `py -3.14 -m pytest -q` and `npm test`. Without `./kernels` installed, fusion uses
-its NumPy implementation and the kernel test is skipped.
+Tests: `py -3.14 -m pytest -q` and `npm test`. Fusion needs the kernel; collection does not.
 
 ---
 
 ## Upstream: IRONSIGHT
 
-The rest of this README is IRONSIGHT's own, kept for its feature list, data sources and
-attribution.
-
-![IRONSIGHT Dashboard](https://raw.githubusercontent.com/NoblerWorks-HQ/IRONSIGHT/main/ironsight2.png)
-
-Real-time OSINT command center for monitoring active conflicts. A single dashboard that aggregates open-source intelligence from news, Telegram, military tracking, financial markets, satellite thermal data, and live air-threat feeds.
-
-**Two theaters, one dashboard.** A toggle in the header flips the entire dashboard between:
-
-- **Iran / Israel** — the Middle East theater (default)
-- **Russia / Ukraine** — the Eastern Europe theater
-
-Every panel, map layer, and data feed re-points to the selected conflict. Your choice is remembered across reloads.
-
-Built with Next.js, TypeScript, Tailwind CSS, and Leaflet. **No API keys required. Completely free to run.**
-
-> IRONSIGHT does not own, generate, or claim credit for any of the underlying data. It is a viewer that surfaces publicly available, third-party, open-source feeds — all of which belong to and are credited to their respective providers (see [Data Sources](#data-sources) and [Credits & Attribution](#credits--attribution)).
-
-## Features
-
-- **Conflict Toggle** — Switch the whole dashboard between the Iran/Israel and Russia/Ukraine theaters; selection persists in the browser
-- **Live Intel Feed** — Per-theater RSS news aggregation with relevance filtering and sports/entertainment noise removal
-- **Telegram OSINT** — Public Telegram channels scraped in real time with auto-translation (Hebrew/Arabic/Farsi and Ukrainian/Russian Cyrillic)
-- **Theater Map** — Interactive Leaflet map with military aircraft, naval vessels, strike markers from news and Telegram, missile trajectory arcs, range rings, country-border overlay, and a distance-measurement tool
-- **Live Drone / Missile Tracker** *(Russia/Ukraine)* — Real-time Shahed drone, cruise/ballistic missile, and glide-bomb (KAB) tracks with heading, movement trails, and confidence, rendered on the map and listed in the alert panel
-- **Air-Raid Alert Status** — Israeli Home Front Command (Pikud HaOref) sirens for the Middle East, and Ukrainian oblast air-raid alerts for Eastern Europe, with audio notifications and on-map sirens/arcs
-- **Conflict Monitor** — Categorized events (strikes, defense, diplomatic, nuclear) with per-theater geocoding
-- **Missile / Strike Tracker** — Weapon-type classification and severity scoring
-- **Regional Threat Monitor** — Per-country threat levels across the theater's neighbors
-- **Military Airspace** — Live military aircraft tracking via adsb.lol, region-filtered per theater
-- **Naval Tracker** — Shows dated positions when a source is available; static estimates are withheld
-- **Defense & Markets** — Defense-contractor stocks, indices, VIX, gold, USD via Yahoo Finance
-- **Crypto Markets** — Bitcoin, Ethereum, Solana, BNB with 24h price changes
-- **Prediction Markets** — Live Polymarket odds relevant to the selected conflict
-- **Energy Markets** — WTI, Brent, natural gas, heating oil, gasoline via Yahoo Finance
-- **Satellite Thermal Detect** — NASA FIRMS fire/explosion detection, region-filtered per theater
+The dashboard is [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works
+(MIT); its feature list is in the upstream README. Its data sources and attribution follow.
 
 ## Data Sources
 
@@ -216,55 +181,6 @@ IDF Official, Rocket Alert, Alert Israel, Times of Israel, Abu Ali Express, OSIN
 | Markets, Oil, Crypto & Polymarket | 10 minutes |
 | Fires (NASA FIRMS) | 10 minutes |
 
-## Getting Started
-
-**Prerequisite:** Node.js 22 (see [`.nvmrc`](.nvmrc); run `nvm use` if you use nvm). No API keys or environment variables required.
-
-```bash
-npm install   # or: npm ci
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) and use the **THEATER** toggle in the header to switch conflicts.
-
-To build for production:
-
-```bash
-npm run build
-npm start
-```
-
-## Run with Docker
-
-Prefer to run it isolated from your host (no local Node install, sandboxed dependencies and network)? A multi-stage `Dockerfile` produces a slim (~215 MB) standalone image that runs as a non-root user. No API keys or environment variables are needed.
-
-```bash
-docker compose up --build
-```
-
-Then open [http://localhost:3000](http://localhost:3000). Stop with `Ctrl+C` (or `docker compose down`).
-
-Or without Compose:
-
-```bash
-docker build -t ironsight .
-docker run --rm -p 3000:3000 ironsight
-```
-
-To use a different host port, map it (e.g. `-p 8080:3000`) or edit the `ports` mapping in `docker-compose.yml`.
-
-## Tech Stack
-
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Maps:** Leaflet / React-Leaflet
-- **XML Parsing:** @xmldom/xmldom
-
-## Architecture
-
-Each conflict is a config object under `src/lib/conflicts/` describing everything theater-specific (map center/cities, keywords, RSS feeds, Telegram channels, alert provider, bounding boxes, etc.). A React context (`useConflict`) exposes the active conflict to the UI, and a `useConflictFeed` hook appends the selected conflict to every API request so the routes serve the right theater. Adding a new conflict is mostly a matter of adding a config file and registering it.
-
 ## Credits & Attribution
 
 IRONSIGHT is a **viewer**, not a data owner. Every feed, dataset, headline, alert, track, tile, and post surfaced by this dashboard is the property of its respective provider and is used here, unmodified in substance, purely to point back to the original source. We claim **no ownership or credit** for any third-party data or open-source project listed below, and we are grateful to the people and communities who make them freely available:
@@ -328,42 +244,3 @@ This project is not affiliated with, endorsed by, or sponsored by any of the dat
 ## License
 
 [MIT](LICENSE)
-
-<!-- nobler-footer:start - shared block, kept in sync across Nobler Works public repos -->
-
----
-
-<div align="center" markdown="1">
-
-## More from Nobler Works
-
-Free, open-source projects from the [Nobler Works](https://noblerworks.com/) team. If one helps you, a ⭐ helps the next person find it.
-
-</div>
-
-| Project | What it is | |
-|---|---|---|
-| 🌍 **[War Games](https://github.com/NoblerWorks-HQ/WarGames)** | NATO, Russia, and China on one map, each commanded by an LLM | **[Website →](https://noblerworks-hq.github.io/WarGames/)** |
-| ⛏️ **[Minecraft Agentic Builder](https://github.com/NoblerWorks-HQ/minecraft-agentic)** | A crew of AI agents builds Minecraft worlds live in your browser | [Repo →](https://github.com/NoblerWorks-HQ/minecraft-agentic) |
-| 📚 **[Everything AI, Summarized](https://github.com/PatrickWiloak/genai-research-papers-summarized)** | 156 landmark AI papers and 31 explainers in plain language | **[Website →](https://patrickwiloak.github.io/genai-research-papers-summarized/)** |
-| ☁️ **[Cloud, Data, AI & Security: Zero to Hero](https://github.com/PatrickWiloak/cloud-data-ai-security-zero-to-hero)** | 149 cert study guides across 27 providers, plus hands-on builds | **[Website →](https://patrickwiloak.github.io/cloud-data-ai-security-zero-to-hero/)** |
-| 🧠 **[Bedrock RAG with S3 Vectors](https://github.com/PatrickWiloak/bedrock-rag-s3-vectors-tutorial)** | Deploy document Q&A on AWS Bedrock in under 10 minutes (CDK or Terraform) | [Repo →](https://github.com/PatrickWiloak/bedrock-rag-s3-vectors-tutorial) |
-| 🏃 **[Proper Training for Distance Running](https://github.com/PatrickWiloak/proper-distance-running-training-guidance)** | Evidence-based running guide with twelve 5K-to-marathon plans | **[Read online →](https://achilles.fit/guides)** |
-
-<div align="center" markdown="1">
-
-**Our products:** [gitGood.dev](https://gitgood.dev) - train for the tech role, not just the interview · [Achilles.fit](https://achilles.fit) - adaptive training plans with an AI coach
-
-**Follow Nobler Works**
-
-[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://noblerworks.com/) [![X](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/Nobler_Works) [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@NoblerWorks) [![TikTok](https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white)](https://www.tiktok.com/@noblerworks) [![Threads](https://img.shields.io/badge/Threads-000000?style=for-the-badge&logo=threads&logoColor=white)](https://www.threads.com/@noblerworks)
-
-**Follow Patrick Wiloak**, founder
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/patricklukewilson) [![X](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/PatrickWiloak) [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/@patrickwiloak) [![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/patrickwiloak) [![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=googlechrome&logoColor=white)](https://patricklukewilson.com)
-
-**Need something like this built for your domain? [Get in touch →](https://noblerworks.com/)**
-
-</div>
-
-<!-- nobler-footer:end -->

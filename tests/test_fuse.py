@@ -12,6 +12,14 @@ R = regions.regions()
 T0 = datetime(2026, 10, 21, tzinfo=UTC)
 
 
+def haversine(lat1, lon1, lat2, lon2):
+    """Great-circle distance in km, IUGG mean radius (as kernels/src/lib.rs)."""
+    p1, p2 = np.radians(lat1), np.radians(lat2)
+    a = np.sin((p2 - p1) / 2) ** 2 + \
+        np.cos(p1) * np.cos(p2) * np.sin(np.radians(lon2 - lon1) / 2) ** 2
+    return 2 * 6371.0088 * np.arcsin(np.sqrt(a))
+
+
 def brute(t, lat, lon, fine, country):
     """Connected components of the link graph by exhaustive pair check and BFS."""
     n, adj = len(t), [[] for _ in t]
@@ -20,7 +28,7 @@ def brute(t, lat, lon, fine, country):
             if abs(t[i] - t[j]) > fuse.TAU:
                 continue
             if fine[i] and fine[j]:
-                ok = fuse.haversine(lat[i], lon[i], lat[j], lon[j]) <= fuse.DELTA
+                ok = haversine(lat[i], lon[i], lat[j], lon[j]) <= fuse.DELTA
             else:
                 ok = lat[i] == lat[j] and lon[i] == lon[j] and not (country[i] or country[j])
             if ok:
@@ -64,25 +72,22 @@ def test_components_equal_brute_force(X):
     fine = np.array([x[2] in fuse.FINE for x in X])
     country = np.array([x[2] == "country" for x in X])
     B = brute(t, lat, lon, fine, country)
-    assert list(fuse.components_np(t, lat, lon, fine, country)) == B
     assert list(fuse.components(t, lat, lon, fine, country)) == B
 
 
-@pytest.mark.skipif(fuse.kernels is None, reason="kernels/ not installed")
-def test_kernel_equals_numpy():
-    """The Rust kernel gives the NumPy reference's labels on dense random input,
-    with locations on a 0.1° lattice (about 11 km) so both link branches occur."""
+def test_components_on_dense_input():
+    """Brute force agrees on dense random input, with locations on a 0.1° lattice
+    (about 11 km) so both link branches occur; unsorted times are refused."""
     g = np.random.default_rng(0)
-    for n in (0, 1, 2000):
+    for n in (0, 1, 400):
         t = np.sort(g.uniform(0, 3 * 86400, n))
         lat, lon = 48 + g.integers(0, 10, n) / 10, 35 + g.integers(0, 10, n) / 10
         fine, country = g.random(n) < 0.6, g.random(n) < 0.1
         fine &= ~country
-        assert np.array_equal(fuse.components(t, lat, lon, fine, country),
-                              fuse.components_np(t, lat, lon, fine, country))
+        B = brute(t, lat, lon, fine, country)
+        assert list(fuse.components(t, lat, lon, fine, country)) == B
     with pytest.raises(ValueError):
-        fuse.kernels.components(np.array([1.0, 0.0]), *[np.zeros(2)] * 2,
-                                *[np.zeros(2, bool)] * 2, fuse.TAU, fuse.DELTA)
+        fuse.components(np.array([1.0, 0.0]), *[np.zeros(2)] * 2, *[np.zeros(2, bool)] * 2)
 
 
 def observation(k, minutes, lat, lon, src, kind="explosions_remote_violence", prec="city"):

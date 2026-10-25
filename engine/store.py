@@ -1,6 +1,6 @@
 """Append-only Parquet store, read with DuckDB (spec § Store).
 
-Files live at <data>/<table>/<region>/<date>/<uuid>.parquet. Rows with an `id`
+Files live at <data>/<table>/<region>/<UTC day written>/<uuid>.parquet. Rows with an `id`
 are deduplicated on read (first `fetched_at`/`t` wins, ties broken by the row's
 content, so every read picks the same copy), so re-collecting the
 same item is idempotent (spec § Errors). The data root is $OSW_DATA or ./data.
@@ -28,17 +28,16 @@ def data_dir():
     return Path(os.environ.get("OSW_DATA", ROOT / "data"))
 
 
-def _day(row):
-    t = row.get("fetched_at") or row.get("started_at") or row.get("t") or row.get("t_start")
-    return t.date().isoformat() if t else "undated"
-
-
 def _write(root, table, rows):
-    """One file per (region, date) of rows under root/<region>/<date>/."""
+    """One file per region of rows under root/<region>/<UTC day written>/. The day is
+    the write date, not a row time: observations carry publication times years apart,
+    and one directory per such date left the store as ~1,000 small files that every
+    query scans."""
+    day = datetime.now(UTC).date().isoformat()
     parts = defaultdict(list)
     for r in rows:
-        parts[(r.get("region") or "global", _day(r))].append(r)
-    for (region, day), rs in parts.items():
+        parts[r.get("region") or "global"].append(r)
+    for region, rs in parts.items():
         d = root / region / day
         d.mkdir(parents=True, exist_ok=True)
         path = d / f"{uuid.uuid4().hex}.pending"

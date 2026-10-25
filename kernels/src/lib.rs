@@ -6,7 +6,7 @@ use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-const R_EARTH: f64 = 6371.0088; // km, IUGG mean radius, as engine.fuse
+const R_EARTH: f64 = 6371.0088; // km, IUGG mean radius
 
 /// Great-circle distance in km, the formula of `engine.fuse.haversine`.
 fn haversine(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {

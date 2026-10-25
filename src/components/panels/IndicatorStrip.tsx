@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { useConflict } from '@/lib/conflicts/context';
 import { useConflictFeed } from '@/lib/hooks';
+import { apiUrl } from '@/lib/snapshot';
 
 interface Indicator {
   id: string; name: string; status: string; count: number;
@@ -31,7 +32,7 @@ export default function IndicatorStrip() {
   const open = async (kind: 'intsum' | 'sitrep') => {
     setProduct('Writing…');
     try {
-      const res = await fetch(`/api/products?conflict=${key}&kind=${kind}`, { cache: 'no-store' });
+      const res = await fetch(apiUrl(`/api/products?conflict=${key}&kind=${kind}`), { cache: 'no-store' });
       const json = await res.json();
       setProduct(json?.text ?? 'No product: the engine did not answer.');
     } catch {

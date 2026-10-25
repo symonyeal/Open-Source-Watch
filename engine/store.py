@@ -81,20 +81,35 @@ def replace(table, rows):
 
 
 def compact(before=None):
-    """Merge the files of each <table>/<region>/<date> directory dated before
-    `before` (default: today, UTC) into one file. Returns the files removed."""
+    """Merge each <table>/<region>/<day> directory dated before `before` (default:
+    today, UTC) into one file, and every directory of a month before `before`'s month
+    into one file under <table>/<region>/<YYYY-MM>. A row is rewritten at most twice,
+    so a store kept under git holds at most three copies of its data, and the file
+    count grows by month, not by write. Returns the files removed."""
     before = before or datetime.now(UTC).date().isoformat()
     n = 0
     with LOCK:
-        for d in data_dir().glob("*/*/*"):
-            F = sorted(d.glob("*.parquet"))
-            if len(F) < 2 or d.name >= before or d.parts[-3] not in SCHEMA:
+        for r in data_dir().glob("*/*"):
+            if r.parent.name not in SCHEMA or not r.is_dir():
                 continue
-            T = pa.concat_tables([pq.read_table(f) for f in F], promote_options="default")
-            pq.write_table(T.cast(SCHEMA[d.parts[-3]]), d / f"{uuid.uuid4().hex}.parquet")
-            for f in F:
-                f.unlink()
-            n += len(F)
+            G = defaultdict(list)
+            for d in r.iterdir():
+                if d.name < before:
+                    G[d.name[:7] if d.name[:7] < before[:7] else d.name].append(d)
+            for key, D in G.items():
+                F = sorted(f for d in D for f in d.glob("*.parquet"))
+                if len(F) < 2:
+                    continue
+                T = pa.concat_tables([pq.read_table(f) for f in F], promote_options="default")
+                out = r / key
+                out.mkdir(exist_ok=True)
+                pq.write_table(T.cast(SCHEMA[r.parent.name]), out / f"{uuid.uuid4().hex}.parquet")
+                for f in F:
+                    f.unlink()
+                for d in D:
+                    if d.name != key and not any(d.iterdir()):
+                        d.rmdir()
+                n += len(F)
     return n
 
 

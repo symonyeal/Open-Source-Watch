@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConflict } from './conflicts/context';
 import { feedFailure, feedSuccess, startFeed, visibleFeed, type FeedSnapshot } from './feed';
+import { apiUrl } from './snapshot';
 
 export function useDataFeed<T>(url: string, interval: number = 60000, initialData: T | null = null) {
   const [snapshot, setSnapshot] = useState<FeedSnapshot<T>>({
@@ -10,7 +11,7 @@ export function useDataFeed<T>(url: string, interval: number = 60000, initialDat
 
   useEffect(() => {
     const active = startFeed<T>(
-      url,
+      apiUrl(url),
       interval,
       (data, time) => setSnapshot(feedSuccess(url, data, time)),
       error => setSnapshot(current => feedFailure(current, url, error)),

@@ -39,3 +39,4 @@ __pycache__/
 
 # compiled kernels
 kernels/target/
+/public/api/

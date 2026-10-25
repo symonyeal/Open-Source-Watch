@@ -1,5 +1,9 @@
 # Open-Source-Watch
 
+**Dashboard:** https://symonyeal.github.io/Open-Source-Watch/ is a static snapshot of
+the stored data, rebuilt after each twice-daily collection; the header gives its time.
+Run it locally (below) for live feeds.
+
 ## In plain terms
 
 Wars and crises leave a trail in public information: news reports, official Telegram
@@ -122,7 +126,7 @@ The dashboard is [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nob
 
 | Layer | Provider | License |
 |-------|----------|---------|
-| Dark basemap tiles | [CARTO](https://carto.com/) Dark Matter, data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors | ODbL / CARTO attribution |
+| Dark basemap tiles | [Esri](https://www.esri.com/) World Dark Gray Canvas (Esri, HERE, Garmin, © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors) | Esri attribution |
 | Country border lines | [Natural Earth](https://www.naturalearthdata.com/) `ne_50m_admin_0_boundary_lines_land` | Public domain |
 | Map engine | [Leaflet](https://leafletjs.com/) | BSD-2-Clause |
 
@@ -191,7 +195,7 @@ IRONSIGHT is a **viewer**, not a data owner. Every feed, dataset, headline, aler
 - **Aircraft:** [adsb.lol](https://www.adsb.lol) community ADS-B network
 - **Satellite thermal:** [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)
 - **Markets / energy:** Yahoo Finance; **crypto:** [CoinGecko](https://www.coingecko.com/); **prediction markets:** [Polymarket](https://polymarket.com/)
-- **Maps:** [Leaflet](https://leafletjs.com/), basemap by [CARTO](https://carto.com/) with data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, borders from [Natural Earth](https://www.naturalearthdata.com/)
+- **Maps:** [Leaflet](https://leafletjs.com/), basemap by [Esri](https://www.esri.com/) with data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, borders from [Natural Earth](https://www.naturalearthdata.com/)
 - **Translation:** Google Translate (unofficial endpoint)
 - **Social OSINT:** public Telegram channels, owned by their respective operators
 
@@ -235,7 +239,7 @@ Military aircraft tracking data is provided by [adsb.lol](https://www.adsb.lol) 
 
 ### Map Data Attribution
 
-Basemap tiles © [CARTO](https://carto.com/attribution), map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country boundary lines from [Natural Earth](https://www.naturalearthdata.com/) (public domain).
+Basemap tiles © Esri, HERE, Garmin, map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country boundary lines from [Natural Earth](https://www.naturalearthdata.com/) (public domain).
 
 ### No Endorsement
 

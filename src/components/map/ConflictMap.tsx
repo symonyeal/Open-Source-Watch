@@ -199,10 +199,15 @@ export default function ConflictMap({ className }: MapProps) {
     if (!container || mapRef.current) return;
 
     const map = L.map('conflict-map', {
-      center: cfg.mapCenter, zoom: cfg.mapZoom, zoomControl: false, attributionControl: false,
+      center: cfg.mapCenter, zoom: cfg.mapZoom, zoomControl: false,
     });
+    map.attributionControl.setPrefix(false);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    // CARTO's free basemap now returns an "API key required" tile; Esri's Dark Gray
+    // Canvas needs no key, with attribution shown on the map.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16, attribution: 'Esri, HERE, Garmin, © OpenStreetMap contributors',
+    }).addTo(map);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     cityLayerRef.current = L.layerGroup().addTo(map);
@@ -239,7 +244,7 @@ export default function ConflictMap({ className }: MapProps) {
   }, [mounted]);
 
   // === COUNTRY BORDERS OVERLAY ===
-  // The CartoDB dark basemap draws political borders very faintly; add a crisp
+  // The dark basemap draws political borders very faintly; add a crisp
   // admin-0 boundary-lines overlay (Natural Earth) so country borders stand out.
   useEffect(() => {
     if (!L || !mapRef.current) return;

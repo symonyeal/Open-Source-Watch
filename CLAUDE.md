@@ -55,7 +55,7 @@ exception.
 ## Run
 
 ```text
-py -3.14 -m pip install ./kernels        # Rust fusion kernel; NumPy fallback without it
+py -3.14 -m pip install ./kernels        # Rust fusion kernel; fusion needs it
 py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
 py -3.14 -m engine collect [--region R]  # one poll of every source
 py -3.14 -m engine fuse                  # recompute events and entities

@@ -161,11 +161,27 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   Ties are now broken by row content.
 - **Compiled linkage kernel** (2026-10-24). The fusion linkage spent about 30 µs per
   observation in Python loop overhead (0.54 s on the cron store, 4.8 s at nine times
-  its history). `kernels/` (Rust, PyO3) computes the same labels in 0.06 s and 0.58 s;
-  the engine uses NumPy where the kernel is not installed, and tests require identical
-  labels from both and from the brute-force reference. Processing and storage costs
+  its history). `kernels/` (Rust, PyO3) computes the same labels in 0.06 s and 0.58 s,
+  checked against the NumPy code and a brute-force reference. Processing and storage costs
   were reduced in Python instead, where the cost was per call (batch classification,
   4.1 s to 0.6 s for 8,000 reports) or in I/O.
+
+- **Store partitioned by write date** (2026-10-25). Observations were filed under their
+  publication date, which spans years: 986 observation and 455 event files on the cron
+  store, and DuckDB's scan of them was over 85 % of each request. Files now go under
+  the UTC day they are written, one per region per write, and compaction merges past
+  days. Same store, same rows (`EXCEPT ALL` both ways): `/api/indicators` 0.85 s to
+  0.22 s, `/observations` 0.56 s to 0.14 s, `/events` 0.24 s to 0.08 s,
+  `engine fuse` 5.0 s to 2.1 s. The Python in these requests took milliseconds, so a
+  Rust rewrite of the engine would not have changed them.
+- **One fusion implementation** (2026-10-25). The NumPy linkage fallback is removed;
+  fusion requires `kernels/`, collection does not. Tests check the kernel against
+  brute force.
+- **Upstream scaffolding removed** (2026-10-25). IRONSIGHT's marketing site (`site/`),
+  its link checker, promotional images, contribution and conduct guides, issue and PR
+  templates, and the duplicated half of its README are gone; attribution, data sources,
+  the legal notice and the licence stay. Dependabot version updates are off: each opened
+  a branch, and the eight left from 2026-10-17 were stale. Security alerts still arrive.
 
 ## Open
 

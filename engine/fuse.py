@@ -21,58 +21,19 @@ import numpy as np
 
 from engine import regions, store
 
-try:
-    import osw_kernels as kernels   # py -3.14 -m pip install ./kernels
-except ImportError:
-    kernels = None
-
 TAU, DELTA = 7200.0, 25.0          # s, km (spec § Fusion)
-R_EARTH = 6371.0088                # km, IUGG mean radius
 FINE = ("point", "city")
 
 
-def haversine(lat1, lon1, lat2, lon2):
-    """Great-circle distance in km (vectorised)."""
-    p1, p2 = np.radians(lat1), np.radians(lat2)
-    a = np.sin((p2 - p1) / 2) ** 2 + \
-        np.cos(p1) * np.cos(p2) * np.sin(np.radians(lon2 - lon1) / 2) ** 2
-    return 2 * R_EARTH * np.arcsin(np.sqrt(a))
-
-
-def components_np(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
-    """Component label of each observation, the smallest index of its component;
-    t sorted ascending (seconds). NumPy reference of the compiled kernel."""
-    n = len(t)
-    parent = np.arange(n)
-
-    def find(i):
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    hi = np.searchsorted(t, t + tau, side="right")
-    for i in range(n):
-        J = np.arange(i + 1, hi[i])
-        if not len(J):
-            continue
-        near = haversine(lat[i], lon[i], lat[J], lon[J]) <= delta
-        same = (lat[J] == lat[i]) & (lon[J] == lon[i]) & ~country[i] & ~country[J]
-        for j in J[np.where(fine[i] & fine[J], near, same)]:
-            a, b = find(i), find(j)
-            if a != b:
-                parent[max(a, b)] = min(a, b)
-    return np.array([find(i) for i in range(n)])
-
-
 def components(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
-    """components_np, by the Rust kernel (kernels/) when it is installed: the
-    NumPy loop costs about 30 µs per observation in Python overhead."""
-    if kernels is None:
-        return components_np(t, lat, lon, fine, country, tau, delta)
-    return kernels.components(*(np.ascontiguousarray(x, float) for x in (t, lat, lon)),
-                              *(np.ascontiguousarray(x, bool) for x in (fine, country)),
-                              tau, delta)
+    """Component label of each observation, the smallest index of its component;
+    t sorted ascending (seconds). Computed by the Rust kernel in kernels/
+    (`py -3.14 -m pip install ./kernels`), imported here so that collection runs
+    without it."""
+    import osw_kernels
+    return osw_kernels.components(*(np.ascontiguousarray(x, float) for x in (t, lat, lon)),
+                                  *(np.ascontiguousarray(x, bool) for x in (fine, country)),
+                                  tau, delta)
 
 
 def credibility(support, contradicted=False):

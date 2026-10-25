@@ -21,6 +21,7 @@ distinct raw reports, 42,502 observations).
 | Kernel equals reference | Hypothesis test against brute force (both implementations); `test_kernel_equals_numpy` (n = 0, 1, 2,000) | passing; events of all seven regions from the same observations identical to HEAD's `fuse.events` (6,898 rows, all fields, both directions) |
 | Batch classification | `derive` of 8,000 news/Telegram reports, translation stubbed | 4.13 s to 0.60 s, identical output digest |
 | Existing copies on the `data` branch removed (2026-10-25, 8da148da) | each table rewritten from its deduplicated view; new view against old, `EXCEPT ALL` both ways, all columns (the comparison reports 1 when one row is dropped) | raw 86,639 → 49,782 rows, observations 87,308 → 42,502, one per id; 0 differing rows each way |
+| Store layout by write date (2026-10-25) | copy of `data` at 8da148da, observations rewritten; `EXCEPT ALL` both ways; endpoint and fusion timings before and after, same machine | 0 differing rows; files 986 → 6 observation, 455 → 6 event; times in Decisions |
 | Cron continuity (P2 done-when) | GitHub Actions API, 2026-10-21 to 2026-10-25 | 26 scheduled runs, all successful, every 2–5 h instead of every 15 min; schedule now twice a day |
 
 Gates after the change: **137 Python tests**, **28 Node tests**, Ruff, pip check,

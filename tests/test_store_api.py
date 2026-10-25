@@ -42,6 +42,33 @@ def test_store_is_idempotent_and_empty_tables_query(monkeypatch):
     assert count("collection_run") == 2 * len(S)
 
 
+def test_an_item_still_listed_is_stored_once(monkeypatch):
+    """Regression: the seen set was read from the deduplicated view, which keeps an
+    item's first fetch, so an item listed for over 2 days was stored every poll."""
+    S = offline(monkeypatch)
+    cycle.collect(S)
+    n, t = count("raw_report_rows"), datetime.now(UTC)
+    monkeypatch.setattr(cycle, "now", lambda: t + timedelta(days=3))
+    cycle._seen = None
+    cycle.collect(S)
+    assert count("raw_report_rows") == n
+
+
+def test_a_failing_processor_loses_no_reports(monkeypatch):
+    """A processor that raises stores nothing for its URL, keeps its reports new for
+    the next poll, and does not stop the other URLs from being stored."""
+    S = offline(monkeypatch)
+    derive = cycle.DERIVE["telegram"]
+    monkeypatch.setitem(cycle.DERIVE, "telegram", lambda raws, R: 1 / 0)
+    runs = cycle.collect(S)
+    q = "SELECT count(*) n FROM raw_report WHERE source_id LIKE 'telegram:%'"
+    assert store.query(q)[0]["n"] == 0 and count("raw_report") > 0
+    assert {x["source_id"] for x in runs} == {s["id"] for s in S} - {"telegram:DeepStateUA"}
+    monkeypatch.setitem(cycle.DERIVE, "telegram", derive)
+    cycle.collect(S)
+    assert store.query(q)[0]["n"] > 0
+
+
 def test_every_adapter_derives(monkeypatch):
     cycle.collect(offline(monkeypatch))
     K = {x["kind"] for x in store.query("SELECT DISTINCT kind FROM observation")}

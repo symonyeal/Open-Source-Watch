@@ -8,7 +8,7 @@ import re
 
 from engine import regions
 from engine.collect import rss
-from engine.process import observation
+from engine.process import observations
 
 NOISE = re.compile(r"world.?cup|\bfifa\b|\bioc\b|olympic|premier.?league|champions.?league|"
                    r"super.?bowl|\bnba\b|\bnfl\b|\bnhl\b|\bmlb\b|grammy|oscar|\bemmy|"
@@ -74,5 +74,5 @@ def derive(raws, R):
                     x["source_id"].startswith("gnews:")
                     else relevant(p["title"], p.get("category"), unfiltered, K))
         if accepted:
-            out.append(observation(r, x, p["title"]))
-    return {"observation": out}
+            out.append((r, x, p["title"]))
+    return {"observation": observations(out)}

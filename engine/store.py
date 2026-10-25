@@ -1,10 +1,12 @@
 """Append-only Parquet store, read with DuckDB (spec § Store).
 
 Files live at <data>/<table>/<region>/<date>/<uuid>.parquet. Rows with an `id`
-are deduplicated on read (first `fetched_at`/`t` wins), so re-collecting the
+are deduplicated on read (first `fetched_at`/`t` wins, ties broken by the row's
+content, so every read picks the same copy), so re-collecting the
 same item is idempotent (spec § Errors). The data root is $OSW_DATA or ./data.
 """
 import os
+import re
 import shutil
 import threading
 import uuid
@@ -51,9 +53,20 @@ def append(table, rows):
         return _write(data_dir() / table, table, rows)
 
 
+def _discard(table):
+    """Remove the table's directory. It is renamed aside first: on Windows a deleted
+    directory keeps its name while any handle (an indexer, antivirus, file watcher)
+    is open on it, and a new directory cannot take that name until then."""
+    d = data_dir() / table
+    if d.exists():
+        d.rename(data_dir() / f".{table}.{uuid.uuid4().hex}.old")
+    for old in data_dir().glob(f".{table}.*.old"):
+        shutil.rmtree(old, ignore_errors=True)
+
+
 def drop(table):
     with LOCK:
-        shutil.rmtree(data_dir() / table, ignore_errors=True)
+        _discard(table)
 
 
 def replace(table, rows):
@@ -62,7 +75,7 @@ def replace(table, rows):
     tmp = data_dir() / f".{table}.{uuid.uuid4().hex}.new"
     n = _write(tmp, table, rows)
     with LOCK:
-        shutil.rmtree(data_dir() / table, ignore_errors=True)
+        _discard(table)
         if tmp.exists():
             tmp.rename(data_dir() / table)
     return n
@@ -90,27 +103,31 @@ ORDER = {"raw_report": "fetched_at", "observation": "t", "event": "t_start", "en
          "product": "t"}
 
 
-def connect():
-    """DuckDB connection with one view per table (deduplicated by id where defined)."""
+def connect(tables=SCHEMA):
+    """DuckDB connection with one view per table (deduplicated by id where defined)
+    and, for every table t, a view t_rows of each stored row, duplicates included."""
     con = duckdb.connect()
     con.execute("SET TimeZone = 'UTC'")
-    for t, schema in SCHEMA.items():
-        files = sorted((data_dir() / t).glob("*/*/*.parquet"))
-        if not files:
-            con.register(f"{t}_empty", pa.Table.from_pylist([], schema))
-            con.execute(f"CREATE VIEW {t} AS SELECT * FROM {t}_empty")
-            continue
-        src = f"read_parquet({[str(f) for f in files]!r}, union_by_name = true)"
-        if t in ORDER:
-            src = (f"(SELECT * FROM {src} QUALIFY row_number() "
-                   f"OVER (PARTITION BY id ORDER BY {ORDER[t]}) = 1)")
+    for t in tables:
+        if next((data_dir() / t).glob("*/*/*.parquet"), None) is None:
+            con.register(f"{t}_empty", pa.Table.from_pylist([], SCHEMA[t]))
+            src = f"{t}_empty"
+        else:   # DuckDB expands the glob, so the SQL holds no file list
+            g = f"{(data_dir() / t).as_posix()}/*/*/*.parquet".replace("'", "''")
+            src = f"read_parquet('{g}', union_by_name = true)"
+        con.execute(f"CREATE VIEW {t}_rows AS SELECT * FROM {src}")
+        if t in ORDER:   # ties broken by content; an id belongs to one region
+            P = SCHEMA[t].names
+            k = "region, id" if "region" in P else "id"   # lets region filters push down
+            src = (f"(SELECT * FROM {t}_rows QUALIFY row_number() OVER (PARTITION BY {k} "
+                   f"ORDER BY {ORDER[t]}, {', '.join(P)}) = 1)")
         con.execute(f"CREATE VIEW {t} AS SELECT * FROM {src}")
     return con
 
 
 def query(sql, params=()):
-    """Rows of `sql` as dicts."""
-    with LOCK, connect() as con:
+    """Rows of `sql` as dicts; only the tables it names are bound."""
+    with LOCK, connect([t for t in SCHEMA if re.search(rf"\b{t}(_rows)?\b", sql)]) as con:
         cur = con.execute(sql, params)
         cols = [c[0] for c in cur.description]
         return [dict(zip(cols, r)) for r in cur.fetchall()]

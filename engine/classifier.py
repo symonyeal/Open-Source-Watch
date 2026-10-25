@@ -40,8 +40,9 @@ def model():
     return pipeline().fit(T, y)
 
 
-def predict(s):
-    return model().predict([s])[0]
+def predict(T):
+    """Kinds of the texts T."""
+    return list(model().predict(T)) if T else []
 
 
 def compare(seed=0):

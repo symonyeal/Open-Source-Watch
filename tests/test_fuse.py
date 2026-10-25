@@ -2,6 +2,7 @@
 from datetime import UTC, datetime, timedelta
 
 import numpy as np
+import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -62,8 +63,26 @@ def test_components_equal_brute_force(X):
     lat, lon = np.array([x[1][0] for x in X]), np.array([x[1][1] for x in X])
     fine = np.array([x[2] in fuse.FINE for x in X])
     country = np.array([x[2] == "country" for x in X])
-    assert partition(fuse.components(t, lat, lon, fine, country)) == \
-        partition(brute(t, lat, lon, fine, country))
+    B = brute(t, lat, lon, fine, country)
+    assert list(fuse.components_np(t, lat, lon, fine, country)) == B
+    assert list(fuse.components(t, lat, lon, fine, country)) == B
+
+
+@pytest.mark.skipif(fuse.kernels is None, reason="kernels/ not installed")
+def test_kernel_equals_numpy():
+    """The Rust kernel gives the NumPy reference's labels on dense random input,
+    with locations on a 0.1° lattice (about 11 km) so both link branches occur."""
+    g = np.random.default_rng(0)
+    for n in (0, 1, 2000):
+        t = np.sort(g.uniform(0, 3 * 86400, n))
+        lat, lon = 48 + g.integers(0, 10, n) / 10, 35 + g.integers(0, 10, n) / 10
+        fine, country = g.random(n) < 0.6, g.random(n) < 0.1
+        fine &= ~country
+        assert np.array_equal(fuse.components(t, lat, lon, fine, country),
+                              fuse.components_np(t, lat, lon, fine, country))
+    with pytest.raises(ValueError):
+        fuse.kernels.components(np.array([1.0, 0.0]), *[np.zeros(2)] * 2,
+                                *[np.zeros(2, bool)] * 2, fuse.TAU, fuse.DELTA)
 
 
 def observation(k, minutes, lat, lon, src, kind="explosions_remote_violence", prec="city"):

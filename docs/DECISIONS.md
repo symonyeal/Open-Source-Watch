@@ -126,7 +126,7 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   typed `generated.ts` keeps upstream code unchanged and lets `tsc` validate each
   region.
 - **Classifier replaces keyword rules** (2026-10-21). On 200 observations labelled by
-  the agent, blind to the rule label (`docs/labels/`), the measured population-weighted
+  hand, blind to the rule label (`docs/labels/`), the measured population-weighted
   accuracy was rules 0.543 against TF-IDF + logistic regression 0.68 (5 seeds,
   0.67–0.69) under 3-fold cross-validation; event-vs-report precision was 0.63 against
   0.79. C = 4 was chosen from {1, 4, 16} on the same folds, a mild selection bias. Rare
@@ -143,6 +143,29 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 - **Cron polls only due sources** (2026-10-21). `collect --due` skips sources whose
   last successful run is younger than 90 % of their cadence; otherwise the 34 MB FIRMS
   7-day file would be fetched every 15 minutes.
+- **Cron twice a day** (2026-10-24, the owner's decision). The `*/15` schedule ran
+  26 times in 3.5 days, every 2–5 h, as GitHub delays scheduled jobs; all succeeded.
+  It now runs at 06:00 and 18:00 UTC. Items that enter and leave a feed between runs
+  (a feed lists its latest 25) are not collected by the cron; a local engine keeps
+  the per-source cadences.
+- **Seen set from every stored copy, 8 days** (2026-10-24). The set was read from the
+  deduplicated view, which keeps an item's first fetch, so an item listed for over
+  2 days was stored on every poll: on the `data` branch 43 % of raw reports and 51 %
+  of observations were copies (Telegram items about 10 each). The set now holds the
+  last time a poll listed each id, read from all stored rows and refreshed by every
+  poll; 8 days covers the FIRMS 7-day file. A stateless runner stores an item still
+  listed after 8 days again, at most once per 8 days.
+- **Deterministic deduplication** (2026-10-24). Copies of an id often share their
+  timestamp, and some differ (44 ids by kind, 172 by text, from re-derivation), so the
+  view's choice varied between reads (fusion of one store gave 6,895 or 6,896 events).
+  Ties are now broken by row content.
+- **Compiled linkage kernel** (2026-10-24). The fusion linkage spent about 30 µs per
+  observation in Python loop overhead (0.54 s on the cron store, 4.8 s at nine times
+  its history). `kernels/` (Rust, PyO3) computes the same labels in 0.06 s and 0.58 s;
+  the engine uses NumPy where the kernel is not installed, and tests require identical
+  labels from both and from the brute-force reference. Processing and storage costs
+  were reduced in Python instead, where the cost was per call (batch classification,
+  4.1 s to 0.6 s for 8,000 reports) or in I/O.
 
 ## Open
 

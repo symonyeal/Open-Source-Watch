@@ -21,6 +21,11 @@ import numpy as np
 
 from engine import regions, store
 
+try:
+    import osw_kernels as kernels   # py -3.14 -m pip install ./kernels
+except ImportError:
+    kernels = None
+
 TAU, DELTA = 7200.0, 25.0          # s, km (spec § Fusion)
 R_EARTH = 6371.0088                # km, IUGG mean radius
 FINE = ("point", "city")
@@ -34,8 +39,9 @@ def haversine(lat1, lon1, lat2, lon2):
     return 2 * R_EARTH * np.arcsin(np.sqrt(a))
 
 
-def components(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
-    """Component label of each observation; t sorted ascending (seconds)."""
+def components_np(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
+    """Component label of each observation, the smallest index of its component;
+    t sorted ascending (seconds). NumPy reference of the compiled kernel."""
     n = len(t)
     parent = np.arange(n)
 
@@ -57,6 +63,16 @@ def components(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
             if a != b:
                 parent[max(a, b)] = min(a, b)
     return np.array([find(i) for i in range(n)])
+
+
+def components(t, lat, lon, fine, country, tau=TAU, delta=DELTA):
+    """components_np, by the Rust kernel (kernels/) when it is installed: the
+    NumPy loop costs about 30 µs per observation in Python overhead."""
+    if kernels is None:
+        return components_np(t, lat, lon, fine, country, tau, delta)
+    return kernels.components(*(np.ascontiguousarray(x, float) for x in (t, lat, lon)),
+                              *(np.ascontiguousarray(x, bool) for x in (fine, country)),
+                              tau, delta)
 
 
 def credibility(support, contradicted=False):
@@ -111,8 +127,8 @@ def events(r, X, runs=()):
         fine = np.array([x["geo_precision"] in FINE for x in Y])
         country = np.array([x["geo_precision"] == "country" for x in Y])
         lab = components(t, lat, lon, fine, country)
-        for c in np.unique(lab):
-            I = np.flatnonzero(lab == c)
+        o = np.argsort(lab, kind="stable")              # components in index order
+        for I in np.split(o, np.flatnonzero(np.diff(lab[o])) + 1):
             M = [Y[i] for i in I]
             F = I[fine[I]] if fine[I].any() else I[:1]
             S =[(regions.reliability(r, x["source_id"]), owner(r, x)) for x in M]

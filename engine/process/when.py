@@ -7,7 +7,8 @@ Recognised, in English text, local to the region's time zone:
 Without a date, the event day is the publication day, or the day before if the
 clock time would lie after publication. A dated time after publication is an
 announcement, not a report, and yields None. Anything vaguer ("overnight", "this
-morning") yields None: no time is better than a guessed one.
+morning"), or impossible ("0 pm", "Feb. 30"), yields None: no time is better than
+a guessed one.
 """
 import re
 from datetime import datetime, timedelta
@@ -28,18 +29,21 @@ def event_time(text, published, tz):
     if not m:
         return None
     if m["h"]:
-        h, mi = int(m["h"]) % 12 + (12 if m["ap"].lower() == "p" else 0), int(m["m"] or 0)
-        if int(m["h"]) > 12:
+        if not 1 <= int(m["h"]) <= 12 or int(m["m"] or 0) > 59:
             return None
+        h, mi = int(m["h"]) % 12 + (12 if m["ap"].lower() == "p" else 0), int(m["m"] or 0)
     else:
         h, mi = int(m["H"]), int(m["M"])
     z = ZoneInfo(tz)
     pub = published.astimezone(z)
     d = DATE.match(text[m.end():])
     if d and d["mon"].lower() in MONTHS:
-        t = datetime(pub.year, MONTHS[d["mon"].lower()], int(d["d"]), h, mi, tzinfo=z)
-        if t - pub > timedelta(days=180):                 # "Dec. 31" read on Jan. 2
-            t = t.replace(year=pub.year - 1)
+        try:
+            t = datetime(pub.year, MONTHS[d["mon"].lower()], int(d["d"]), h, mi, tzinfo=z)
+            if t - pub > timedelta(days=180):             # "Dec. 31" read on Jan. 2
+                t = t.replace(year=pub.year - 1)
+        except ValueError:                                # "Feb. 30"
+            return None
         if t > pub:                                       # announced, not yet happened
             return None
     else:

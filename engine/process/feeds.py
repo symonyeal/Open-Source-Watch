@@ -8,14 +8,14 @@ from pathlib import Path
 
 from engine import regions, store
 from engine.collect.firms import key as firms_key
-from engine.process import credibility_single, lang, obs_id, observation, translate
+from engine.process import credibility_single, lang, obs_id, observations, translate
 
 CITY = Path(__file__).resolve().parents[2] / "src" / "data" / "city-data.json"
 
 
 def telegram(raws, R):
-    return {"observation": [observation(R[x["region"]], x, json.loads(x["payload"])["text"])
-                            for x in raws]}
+    return {"observation": observations(
+        [(R[x["region"]], x, json.loads(x["payload"])["text"]) for x in raws])}
 
 
 CELL, PRIOR, PERSIST = 0.1, 7, 3   # degrees; days; active days that make a cell persistent
@@ -53,10 +53,10 @@ def firms(raws, R):
         if p["confidence"] == "l":
             continue
         hot = persistent(D, cell(lat, lon), date.fromisoformat(p["acq_date"]))
-        for k, r in enumerate(R.values()):
+        for r in R.values():
             if regions.in_bbox(r, lat, lon):
                 out.append({
-                    "id": obs_id(firms_key(p), k), "raw_id": x["id"],
+                    "id": obs_id(firms_key(p), r["id"]), "raw_id": x["id"],
                     "source_id": x["source_id"], "region": r["id"], "t": x["published_at"],
                     "lat": lat, "lon": lon, "geo_precision": "point",
                     "kind": "report" if hot else "thermal_anomaly",

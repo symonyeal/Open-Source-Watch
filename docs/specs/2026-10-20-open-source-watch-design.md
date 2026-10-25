@@ -330,7 +330,7 @@ The rules remain the fallback.
 **AIS.** aisstream.io is a websocket, used only when `AISSTREAM_KEY` is set. Each
 minute the buffered messages are stored through the same path as a poll. Without a key
 the source records `blocked`, and the transit PIRs read as a collection gap. The cron
-does not stream AIS, because a 15-minute job cannot hold a websocket open; AIS history
+does not stream AIS, because a scheduled job cannot hold a websocket open; AIS history
 accrues only while a local engine runs with a key.
 
 ## Out of scope

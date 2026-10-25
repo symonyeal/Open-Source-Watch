@@ -183,6 +183,20 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   the legal notice and the licence stay. Dependabot version updates are off: each opened
   a branch, and the eight left from 2026-10-17 were stale. Security alerts still arrive.
 
+- **Static snapshot on GitHub Pages** (2026-10-25, the owner's choice over a hosted
+  server). After each collection the workflow serves the stored data through the engine
+  and dashboard once, writes every route of every region to JSON
+  (`scripts/snapshot.mjs`, 133 files, 1.3 MB), and deploys a static export that reads
+  them. Pages keeps the latest deployment only; nothing is committed. Live-only feeds
+  (alerts, aircraft, drones) show what their sources returned at snapshot time.
+- **Monthly roll-up** (2026-10-25). Compaction merges each past day, then each past
+  month, into one file per region. A row is rewritten at most twice, so the `data`
+  branch's history is bounded by three copies of its data, and the file count grows
+  by month.
+- **Basemap** (2026-10-25). CARTO's free Dark Matter tiles now return an
+  "API key required" image; Esri's World Dark Gray Canvas needs no key and carries
+  its attribution on the map.
+
 ## Open
 
 - Thermal indicators II-3 and RU-2b still count events against fixed thresholds after

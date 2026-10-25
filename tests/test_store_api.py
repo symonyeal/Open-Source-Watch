@@ -95,6 +95,22 @@ def test_compaction_keeps_rows(monkeypatch):
     assert store.compact(before=tomorrow) > 0 and count("collection_run") == n
 
 
+def test_past_months_roll_up_to_one_file(monkeypatch):
+    """Days of a past month become one file per region, with every row kept."""
+    offline(monkeypatch)
+    row = {"source_id": "rss:BBC", "region": "iran-israel", "started_at": datetime.now(UTC),
+           "status": "ok", "n_rows": 1, "latency_ms": 1, "runner": "test"}
+    store.append("collection_run", [row])
+    store.append("collection_run", [row])
+    r = store.data_dir() / "collection_run" / "iran-israel"
+    (r / next(r.iterdir()).name).rename(r / "2026-09-30")
+    store.append("collection_run", [row])
+    (r / next(d for d in r.iterdir() if d.name != "2026-09-30").name).rename(r / "2026-09-01")
+    assert store.compact(before="2026-10-02") == 3 and count("collection_run") == 3
+    assert [d.name for d in r.iterdir()] == ["2026-09"]
+    assert len(list((r / "2026-09").glob("*.parquet"))) == 1
+
+
 def test_queries_do_not_see_a_partially_written_poll(monkeypatch):
     row = {"source_id": "rss:BBC", "region": "iran-israel", "started_at": datetime.now(UTC),
            "status": "ok", "n_rows": 1, "latency_ms": 1, "runner": "test"}

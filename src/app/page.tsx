@@ -21,6 +21,7 @@ import IndicatorStrip from '@/components/panels/IndicatorStrip';
 import ConflictToggle from '@/components/ConflictToggle';
 import ContextBoard from '@/components/panels/ContextBoard';
 import { useConflict } from '@/lib/conflicts/context';
+import { SNAPSHOT } from '@/lib/snapshot';
 import { useState, useEffect } from 'react';
 
 const ConflictMap = dynamic(() => import('@/components/map/ConflictMap'), {
@@ -66,7 +67,7 @@ export default function Dashboard() {
             <div>
               <h1 className="text-sm font-bold tracking-[3px] text-[var(--cyan)]">OPEN-SOURCE-WATCH</h1>
               <p className="text-[8px] text-[var(--text-secondary)] tracking-[2px]">
-                OSINT COMMAND CENTER // UNCLASSIFIED
+                {SNAPSHOT ? `SNAPSHOT ${SNAPSHOT.slice(0, 16).replace('T', ' ')} UTC // NOT LIVE` : 'OSINT COMMAND CENTER // UNCLASSIFIED'}
               </p>
             </div>
           </div>

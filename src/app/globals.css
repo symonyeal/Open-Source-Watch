@@ -178,3 +178,11 @@ body {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* Basemap attribution, small and on the dark theme */
+.leaflet-container .leaflet-control-attribution {
+  font-size: 8px;
+  line-height: 1.4;
+  background: rgba(10, 14, 23, 0.7);
+  color: var(--text-secondary);
+}

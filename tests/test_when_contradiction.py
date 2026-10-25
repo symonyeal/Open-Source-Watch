@@ -32,6 +32,14 @@ def test_event_time_across_new_year():
         datetime(2026, 12, 31, 2, 0, tzinfo=UTC)
 
 
+@pytest.mark.parametrize("s", ["Strike at 5 p.m. on Feb. 30", "at 5 pm on Oct 45",
+                               "Sirens at 11 pm on Feb 29", "Explosion at 0 pm", "at 13 pm"])
+def test_impossible_time_is_none_not_an_error(s):
+    """Regression: an impossible date raised ValueError and stopped the poll's processing;
+    "0 pm" was read as noon."""
+    assert event_time(s, PUB, "Europe/Kyiv") is None
+
+
 R = regions.regions()["russia-ukraine"]
 
 

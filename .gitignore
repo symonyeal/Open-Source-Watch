@@ -36,3 +36,6 @@ data/
 __pycache__/
 .pytest_cache/
 .ruff_cache/
+
+# compiled kernels
+kernels/target/

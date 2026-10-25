@@ -24,7 +24,7 @@ markets. The footer shows the health of each source.
 Phase 2 adds fusion: reports of the same kind close in time and place are merged
 into events, each graded by how many independent, reliable sources support it. The
 header shows each region's priority intelligence requirements as indicators. A
-scheduled GitHub job collects the slower feeds every 15 minutes into the `data`
+scheduled GitHub job collects the slower feeds twice a day into the `data`
 branch, so history builds while the laptop is off.
 Phases 3 and 4 add four shipping chokepoints (Red Sea, Strait of Hormuz, Taiwan Strait,
 Black Sea), each defined by one file, and written products: a daily intelligence
@@ -64,6 +64,7 @@ chokepoint: the Red Sea, Hormuz, the Taiwan Strait and the Black Sea come next.
 
 ```powershell
 py -3.14 -m pip install -r requirements.txt
+py -3.14 -m pip install ./kernels                 # optional: Rust fusion kernel (cargo)
 py -3.14 -m engine serve                          # engine on http://127.0.0.1:8790
 ```
 
@@ -84,11 +85,12 @@ to `./data` (or `$OSW_DATA`).
 
 To collect only the new public context sources, run
 `py -3.14 -m engine collect --adapter context`. No key is needed for FRED,
-PortWatch or World Bank data. The collection workflow includes these sources;
-oil and shipping poll every six hours, country indicators daily. These are
+PortWatch or World Bank data. A local engine polls oil and shipping every six
+hours and country indicators daily; the twice-daily collection workflow includes them. These are
 publication cadences for collection, not promises about provider update times.
 
-Tests: `py -3.14 -m pytest -q` and `npm test`.
+Tests: `py -3.14 -m pytest -q` and `npm test`. Without `./kernels` installed, fusion uses
+its NumPy implementation and the kernel test is skipped.
 
 ---
 

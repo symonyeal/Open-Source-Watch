@@ -6,6 +6,7 @@ parser and processor. Sources sharing a URL are fetched once per poll. The lates
 response per URL is kept in CACHE, from which the proxy answers the front end
 (spec § Seam): what the dashboard shows is what was stored.
 """
+import logging
 import queue
 import threading
 import time
@@ -34,7 +35,9 @@ DERIVE = {"rss": news.derive, "gnews": news.derive, "telegram": feeds.telegram,
           "drones": feeds.neptun, "ais": feeds.ais}
 
 CACHE = {}          # url -> (monotonic time, httpx.Response)
+SEEN = timedelta(days=8)   # longer than any source's lookback (the FIRMS 7-day file)
 _seen, _lock = None, threading.Lock()
+log = logging.getLogger("engine")
 
 
 def adapter(source_id):
@@ -118,18 +121,20 @@ def by_url():
 
 
 def seen():
-    """{raw report id: fetched_at} of the last 2 days."""
+    """{raw report id: last time a poll listed it} over the last SEEN. Read from
+    every stored copy, then refreshed by each poll, so an item that stays in its
+    feed is stored once (a stateless runner stores it again at most once per SEEN)."""
     global _seen
     if _seen is None:
-        _seen = {x["id"]: x["fetched_at"] for x in store.query(
-            "SELECT id, fetched_at FROM raw_report WHERE fetched_at > ?",
-            (now() - timedelta(days=2),))}
+        _seen = {x["id"]: x["t"] for x in store.query(
+            "SELECT id, max(fetched_at) t FROM raw_report_rows WHERE fetched_at > ? "
+            "GROUP BY id", (now() - SEEN,))}
     return _seen
 
 
 def prune():
     with _lock:
-        S, t = seen(), now() - timedelta(days=2)
+        S, t = seen(), now() - SEEN
         for k in [k for k, v in S.items() if v < t]:
             del S[k]
 
@@ -146,7 +151,9 @@ def derive(raws):
 
 def collect(S, runner="local", workers=16):
     """Poll every URL of sources S once, in parallel; store new raw reports, what
-    they derive, and every run row. Returns the run rows."""
+    they derive, and every run row. Returns the run rows. A URL whose processing
+    raises is logged and stores nothing, so its reports stay new for the next poll
+    and the other URLs are still stored."""
     G = defaultdict(list)
     for s in S:
         G[s["url"]].append(s)
@@ -155,7 +162,11 @@ def collect(S, runner="local", workers=16):
         res, raw, runs = run(group, PARSE[adapter(group[0]["id"])], runner)
         if res is not None:
             CACHE[group[0]["url"]] = (time.monotonic(), res)
-        return keep(raw, runs)
+        try:
+            return keep(raw, runs)
+        except Exception:
+            log.exception("processing %s failed", group[0]["url"])
+            return [], {}, []
 
     base = [g for g in G.values() if g[0]["cadence"] >= 86400]   # baselines (FIRMS 7 d) first
     out = [one(g) for g in base]
@@ -166,12 +177,16 @@ def collect(S, runner="local", workers=16):
 
 
 def keep(raw, runs):
-    """(new raw reports, what they derive, run rows); a stored report is not new."""
+    """(new raw reports, what they derive, run rows); a listed report is not new,
+    and a report is marked listed only once it has derived. A feed listing one
+    item twice yields one report."""
     with _lock:
         K = seen()
-        new = [x for x in raw if x["id"] not in K]
-        K.update((x["id"], x["fetched_at"]) for x in new)
-    return new, derive(new), runs
+        new = list({x["id"]: x for x in raw[::-1] if x["id"] not in K}.values())[::-1]
+    D = derive(new)
+    with _lock:
+        K.update((x["id"], x["fetched_at"]) for x in raw)
+    return new, D, runs
 
 
 def save(out):
@@ -228,7 +243,8 @@ def schedule(stop, runner="local", tick=15, fusion=600, housekeeping=3600):
     every `fusion` seconds recompute events and snapshot the indicator board,
     storing a SITREP every 6 h and an INTSUM every 24 h; compact the store and
     prune the seen set every `housekeeping` seconds. Stream sources (AIS) buffer
-    their messages, which are stored once per cadence."""
+    their messages, which are stored once per cadence. A step that raises is
+    logged and retried at its next due time; the scheduler keeps running."""
     S, due, fused, kept = sources(polled=True), {}, 0.0, time.monotonic()
     made = {k: time.monotonic() for k in produce.PERIOD}
     streams = [s for s in sources() if s.get("stream")]
@@ -237,30 +253,38 @@ def schedule(stop, runner="local", tick=15, fusion=600, housekeeping=3600):
         for s in streams:
             threading.Thread(target=ais.stream, args=(ais.key(), regions.regions(),
                                                       Q[s["id"]].put, stop), daemon=True).start()
+    def step(f, *a):
+        try:
+            f(*a)
+        except Exception:
+            log.exception("scheduled %s failed", f.__name__)
+
+    def products(t):
+        fuse.fuse()
+        P = [k for k, h in produce.PERIOD.items() if t - made[k] > 3600 * h]
+        analyse(P)
+        made.update({k: t for k in P})
+
     while not stop.is_set():
         t = time.monotonic()
         D = [s for s in S if due.get(s["id"], 0) <= t]
+        due |= {s["id"]: t + s["cadence"] for s in D}
         if D:
-            collect(D, runner)
-            for s in D:
-                due[s["id"]] = t + s["cadence"]
+            step(collect, D, runner)
         for s in streams:
             if due.get(s["id"], 0) <= t:
+                due[s["id"]] = t + s["cadence"]
                 M = []
                 while not Q[s["id"]].empty():
                     M.append(Q[s["id"]].get())
-                ingest(s, M, runner)
-                due[s["id"]] = t + s["cadence"]
+                step(ingest, s, M, runner)
         if t - fused > fusion:
-            fuse.fuse()
-            P = [k for k, h in produce.PERIOD.items() if t - made[k] > 3600 * h]
-            analyse(P)
-            made |= {k: t for k in P}
             fused = t
+            step(products, t)
         if t - kept > housekeeping:
-            store.compact()
-            prune()
             kept = t
+            step(store.compact)
+            step(prune)
         stop.wait(tick)
 
 

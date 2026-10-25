@@ -8,6 +8,8 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 
 - [x] 2026-10-24 Collection/indicator audit: region-scoped cadence, missing-evidence status, daily-source health, finite AIS JSON, summary confidence windows, feed request lifecycle and honest oil errors.
 - [x] 2026-10-24 South Asia plus recorded EIA/FRED spot, IMF PortWatch and World Bank country context; [methods and limits](docs/DATA-CONTEXT.md).
+- [x] 2026-10-24 Engine debugging audit: duplicate storage of still-listed items, failure isolation, event-time crash, stream gaps, deterministic deduplication, Windows table swap, Rust fusion kernel; [validation](docs/VALIDATION.md).
+- [ ] Remove the existing duplicate rows on the `data` branch (about 37,000 raw, 45,000 observation copies): `engine rebuild` for derived tables; raw copies need a one-off deduplicating compaction.
 - [ ] Validate South Asia classifier and event thresholds against a locally reviewed sample.
 - [x] 2026-10-24 South Asia reporting counts have no alert cutoffs; shipping smoothing follows the published World Bank centered seven-day method. Supplied satellite datasets and iMoonLab methods assessed in [Maritime methods](docs/MARITIME-METHODS.md).
 - [ ] Compare PortWatch changes with independent port-authority reports before assigning disruption causes.
@@ -17,7 +19,7 @@ Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items belo
 - [x] 2026-10-21 P0: fork, house layout, engine skeleton, schema, region registry, RSS collector, news route via `ENGINE_URL`.
 - [x] 2026-10-21 P1: collectors for every upstream feed; recording proxy in `fetchWithTimeout`; Telegram via channel previews; GeoNames gazetteer; source health in the footer.
 - [x] 2026-10-21 P2: fusion into events and entities; credibility from corroboration; PIR/indicator status (header strip); collection cron onto `data`.
-- [ ] P2 done-when: confirm the `Collect` workflow ran 24 h without repair (started 2026-10-21).
+- [x] 2026-10-24 P2 done-when: `Collect` ran 26 scheduled times 2026-10-21 to 10-25 without failure or repair, but every 2-5 h (GitHub delay); now scheduled twice a day.
 - [x] 2026-10-21 P3: TOML region registry (generated.ts); indicator history; INTSUM/SITREP; ACH; classifier (0.68 vs 0.54); event times and contradiction.
 - [x] 2026-10-21 P4: chokepoint regions; AIS adapter (needs key); transit indicator; thermal baseline; Supply-Chain-Cuts links.
 - [ ] Set `AISSTREAM_KEY` locally and confirm a live PositionReport; transit PIRs need 7 days of coverage.

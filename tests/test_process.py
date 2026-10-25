@@ -35,7 +35,7 @@ def test_classifier_beats_rules_under_cross_validation():
     from engine import classifier
     r, c = classifier.compare(seed=0)
     assert round(r, 3) == 0.543 and c > r + 0.05
-    assert classifier.predict("Russian drones attack Kyiv, two killed") in KINDS
+    assert classifier.predict(["Russian drones attack Kyiv, two killed"])[0] in KINDS
 
 
 @pytest.mark.parametrize("rid, s, place", [

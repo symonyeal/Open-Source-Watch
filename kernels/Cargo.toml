@@ -1,0 +1,19 @@
+[package]
+name = "osw-kernels"
+version = "0.1.0"
+edition = "2024"
+description = "Compiled kernels of the Open-Source-Watch engine"
+license = "MIT"
+publish = false
+
+[lib]
+name = "osw_kernels"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.30.1", features = ["extension-module"] }
+numpy = "0.30.0"
+
+[profile.release]
+lto = true
+codegen-units = 1

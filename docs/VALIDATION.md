@@ -3,6 +3,29 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-10-24 engine debugging audit
+
+Measured on a copy of the `data` branch at its 2026-10-25 01:39 UTC commit (49,782
+distinct raw reports, 42,502 observations).
+
+| Finding | Check | Result |
+| --- | --- | --- |
+| Items listed for over 2 days were stored on every poll | stored rows against distinct ids; `test_an_item_still_listed_is_stored_once` | raw 86,639 rows for 49,782 ids, observations 87,308 for 42,502; repeat gaps 49–84 h. Test fails before the fix, passes after |
+| A processor exception lost the other URLs' reports and stopped the scheduler thread | `test_a_failing_processor_loses_no_reports` | fails before, passes after |
+| An impossible date ("Feb. 30") raised in processing; "0 pm" read as noon | `test_impossible_time_is_none_not_an_error` | none of 17,113 stored texts triggered it; test fails 4 of 5 cases before, passes after |
+| `/stream` skipped observations written more than 1 s after their poll began | live server, report written 9 s after its poll start, read with curl | before: not sent; after: sent once |
+| Deduplicated views chose among differing copies arbitrarily | five fusions of the same store | before: 6,895 or 6,896 events; after: 6,898 three times |
+| `store.replace` could fail on Windows after deleting the old table, leaving `.new` directories | fusion in a watched folder | failed 4 of 4, later 0 of 5 (intermittent); rename-aside run 3 of 3 |
+| FIRMS observation ids depended on region order | code reading | keyed by region id |
+| Fusion linkage cost | `components` on the store, and replicated 9 times in time | NumPy 0.54 s / 4.81 s; Rust kernel 0.06 s / 0.58 s |
+| Kernel equals reference | Hypothesis test against brute force (both implementations); `test_kernel_equals_numpy` (n = 0, 1, 2,000) | passing; events of all seven regions from the same observations identical to HEAD's `fuse.events` (6,898 rows, all fields, both directions) |
+| Batch classification | `derive` of 8,000 news/Telegram reports, translation stubbed | 4.13 s to 0.60 s, identical output digest |
+| Cron continuity (P2 done-when) | GitHub Actions API, 2026-10-21 to 2026-10-25 | 26 scheduled runs, all successful, every 2–5 h instead of every 15 min; schedule now twice a day |
+
+Gates after the change: **137 Python tests**, **28 Node tests**, Ruff, pip check,
+rustfmt and clippy clean; production build passed; ESLint 0 errors, 17 warnings as
+before. The kernel was not measured on Linux; CI builds and tests it there.
+
 ## 2026-10-24 audit
 
 - Final local gates: **129 Python tests**, **28 Node tests**, Ruff and pip

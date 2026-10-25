@@ -22,6 +22,7 @@ from starlette.routing import Route
 from engine import cycle, regions, store
 
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+STREAM_LAG = timedelta(minutes=15)   # longer than a poll takes from fetch to write
 
 
 def region_of(req):
@@ -152,18 +153,23 @@ async def telegram(req):
 
 
 async def stream(req):
-    """Server-sent events: each new observation of the region, polled every 5 s."""
+    """Server-sent events: each new observation of the region, polled every 5 s.
+    A report's fetched_at is its poll's start, earlier than its write, so the
+    query looks back STREAM_LAG and skips observations already sent."""
     r = region_of(req)
 
     async def events():
-        t = datetime.now(UTC)
+        t, sent = datetime.now(UTC), {}
         while not await req.is_disconnected():
             X = await run_in_threadpool(
-                store.query, "SELECT o.* FROM observation o JOIN raw_report r ON r.id = o.raw_id "
-                "WHERE o.region = ? AND r.fetched_at > ? ORDER BY o.t", (r["id"], t))
-            t = datetime.now(UTC) - timedelta(seconds=1)
+                store.query, "SELECT o.*, r.fetched_at FROM observation o JOIN raw_report r "
+                "ON r.id = o.raw_id WHERE o.region = ? AND r.fetched_at > ? ORDER BY o.t",
+                (r["id"], max(t, datetime.now(UTC) - STREAM_LAG)))
             for x in X:
-                yield f"event: observation\ndata: {json.dumps(x, default=str)}\n\n"
+                if x["id"] not in sent:
+                    sent[x["id"]] = x.pop("fetched_at")
+                    yield f"event: observation\ndata: {json.dumps(x, default=str)}\n\n"
+            sent = {k: v for k, v in sent.items() if v > datetime.now(UTC) - STREAM_LAG}
             await asyncio.sleep(5)
 
     return StreamingResponse(events(), media_type="text/event-stream", headers=NO_CACHE)

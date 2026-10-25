@@ -64,19 +64,6 @@ export interface CountryQuery {
   query: string;
 }
 
-export interface StaticShip {
-  name: string;
-  hull: string;
-  type: string;
-  class: string;
-  navy: string;
-  lat: number;
-  lon: number;
-  status: string;
-  region: string;
-  group?: string;
-}
-
 export interface ColorMatchRule {
   // Substring matched against a flight "origin" string; first match wins.
   match: string;
@@ -122,7 +109,6 @@ export interface ClientConfig {
 
   // NavalPanel
   navyOrder: string[];
-  maritimeRegions: string[];
 
   // RegionalAlertsPanel
   countryColors: Record<string, string>;
@@ -141,6 +127,10 @@ export interface ClientConfig {
 
 // ---- Server-facing config (read in API routes by ?conflict= param) ----
 export interface ServerConfig {
+  // When true, Google News titles must match the region and (for country feeds)
+  // the queried country; South Asia uses this to contain broad search results.
+  filterGoogleNews?: boolean;
+
   // strikes route
   strikeQueries: string[];
   countryAttribution: { match: string[]; country: string }[];
@@ -170,10 +160,6 @@ export interface ServerConfig {
 
   // telegram route
   telegramChannels: TelegramChannel[];
-
-  // ships route
-  ships: StaticShip[];
-  shipRegions: string[];
 
   // alerts route: which provider drives the air-raid feed
   alertProvider: 'tzevaadom' | 'alertsua' | 'none';

@@ -9,6 +9,9 @@ languages = ["en", "uk", "ru"]
 timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
 
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:BBC" = "B"
 "rss:NYT" = "B"
 "rss:Al Jazeera" = "C"

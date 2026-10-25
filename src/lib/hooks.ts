@@ -1,41 +1,29 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useConflict } from './conflicts/context';
+import { feedFailure, feedSuccess, startFeed, visibleFeed, type FeedSnapshot } from './feed';
 
 export function useDataFeed<T>(url: string, interval: number = 60000, initialData: T | null = null) {
-  const [data, setData] = useState<T | null>(initialData);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  const fetchData = useCallback(async () => {
-    try {
-      // Cache-bust to ensure fresh data on each poll
-      const bustUrl = `${url}${url.includes('?') ? '&' : '?'}_t=${Date.now()}`;
-      const res = await fetch(bustUrl, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      // Keep previous data if new response is empty (likely rate limited)
-      const isEmpty = Array.isArray(json) ? json.length === 0 :
-                      json && typeof json === 'object' && 'posts' in json ? json.posts?.length === 0 : false;
-      if (!isEmpty || !data) {
-        setData(json);
-      }
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch');
-    } finally {
-      setLoading(false);
-    }
-  }, [url]);
+  const [snapshot, setSnapshot] = useState<FeedSnapshot<T>>({
+    url, data: initialData, loading: true, error: null, lastUpdated: null,
+  });
+  const poller = useRef<{ refresh: () => Promise<void> } | null>(null);
 
   useEffect(() => {
-    fetchData();
-    const id = setInterval(fetchData, interval);
-    return () => clearInterval(id);
-  }, [fetchData, interval]);
+    const active = startFeed<T>(
+      url,
+      interval,
+      (data, time) => setSnapshot(feedSuccess(url, data, time)),
+      error => setSnapshot(current => feedFailure(current, url, error)),
+    );
+    poller.current = active;
+    return () => {
+      active.stop();
+      if (poller.current === active) poller.current = null;
+    };
+  }, [url, interval]);
 
-  return { data, loading, error, lastUpdated, refetch: fetchData };
+  const refetch = useCallback(() => poller.current?.refresh(), []);
+  return { ...visibleFeed(url, snapshot, initialData), refetch };
 }
 
 /**

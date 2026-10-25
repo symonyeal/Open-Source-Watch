@@ -164,11 +164,6 @@ const RAW: Raw[] = [
       ],
       "sourceColors": {},
       "navyOrder": [],
-      "maritimeRegions": [
-        "Black Sea",
-        "Sea of Azov",
-        "Bosphorus"
-      ],
       "countryColors": {},
       "regionBoxes": [],
       "alertSystemName": "No air-raid feed",
@@ -278,8 +273,6 @@ const RAW: Raw[] = [
           "color": "#33cc66"
         }
       ],
-      "ships": [],
-      "shipRegions": [],
       "alertProvider": "none",
       "firesBBox": {
         "latMin": 40.5,
@@ -490,11 +483,6 @@ const RAW: Raw[] = [
       ],
       "sourceColors": {},
       "navyOrder": [],
-      "maritimeRegions": [
-        "Strait of Hormuz",
-        "Gulf of Oman",
-        "Persian Gulf"
-      ],
       "countryColors": {},
       "regionBoxes": [],
       "alertSystemName": "No air-raid feed",
@@ -585,8 +573,6 @@ const RAW: Raw[] = [
           "color": "#33cc66"
         }
       ],
-      "ships": [],
-      "shipRegions": [],
       "alertProvider": "none",
       "firesBBox": {
         "latMin": 23.0,
@@ -827,11 +813,6 @@ const RAW: Raw[] = [
       ],
       "sourceColors": {},
       "navyOrder": [],
-      "maritimeRegions": [
-        "Red Sea",
-        "Bab el-Mandeb",
-        "Gulf of Aden"
-      ],
       "countryColors": {},
       "regionBoxes": [
         {
@@ -961,8 +942,6 @@ const RAW: Raw[] = [
           "color": "#33cc66"
         }
       ],
-      "ships": [],
-      "shipRegions": [],
       "alertProvider": "none",
       "firesBBox": {
         "latMin": 11.0,
@@ -1026,6 +1005,398 @@ const RAW: Raw[] = [
       },
       "polymarketExclude": {
         "regex": "nba|nfl|mlb|nhl|fifa|world.?cup|oscar|grammy|crypto|bitcoin",
+        "flags": "i"
+      }
+    }
+  },
+  {
+    "key": "south-asia",
+    "label": "SOUTH ASIA",
+    "theater": "OSINT COMMAND CENTER // UNCLASSIFIED",
+    "client": {
+      "mapZoom": 3,
+      "cities": [
+        {
+          "name": "Dhaka",
+          "lat": 23.8103,
+          "lon": 90.4125,
+          "country": "Bangladesh",
+          "capital": true
+        },
+        {
+          "name": "Chattogram",
+          "lat": 22.3569,
+          "lon": 91.7832,
+          "country": "Bangladesh",
+          "capital": false
+        },
+        {
+          "name": "New Delhi",
+          "lat": 28.6139,
+          "lon": 77.209,
+          "country": "India",
+          "capital": true
+        },
+        {
+          "name": "Mumbai",
+          "lat": 19.076,
+          "lon": 72.8777,
+          "country": "India",
+          "capital": false
+        },
+        {
+          "name": "Mundra",
+          "lat": 22.839,
+          "lon": 69.721,
+          "country": "India",
+          "capital": false
+        },
+        {
+          "name": "Chennai",
+          "lat": 13.0827,
+          "lon": 80.2707,
+          "country": "India",
+          "capital": false
+        },
+        {
+          "name": "Karachi",
+          "lat": 24.8607,
+          "lon": 67.0011,
+          "country": "Pakistan",
+          "capital": false
+        },
+        {
+          "name": "Gwadar",
+          "lat": 25.1264,
+          "lon": 62.3225,
+          "country": "Pakistan",
+          "capital": false
+        },
+        {
+          "name": "Islamabad",
+          "lat": 33.6844,
+          "lon": 73.0479,
+          "country": "Pakistan",
+          "capital": true
+        },
+        {
+          "name": "Colombo",
+          "lat": 6.9271,
+          "lon": 79.8612,
+          "country": "Sri Lanka",
+          "capital": false
+        },
+        {
+          "name": "Hambantota",
+          "lat": 6.1241,
+          "lon": 81.1185,
+          "country": "Sri Lanka",
+          "capital": false
+        },
+        {
+          "name": "Yangon",
+          "lat": 16.8409,
+          "lon": 96.1735,
+          "country": "Myanmar",
+          "capital": false
+        },
+        {
+          "name": "Thilawa",
+          "lat": 16.649,
+          "lon": 96.268,
+          "country": "Myanmar",
+          "capital": false
+        },
+        {
+          "name": "Naypyidaw",
+          "lat": 19.7633,
+          "lon": 96.0785,
+          "country": "Myanmar",
+          "capital": true
+        },
+        {
+          "name": "Kathmandu",
+          "lat": 27.7172,
+          "lon": 85.324,
+          "country": "Nepal",
+          "capital": true
+        },
+        {
+          "name": "Thimphu",
+          "lat": 27.4728,
+          "lon": 89.639,
+          "country": "Bhutan",
+          "capital": true
+        },
+        {
+          "name": "Malé",
+          "lat": 4.1755,
+          "lon": 73.5093,
+          "country": "Maldives",
+          "capital": true
+        }
+      ],
+      "cityColors": {
+        "Bangladesh": "#2e9d70",
+        "India": "#e28a32",
+        "Pakistan": "#4d9f68",
+        "Sri Lanka": "#c19b32",
+        "Myanmar": "#d6b42c",
+        "Nepal": "#c64040",
+        "Bhutan": "#dc7b32",
+        "Maldives": "#378ac4",
+        "default": "#999999"
+      },
+      "launchSites": [],
+      "strikeLocations": {
+        "dhaka": [
+          23.81,
+          90.41
+        ],
+        "chattogram": [
+          22.36,
+          91.78
+        ],
+        "chittagong": [
+          22.36,
+          91.78
+        ],
+        "new delhi": [
+          28.61,
+          77.21
+        ],
+        "mumbai": [
+          19.08,
+          72.88
+        ],
+        "mundra": [
+          22.84,
+          69.72
+        ],
+        "chennai": [
+          13.08,
+          80.27
+        ],
+        "karachi": [
+          24.86,
+          67.0
+        ],
+        "gwadar": [
+          25.13,
+          62.32
+        ],
+        "islamabad": [
+          33.68,
+          73.05
+        ],
+        "colombo": [
+          6.93,
+          79.86
+        ],
+        "hambantota": [
+          6.12,
+          81.12
+        ],
+        "yangon": [
+          16.84,
+          96.17
+        ],
+        "thilawa": [
+          16.65,
+          96.27
+        ],
+        "naypyidaw": [
+          19.76,
+          96.08
+        ],
+        "kathmandu": [
+          27.72,
+          85.32
+        ],
+        "thimphu": [
+          27.47,
+          89.64
+        ],
+        "malé": [
+          4.18,
+          73.51
+        ]
+      },
+      "strikeTargets": [],
+      "alertCities": {},
+      "missileOrigins": [],
+      "flightColors": [],
+      "navyColors": {},
+      "timeZones": [
+        {
+          "label": "DHAKA",
+          "zone": "Asia/Dhaka",
+          "flag": "🇧🇩"
+        },
+        {
+          "label": "INDIA",
+          "zone": "Asia/Kolkata",
+          "flag": "🇮🇳"
+        },
+        {
+          "label": "KARACHI",
+          "zone": "Asia/Karachi",
+          "flag": "🇵🇰"
+        },
+        {
+          "label": "COLOMBO",
+          "zone": "Asia/Colombo",
+          "flag": "🇱🇰"
+        },
+        {
+          "label": "YANGON",
+          "zone": "Asia/Yangon",
+          "flag": "🇲🇲"
+        },
+        {
+          "label": "KATHMANDU",
+          "zone": "Asia/Kathmandu",
+          "flag": "🇳🇵"
+        },
+        {
+          "label": "THIMPHU",
+          "zone": "Asia/Thimphu",
+          "flag": "🇧🇹"
+        },
+        {
+          "label": "MALÉ",
+          "zone": "Indian/Maldives",
+          "flag": "🇲🇻"
+        },
+        {
+          "label": "UTC",
+          "zone": "UTC",
+          "flag": "🌐"
+        }
+      ],
+      "sourceColors": {},
+      "navyOrder": [],
+      "countryColors": {},
+      "regionBoxes": [],
+      "alertSystemName": "No air-raid feed",
+      "alertStatusTitle": "NO AIR-RAID FEED",
+      "hasDroneTracker": false,
+      "alertFallbackCenter": [
+        21.0,
+        82.0
+      ],
+      "defaultMissileOrigin": [
+        21.0,
+        82.0
+      ],
+      "defaultRegion": "South Asia",
+      "mapCenter": [
+        21.0,
+        82.0
+      ]
+    },
+    "server": {
+      "strikeQueries": [
+        "(Bangladesh+OR+India+OR+Pakistan+OR+%22Sri+Lanka%22+OR+Myanmar+OR+Nepal+OR+Bhutan+OR+Maldives)+(ship+attack+OR+maritime+incident+OR+port+attack)",
+        "(Bangladesh+OR+India+OR+Pakistan+OR+%22Sri+Lanka%22+OR+Myanmar+OR+Nepal+OR+Bhutan+OR+Maldives)+(armed+clash+OR+insurgent+attack+OR+civilian+attack)"
+      ],
+      "countryAttribution": [],
+      "defaultCountry": "South Asia",
+      "conflictQueries": [
+        "(Bangladesh OR India OR Pakistan OR \"Sri Lanka\" OR Myanmar OR Nepal OR Bhutan OR Maldives) (shipping disruption OR port closure OR port attack)",
+        "(Bangladesh OR India OR Pakistan OR \"Sri Lanka\" OR Myanmar OR Nepal OR Bhutan OR Maldives) (cyclone OR flood OR earthquake OR landslide)"
+      ],
+      "conflictLocations": [],
+      "countryQueries": [
+        {
+          "country": "Bangladesh",
+          "flag": "🇧🇩",
+          "query": "Bangladesh+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "India",
+          "flag": "🇮🇳",
+          "query": "India+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Pakistan",
+          "flag": "🇵🇰",
+          "query": "Pakistan+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Sri Lanka",
+          "flag": "🇱🇰",
+          "query": "Sri+Lanka+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Myanmar",
+          "flag": "🇲🇲",
+          "query": "Myanmar+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Nepal",
+          "flag": "🇳🇵",
+          "query": "Nepal+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Bhutan",
+          "flag": "🇧🇹",
+          "query": "Bhutan+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        },
+        {
+          "country": "Maldives",
+          "flag": "🇲🇻",
+          "query": "Maldives+(port+OR+shipping+OR+fuel+OR+power+OR+hydropower+OR+cyclone+OR+flood+OR+earthquake+OR+security+OR+conflict+OR+protest)+-cricket+-football+-sports"
+        }
+      ],
+      "telegramChannels": [],
+      "alertProvider": "none",
+      "firesBBox": {
+        "latMin": -1.5,
+        "latMax": 38.5,
+        "lonMin": 60.0,
+        "lonMax": 101.5
+      },
+      "flightsBBox": {
+        "latMin": -1.5,
+        "latMax": 38.5,
+        "lonMin": 60.0,
+        "lonMax": 101.5
+      },
+      "flightsCenter": {
+        "lat": 21.0,
+        "lon": 82.0,
+        "dist": 2500
+      },
+      "filterGoogleNews": true,
+      "newsFeeds": [
+        {
+          "url": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
+          "name": "BBC Asia"
+        },
+        {
+          "url": "https://www.aljazeera.com/xml/rss/all.xml",
+          "name": "Al Jazeera"
+        },
+        {
+          "url": "https://gcaptain.com/feed/",
+          "name": "gCaptain"
+        },
+        {
+          "url": "https://splash247.com/feed/",
+          "name": "Splash247"
+        }
+      ],
+      "newsRelevanceKeywords": {
+        "regex": "south asia|bangladesh|bangladeshi|\\bindia\\b|\\bindian\\b|indian ocean|pakistan|sri lanka|sri lankan|ceylon|myanmar|burma|burmese|nepal|nepali|nepalese|bhutan|bhutanese|maldives|maldivian|dhaka|chattogram|chittagong|karachi|gwadar|colombo|hambantota|yangon|thilawa|kathmandu|thimphu|mumbai|mundra|chennai|bay of bengal",
+        "flags": "i"
+      },
+      "polymarketKeywords": {
+        "regex": "south asia|bangladesh|india|pakistan|sri lanka|myanmar|burma|nepal|bhutan|maldives",
+        "flags": "i"
+      },
+      "polymarketExclude": {
+        "regex": "cricket|football|soccer|nba|nfl|mlb|nhl|fifa|world.?cup|ipl|election odds|crypto|bitcoin",
         "flags": "i"
       }
     }
@@ -1174,11 +1545,6 @@ const RAW: Raw[] = [
       ],
       "sourceColors": {},
       "navyOrder": [],
-      "maritimeRegions": [
-        "Taiwan Strait",
-        "South China Sea",
-        "Philippine Sea"
-      ],
       "countryColors": {},
       "regionBoxes": [],
       "alertSystemName": "No air-raid feed",
@@ -1266,8 +1632,6 @@ const RAW: Raw[] = [
           "color": "#33cc66"
         }
       ],
-      "ships": [],
-      "shipRegions": [],
       "alertProvider": "none",
       "firesBBox": {
         "latMin": 21.0,

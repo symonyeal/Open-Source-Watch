@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { fetchWithTimeout, parseXML, getTextContent } from '@/lib/fetcher';
 import { getConflictFromRequest } from '@/lib/conflicts';
+import { acceptsGoogleNewsTitle } from '@/lib/regionalNews';
 import type { StrikeEvent } from '@/lib/types/api';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,7 @@ export async function GET(req: Request) {
         const dashIdx = title.lastIndexOf(' - ');
         const source = dashIdx > 0 ? title.substring(dashIdx + 3) : '';
         if (dashIdx > 0) title = title.substring(0, dashIdx);
+        if (!acceptsGoogleNewsTitle(title, server)) continue;
 
         const t = title.toLowerCase();
         let category = 'REPORT';

@@ -3,8 +3,10 @@
 import { useConflictFeed, formatPrice, formatChange } from '@/lib/hooks';
 import type { OilData } from '@/lib/types/api';
 
+type OilQuote = OilData & { updated?: string | null };
+
 export default function OilPanel() {
-  const { data: prices, loading } = useConflictFeed<OilData[]>('/api/oil', 600000);
+  const { data: prices, loading } = useConflictFeed<OilQuote[]>('/api/oil', 600000);
 
   return (
     <div className="panel h-full flex flex-col">
@@ -27,12 +29,12 @@ export default function OilPanel() {
                   {item.name}
                 </div>
                 <div className="text-[9px] text-[var(--text-secondary)] uppercase">
-                  {item.type.replace('_', ' ')}
+                  {item.type.replaceAll('_', ' ')} FUTURES · {unit(item.type)}
                 </div>
               </div>
               <div className="text-right">
                 <div className={`text-sm font-bold ${item.error ? 'text-[var(--text-secondary)]' : ''}`}>
-                  {item.error ? 'N/A' : `$${formatPrice(item.price)}`}
+                  {item.error ? 'N/A' : `${formatPrice(item.price)} ${unit(item.type)}`}
                 </div>
                 {!item.error && (
                   <div
@@ -43,6 +45,9 @@ export default function OilPanel() {
                     {formatChange(item.change, item.changePercent)}
                   </div>
                 )}
+                <div className="text-[9px] text-[var(--text-secondary)]">
+                  {item.updated ? `Source ${new Date(item.updated).toLocaleString()}` : 'Source time unavailable'}
+                </div>
               </div>
             </div>
           ))
@@ -50,4 +55,10 @@ export default function OilPanel() {
       </div>
     </div>
   );
+}
+
+function unit(type: string) {
+  if (type === 'natural_gas') return 'USD/MMBtu';
+  if (type === 'heating_oil' || type === 'gasoline') return 'USD/gal';
+  return 'USD/bbl';
 }

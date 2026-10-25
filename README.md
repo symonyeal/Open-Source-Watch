@@ -8,6 +8,14 @@ prices. Open-Source-Watch gathers that trail for a region, keeps every item with
 of where it came from and how far that source can be trusted, and shows it on one live
 map.
 
+Select **SOUTH ASIA** for Bangladesh, India, Pakistan, Sri Lanka, Myanmar, Nepal,
+Bhutan and Maldives. The **ENERGY & TRADE** view adds dated oil benchmarks, port
+activity and country energy-import context alongside the incident monitor.
+See [Data context](docs/DATA-CONTEXT.md) for sources, calculations and limits.
+South Asia incident indicators are reporting counts, with no calibrated alert
+cutoffs. [Maritime methods](docs/MARITIME-METHODS.md) records the satellite
+benchmarks and reference implementations assessed for further work.
+
 **Status.** All four phases of the [design](docs/specs/2026-10-20-open-source-watch-design.md):
 every feed of the two starting regions (Iran/Israel, Russia/Ukraine) is collected,
 graded and stored by the Python engine, which serves it to the dashboard. That covers
@@ -24,7 +32,10 @@ summary (INTSUM) and a six-hourly situation report (SITREP), with competing hypo
 weighed against the evidence. Fire detections at permanent heat sources such as gas
 flares no longer count as anomalies, and a trained classifier replaced keyword rules
 after measuring better. Ship traffic through each strait is counted from AIS data
-when a free aisstream.io key is set.
+when a free aisstream.io key is set. Only observed gate crossings between positions at
+most 15 minutes apart count. A day is sampled when a valid segment has an endpoint on
+it; this does not establish full-day coverage, and the policy has not been validated
+against live AIS. Static naval positions are withheld until dated positions are available.
 
 **What this does not show.** Nothing here is verified ground truth. Each item is a
 claim by its source; the grade says how reliable the source has been judged, not whether
@@ -51,18 +62,31 @@ chokepoint: the Red Sea, Hormuz, the Taiwan Strait and the Black Sea come next.
 
 ### Run
 
-```text
+```powershell
 py -3.14 -m pip install -r requirements.txt
 py -3.14 -m engine serve                          # engine on http://127.0.0.1:8790
-npm install
-ENGINE_URL=http://127.0.0.1:8790 npm run dev      # dashboard on http://localhost:3000
 ```
 
-Without `ENGINE_URL` the dashboard runs exactly as upstream IRONSIGHT. Set
+In a second PowerShell terminal:
+
+```powershell
+npm.cmd ci
+$env:ENGINE_URL = 'http://127.0.0.1:8790'
+npm.cmd run dev                                  # dashboard on http://localhost:3000
+```
+
+Without `ENGINE_URL`, the incident feeds use their direct sources and the
+Energy & Trade view reports that its engine is unavailable. Set
 `AISSTREAM_KEY` (free at aisstream.io) before `engine serve` to count ship transits.
 To add a region, copy `regions/red-sea/region.toml`, edit it, and run
 `py -3.14 -m engine regions`. Data is written
 to `./data` (or `$OSW_DATA`).
+
+To collect only the new public context sources, run
+`py -3.14 -m engine collect --adapter context`. No key is needed for FRED,
+PortWatch or World Bank data. The collection workflow includes these sources;
+oil and shipping poll every six hours, country indicators daily. These are
+publication cadences for collection, not promises about provider update times.
 
 Tests: `py -3.14 -m pytest -q` and `npm test`.
 
@@ -100,7 +124,7 @@ Built with Next.js, TypeScript, Tailwind CSS, and Leaflet. **No API keys require
 - **Missile / Strike Tracker** — Weapon-type classification and severity scoring
 - **Regional Threat Monitor** — Per-country threat levels across the theater's neighbors
 - **Military Airspace** — Live military aircraft tracking via adsb.lol, region-filtered per theater
-- **Naval Tracker** — Known vessel positions (Persian Gulf / Red Sea / Eastern Med, or Black Sea / Sea of Azov)
+- **Naval Tracker** — Shows dated positions when a source is available; static estimates are withheld
 - **Defense & Markets** — Defense-contractor stocks, indices, VIX, gold, USD via Yahoo Finance
 - **Crypto Markets** — Bitcoin, Ethereum, Solana, BNB with 24h price changes
 - **Prediction Markets** — Live Polymarket odds relevant to the selected conflict

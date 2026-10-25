@@ -3,6 +3,41 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-10-24 audit
+
+- Final local gates: **129 Python tests**, **28 Node tests**, Ruff and pip
+  consistency checks passed; production Next.js build passed. ESLint completed
+  with no errors and 17 existing warnings. Python reports one Starlette
+  TestClient deprecation warning; Node reports package-module-type warnings.
+- South Asia count indicators have no calibrated alert cutoffs. Shipping
+  smoothing follows the published World Bank centered seven-day window with
+  a full-calendar-window restriction; tests check its dates and missingness.
+  No satellite detector, COCO-to-SAR transfer or maritime model accuracy was
+  measured. The assessment is in [Maritime methods](MARITIME-METHODS.md).
+
+- New public context: live collection returned **17 ok**, and the engine view read
+  back **17 series**. Spot dates, port/chokepoint dates and country observation
+  years are retained separately. Recorded provider responses are test fixtures.
+- The built Energy & Trade view was checked in headless Edge at 1440 and 390 px.
+  It displayed all eight country rows and stored oil/shipping data through Next.js
+  and the engine, switched regional context without stale rows, and reported no
+  page errors. Unrelated monitor requests were suppressed in this focused check;
+  it is not an end-to-end validation of every feed.
+- The live oil route returned all five futures quotes with source timestamps
+  after the missing-`previousClose` fallback was exercised.
+- Source research, live probes and corrected identifications are in
+  [Review log](REVIEW-LOG.md); calculations and limits are in
+  [Data context](DATA-CONTEXT.md).
+- Compatible dependency patches resolve the critical/high findings from this
+  audit. `npm audit --omit=dev` reports **0 vulnerabilities**. Full `npm audit`
+  retains three moderate entries through Tailwind 3's selector-parser chain.
+  Its proposed Tailwind 4 migration is not included; ordinary trusted-source
+  build usage is outside the advisory's stated untrusted-selector exposure.
+- Live AIS coverage, South Asia classifier accuracy, causal explanations for
+  trade changes, and cross-process compaction remain unvalidated.
+
+## Earlier checks
+
 | Claim | Check | Status |
 | --- | --- | --- |
 | `conflict.json` equals the TypeScript configs | `tests/test_regions.py::test_conflict_json_is_a_fresh_export` | passing 2026-10-21 |
@@ -34,8 +69,8 @@ responses, never snapshots of live output.
 | Event times are extracted correctly | `test_event_time` (clock, 24 h, previous day, announcement, vague, invalid), `test_event_time_across_new_year` | passing 2026-10-21 |
 | Contradiction rule | `test_covered_silence_contradicts`, `test_no_contradiction` (4 cases), Kyiv regression | passing 2026-10-21 |
 | Thermal persistence | `test_persistent_heat_source` | passing 2026-10-21 |
-| Transit indicator detects a collapse; no data without history | `test_transit_indicator_detects_a_collapse`, `test_transit_indicator_without_history_has_no_data`, `test_segment_crossing` | passing 2026-10-21 |
+| Transit indicator detects a collapse; sparse isolated points and long AIS gaps do not imply coverage or crossings | `test_transit_indicator_detects_a_collapse`, `test_transit_indicator_without_history_has_no_data`, `test_segment_crossing`, `test_transit_gap_over_policy_limit_is_not_counted`, `test_isolated_ais_points_do_not_count_as_sampled_coverage` | passing 2026-10-23; sample policy not live-validated |
 | ACH ranking | `test_ach_ranks_by_inconsistency` | passing 2026-10-21 |
-| Products | `test_intsum_reports_each_pir_and_cites_its_standards` | passing 2026-10-21 |
+| Products | `test_intsum_reports_each_pir_and_cites_its_standards`, `test_products_route_serves_latest_scheduled_product` | passing 2026-10-23 |
 | AIS path | `test_positions_only_and_nanosecond_times`, `test_without_key_the_stream_is_blocked`, `test_with_key_messages_become_vessel_tracks` (documented format, no live message) | passing 2026-10-21 |
 | Six regions live | 261 polls: 251 ok, 5 empty, 3 http_error, 2 blocked (Arab News); 20,160 items; all 44 routes of the four new regions 200 through the engine | observed 2026-10-21 |

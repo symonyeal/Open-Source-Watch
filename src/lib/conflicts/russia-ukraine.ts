@@ -157,8 +157,6 @@ export const russiaUkraine: ConflictConfig = {
     },
 
     navyOrder: ['US Navy', 'Royal Navy', 'Turkish Navy', 'Ukrainian Navy', 'NATO', 'Russian Navy'],
-    maritimeRegions: ['Black Sea', 'Sea of Azov', 'Eastern Med', 'Kerch Strait'],
-
     countryColors: {
       'Russia': '#cc3355', 'Belarus': '#cc8833', 'Poland': '#4488cc', 'Moldova': '#e06030',
       'Romania': '#7744aa', 'Slovakia': '#44bbaa', 'Hungary': '#33aa77', 'Lithuania': '#8866cc',
@@ -337,21 +335,6 @@ export const russiaUkraine: ConflictConfig = {
       { name: 'rian_ru', label: 'RIA Novosti (RU)', color: '#c8102e' },
     ],
 
-    ships: [
-      { name: 'Admiral Makarov', hull: '799', type: 'Frigate', class: 'Admiral Grigorovich-class', navy: 'Russian Navy', lat: 44.60, lon: 37.80, status: 'Kalibr Carrier', region: 'Black Sea', group: 'Black Sea Fleet' },
-      { name: 'Admiral Essen', hull: '751', type: 'Frigate', class: 'Admiral Grigorovich-class', navy: 'Russian Navy', lat: 43.40, lon: 36.90, status: 'Active', region: 'Black Sea', group: 'Black Sea Fleet' },
-      { name: 'Rostov-on-Don', hull: 'B-237', type: 'Submarine', class: 'Kilo-class (Improved)', navy: 'Russian Navy', lat: 44.72, lon: 37.79, status: 'In Port (Novorossiysk)', region: 'Black Sea', group: 'Black Sea Fleet' },
-      { name: 'Ivan Khurs', hull: '208', type: 'Intelligence Ship', class: 'Yuriy Ivanov-class', navy: 'Russian Navy', lat: 44.50, lon: 38.10, status: 'Active', region: 'Black Sea' },
-      { name: 'Vyshny Volochek', hull: '609', type: 'Corvette', class: 'Buyan-M-class', navy: 'Russian Navy', lat: 44.10, lon: 37.40, status: 'Kalibr Carrier', region: 'Black Sea', group: 'Black Sea Fleet' },
-      { name: 'Grayvoron', hull: '616', type: 'Corvette', class: 'Buyan-M-class', navy: 'Russian Navy', lat: 43.90, lon: 37.10, status: 'Active', region: 'Black Sea' },
-      { name: 'Azov Flotilla', hull: 'Various', type: 'Fast Attack Craft', class: 'Various', navy: 'Russian Navy', lat: 46.30, lon: 36.60, status: 'Active', region: 'Sea of Azov', group: 'Azov Flotilla' },
-      { name: 'Hetman Ivan Mazepa', hull: 'F211', type: 'Corvette', class: 'Ada-class', navy: 'Ukrainian Navy', lat: 46.45, lon: 30.75, status: 'Fitting Out', region: 'Black Sea', group: 'UA Navy' },
-      { name: 'Magura V5 USVs', hull: 'USV', type: 'Naval Drone (USV)', class: 'Magura V5', navy: 'Ukrainian Navy', lat: 45.00, lon: 31.50, status: 'Active Ops', region: 'Black Sea', group: 'UA Navy' },
-      { name: 'TCG Kinaliada', hull: 'F-514', type: 'Corvette', class: 'Ada-class', navy: 'Turkish Navy', lat: 41.20, lon: 29.10, status: 'Patrol (Bosphorus)', region: 'Black Sea' },
-      { name: 'USS Arleigh Burke', hull: 'DDG-51', type: 'Destroyer', class: 'Arleigh Burke-class', navy: 'US Navy', lat: 34.50, lon: 28.00, status: 'Deployed', region: 'Eastern Med', group: '6th Fleet' },
-      { name: 'FS Auvergne', hull: 'D654', type: 'Frigate', class: 'FREMM-class', navy: 'NATO', lat: 35.20, lon: 26.50, status: 'Deployed', region: 'Eastern Med', group: 'NATO SNMG2' },
-    ],
-    shipRegions: ['Black Sea', 'Sea of Azov', 'Eastern Med', 'Kerch Strait'],
 
     alertProvider: 'alertsua',
     droneProvider: 'neptun',

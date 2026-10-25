@@ -4,6 +4,36 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Published smoothing, descriptive South Asia counts** (2026-10-24). Shipping
+  uses the World Bank notebook's centered seven-day mean, requiring full windows.
+  Remove unsourced 7-versus-28-day comparisons and arbitrary observation-age
+  cutoffs. South Asia has no validated alert thresholds, so its incident
+  indicators display counts without watch/trigger tiers. The supplied satellite
+  and iMoonLab repositories are assessed in `MARITIME-METHODS.md`; benchmark
+  models are not represented as operational ship observations.
+
+- **Recorded economic context** (2026-10-24). EIA-origin spot benchmarks via
+  FRED, IMF PortWatch vessel activity, and World Bank energy/fuel-import
+  indicators each retain their dates, units and collection health. All 17
+  sources returned successful live polls. These series remain outside the
+  classifier and PIR thresholds; tanker counts cannot establish crude cargo.
+  See `DATA-CONTEXT.md` and `REVIEW-LOG.md`.
+- **Explicit South Asia scope** (2026-10-24). Eight named ISO3 country codes
+  replace dependence on a changing external regional aggregate. Nine selected
+  ports give coastal context, without claiming complete port coverage.
+- **Missing evidence is unassessed** (2026-10-24). A failed producing feed
+  makes its indicator `no data`. ACH cannot count a collection gap as absent
+  evidence. Stale AIS cannot answer a PIR; insufficient sampled days remains
+  a gap even while the stream is healthy.
+- **Region-scoped cadence and health** (2026-10-24). Reused RSS/Google source
+  names previously allowed another region's poll to suppress a due request.
+  Each run is keyed by region and source; health retains three cadences so
+  daily baselines do not disappear after 24 hours.
+- **Confidence follows indicator windows** (2026-10-24). A six-hour SITREP
+  can cite a triggered 72-hour indicator. Supporting credibility now comes
+  from that indicator's matching events. AIS confidence remains unassessed
+  because the sampling coverage is not calibrated.
+
 - **Fork IRONSIGHT; Python engine beside it** (2026-10-20). Alternatives: a Python core
   with a new static front end; a Next.js front end with a separate Python service.
   The user chose to fork, then build the engine. Upstream stays at the root so
@@ -81,6 +111,15 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   sources, and II-3a fell from 228 to 42 events. The 7-day file is processed before
   the 24-hour file, since processing them in parallel judged recent detections with no
   history.
+- **AIS crossing sample gap** (2026-10-23). Gate crossings require adjacent AIS
+  positions no more than 15 minutes apart. aisstream is consumed as a live stream and
+  reconnects after 30 seconds on connection failures; the 15-minute bound allows for
+  several missed position reports while refusing to infer a route across a longer
+  absence. A UTC day is sampled when a valid segment has an endpoint on it; this is not
+  a full-day uptime claim. These policies are not validated against live coverage.
+- **Undated naval positions withheld** (2026-10-23). The dashboard's static ship
+  coordinates had no report dates and were stamped with request time. They are removed
+  from the live view until a dated position source is available.
 - **Registry from TOML, generated at build time** (2026-10-21). The spec's direction
   was an engine-served registry. But upstream's routes read the registry
   synchronously, so serving it would mean an async rewrite of every route. A generated,
@@ -113,6 +152,7 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 - AIS needs `AISSTREAM_KEY`; the message format is taken from aisstream.io's
   documentation, and no live message has been received. Transit PIRs read as
   collection gaps until a key is set and 7 days of coverage exist.
+- The 15-minute AIS crossing bound has not been calibrated against live tracks.
 - Live-only feeds (alerts, aircraft, drone tracks) have history only while a local
   engine runs.
 - A local engine and the cron both write the `data` branch's tables when `./data` is

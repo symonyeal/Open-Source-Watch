@@ -10,16 +10,17 @@ import { useConflictFeed } from '@/lib/hooks';
 
 interface Indicator {
   id: string; name: string; status: string; count: number;
+  metric?: string;
   window_h?: number; watch?: number; trigger?: number; z?: number | null;
 }
 interface Hypothesis { id: string; text: string; inconsistent: string[] }
 interface Pir { pir: string; question: string; status: 'answered' | 'open' | 'gap'; indicators: Indicator[]; hypotheses: Hypothesis[] }
 
-const COLOR: Record<string, string> = { triggered: 'var(--red)', watch: '#ffaa00', inactive: 'var(--green)', gap: 'var(--text-secondary)' };
+const COLOR: Record<string, string> = { triggered: 'var(--red)', watch: '#ffaa00', inactive: 'var(--green)', observed: 'var(--blue)', gap: 'var(--text-secondary)' };
 
 const value = (i: Indicator) => i.window_h !== undefined
-  ? `${i.count} in ${i.window_h}h (watch ${i.watch}, trigger ${i.trigger})`
-  : `${i.count} transits, z ${i.z ?? 'n/a'}`;
+  ? `${i.count} in ${i.window_h}h (${i.metric === 'event_count' ? 'reporting count; no calibrated threshold' : `watch ${i.watch}, trigger ${i.trigger}`})`
+  : `${i.count} observed AIS crossings, z ${i.z ?? 'n/a'}`;
 
 export default function IndicatorStrip() {
   const { key } = useConflict();
@@ -43,7 +44,8 @@ export default function IndicatorStrip() {
       <span className="text-[var(--text-secondary)] tracking-[2px]">I&amp;W</span>
       {data.map(p => {
         const worst = p.indicators.some(i => i.status === 'triggered') ? 'triggered'
-          : p.indicators.some(i => i.status === 'watch') ? 'watch' : p.status === 'gap' ? 'gap' : 'inactive';
+          : p.indicators.some(i => i.status === 'watch') ? 'watch' : p.status === 'gap' ? 'gap'
+            : p.indicators.some(i => i.status === 'observed') ? 'observed' : 'inactive';
         const tip = [
           p.question,
           ...p.indicators.map(i => `${i.id} ${i.name}: ${value(i)} ${i.status}`),

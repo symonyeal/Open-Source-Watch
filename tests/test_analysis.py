@@ -15,13 +15,27 @@ def test_segment_crossing():
     assert not analyze.crosses(a, (12.0, 44.0), a, b)                   # touching is not crossing
 
 
+def test_transit_gap_over_policy_limit_is_not_counted():
+    a, b = GATE
+    P = [
+        {"t": datetime(2026, 10, 1, tzinfo=UTC), "lat": 12.70, "lon": 43.30},
+        {"t": datetime(2026, 10, 2, tzinfo=UTC), "lat": 12.50, "lon": 43.45},
+    ]
+    assert analyze.crosses((P[0]["lat"], P[0]["lon"]),
+                           (P[1]["lat"], P[1]["lon"]), a, b)
+    assert analyze.crossings(P, GATE) == []
+    assert analyze.crossings(P, GATE, timedelta(days=1)) == [P[1]["t"]]
+    P[1]["t"] = P[0]["t"]
+    assert analyze.crossings(P, GATE) == []
+
+
 def vessel(mmsi, day, crossings):
     """Track points of a vessel that crosses the gate `crossings` times on `day`."""
     t = datetime.combine(day, datetime.min.time(), UTC) + timedelta(hours=1)
     P, south = [], True
     for k in range(crossings + 1):
         lat, lon = (12.50, 43.45) if south else (12.70, 43.30)
-        P.append({"entity_id": f"mmsi:{mmsi}", "region": "red-sea", "t": t + timedelta(hours=k),
+        P.append({"entity_id": f"mmsi:{mmsi}", "region": "red-sea", "t": t + timedelta(minutes=k),
                   "lat": lat, "lon": lon, "heading": None, "speed": None,
                   "source_id": "ais:aisstream"})
         south = not south
@@ -45,6 +59,19 @@ def test_transit_indicator_without_history_has_no_data():
     i = next(i for p in RS["pir"] for i in p["indicator"] if i.get("metric") == "transit")
     x = analyze.transit_indicator(RS, i, datetime(2026, 10, 21, tzinfo=UTC))
     assert x["status"] == "no data"
+
+
+def test_isolated_ais_points_do_not_count_as_sampled_coverage():
+    t = datetime(2026, 10, 21, 12, tzinfo=UTC)
+    store.append("track_point", [
+        {"entity_id": f"mmsi:{k}", "region": "red-sea", "t": t - timedelta(days=k),
+         "lat": 12.60, "lon": 43.35, "heading": None, "speed": None,
+         "source_id": "ais:aisstream"}
+        for k in range(1, 9)
+    ])
+    i = next(i for p in RS["pir"] for i in p["indicator"] if i.get("metric") == "transit")
+    x = analyze.transit_indicator(RS, i, t)
+    assert x["count"] == 0 and x["status"] == "no data"
 
 
 def test_ach_ranks_by_inconsistency():

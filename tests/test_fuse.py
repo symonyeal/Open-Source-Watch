@@ -141,5 +141,5 @@ def test_indicator_board():
     B = {p["pir"]: p for p in analyze.board(r, {"rss:BBC": "ok"})}
     assert B["II-2"]["status"] == "open"          # healthy, and nothing happened: no gap
     B = {p["pir"]: p for p in analyze.board(r, {"alerts:tzevaadom": "failed"})}
-    assert B["II-1"]["status"] == "answered"      # triggered takes precedence over a gap
+    assert B["II-1"]["status"] == "gap"           # failed collection cannot answer a PIR
     assert analyze.status(0, 1, 3) == "inactive" and analyze.status(1, 1, 3) == "watch"

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { fetchWithTimeout } from '@/lib/fetcher';
+import { chartQuote, chartQuoteError } from '@/lib/quotes';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ async function fetchYahoo(sym: string) {
   });
   if (!res.ok) throw new Error('Failed');
   const data = await res.json();
-  return data?.chart?.result?.[0]?.meta;
+  return data?.chart?.result?.[0];
 }
 
 export async function GET() {
@@ -34,29 +35,17 @@ export async function GET() {
     const markets = await Promise.all(
       SYMBOLS.map(async (s) => {
         try {
-          const meta = await fetchYahoo(s.symbol);
-          if (!meta) throw new Error('No data');
-
-          const price = meta.regularMarketPrice ?? 0;
-          const prev = meta.chartPreviousClose ?? meta.previousClose ?? price;
-          const change = Math.round((price - prev) * 100) / 100;
-          const pct = prev ? Math.round(((price - prev) / prev) * 10000) / 100 : 0;
-
+          const quote = chartQuote(await fetchYahoo(s.symbol));
           return {
             symbol: s.symbol,
             name: s.name,
-            price: Math.round(price * 100) / 100,
-            change,
-            changePercent: pct,
+            ...quote,
           };
         } catch {
           return {
             symbol: s.symbol,
             name: s.name,
-            price: 0,
-            change: 0,
-            changePercent: 0,
-            error: true,
+            ...chartQuoteError(),
           };
         }
       })

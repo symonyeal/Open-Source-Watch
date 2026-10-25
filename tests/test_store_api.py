@@ -68,6 +68,22 @@ def test_compaction_keeps_rows(monkeypatch):
     assert store.compact(before=tomorrow) > 0 and count("collection_run") == n
 
 
+def test_queries_do_not_see_a_partially_written_poll(monkeypatch):
+    row = {"source_id": "rss:BBC", "region": "iran-israel", "started_at": datetime.now(UTC),
+           "status": "ok", "n_rows": 1, "latency_ms": 1, "runner": "test"}
+    store.append("collection_run", [row])
+    write = store.pq.write_table
+
+    def during_write(table, path):
+        path.write_bytes(b"")             # a writer has opened, but not completed, its file
+        assert count("collection_run") == 1
+        write(table, path)
+
+    monkeypatch.setattr(store.pq, "write_table", during_write)
+    store.append("collection_run", [row])
+    assert count("collection_run") == 2
+
+
 def test_proxy_serves_what_was_stored(monkeypatch):
     S = offline(monkeypatch)
     url = next(s["url"] for s in S if s["id"] == "rss:BBC")
@@ -87,6 +103,19 @@ def test_telegram_route_has_upstream_shape(monkeypatch):
     assert [p["postId"] for p in d["posts"]] == [23913, 23912, 23911]
     assert set(d["posts"][0]) == {"channel", "channelLabel", "color", "postId", "text", "date",
                                   "url"}
+
+
+def test_products_route_serves_latest_scheduled_product():
+    c = TestClient(app(collect=False))
+    url = "/api/products?region=iran-israel&kind=intsum"
+    assert c.get(url).json() is None
+    store.append("product", [
+        {"id": "old", "region": "iran-israel", "kind": "intsum",
+         "t": datetime(2026, 10, 21, tzinfo=UTC), "period_h": 24, "text": "older"},
+        {"id": "new", "region": "iran-israel", "kind": "intsum",
+         "t": datetime(2026, 10, 22, tzinfo=UTC), "period_h": 24, "text": "newer"},
+    ])
+    assert c.get(url).json()["text"] == "newer"
 
 
 def test_sources_view(monkeypatch):

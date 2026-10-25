@@ -11,6 +11,9 @@ timezone = "Asia/Taipei"  # local time of reports (engine.process.when)
 line = [[25.45, 119.85], [24.85, 120.92]]
 
 [reliability]
+"context:FRED" = "F"
+"context:PortWatch" = "F"
+"context:World Bank" = "F"
 "rss:Taipei Times" = "C"
 "rss:SCMP" = "C"
 "rss:The Diplomat" = "C"
@@ -108,7 +111,6 @@ timeZones = [
   { label = "BEIJING", zone = "Asia/Shanghai", flag = "🇨🇳" },
   { label = "UTC", zone = "UTC", flag = "🌐" },
 ]
-maritimeRegions = ["Taiwan Strait", "South China Sea", "Philippine Sea"]
 
 [conflict.server]
 strikeQueries = ["PLA+aircraft+Taiwan+ADIZ", "Taiwan+Strait+warship+drill"]

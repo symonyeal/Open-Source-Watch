@@ -5,6 +5,11 @@ records. Status is **inspected** (read for this project) or **cited** (not yet r
 
 | Source | Used for | Status |
 | --- | --- | --- |
+| [World Bank chokepoints notebook](https://worldbank.github.io/alternative-data-for-crisis/notebooks/disruptions-business-trade/chokepoints-monitor.html), data smoothing section | centered seven-day PortWatch mean; full-window restriction here | inspected 2026-10-24 |
+| [Ship dataset catalog](https://github.com/jasonmanesis/Satellite-Imagery-Datasets-Containing-Ships), [HRSID](https://github.com/chaozhong2010/HRSID), [xView3 reference](https://github.com/DIUx-xView/xview3-reference), [iMoonLab](https://github.com/orgs/iMoonLab/repositories) | satellite method assessment; [scope and limits](MARITIME-METHODS.md) | inspected 2026-10-24; no detector installed |
+| [EIA Brent / FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU), [WTI](https://fred.stlouisfed.org/series/DCOILWTICO), graph CSV exports | Daily spot prices, USD/barrel; separate from futures | inspected and live responses 2026-10-24 |
+| [IMF PortWatch](https://portwatch.imf.org/), public ArcGIS daily ports/chokepoints and reference layers | Daily total/tanker calls and transits; derived rolling averages | inspected and live responses 2026-10-24; see [context terms](DATA-CONTEXT.md) |
+| World Bank WDI [EG.IMP.CONS.ZS](https://data.worldbank.org/indicator/EG.IMP.CONS.ZS), [TM.VAL.FUEL.ZS.UN](https://data.worldbank.org/indicator/TM.VAL.FUEL.ZS.UN), [API v2](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures) | Country energy exposure, explicit ISO3 scope; CC BY 4.0 on indicator pages | inspected and live responses 2026-10-24 |
 | Nobler Works, *IRONSIGHT*, github.com/NoblerWorks-HQ/IRONSIGHT, MIT, commit 854f335 | front end, feeds, relevance rule, endpoint list | inspected 2026-10-20 |
 | NATO STANAG 2511 / AJP-2.1, source reliability A–F and information credibility 1–6 (the Admiralty code) | `reliability`, `credibility` | cited |
 | ODNI, Intelligence Community Directive 203, *Analytic Standards*, 2015 | estimative language and confidence (P3) | cited |

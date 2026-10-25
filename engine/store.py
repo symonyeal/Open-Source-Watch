@@ -39,13 +39,16 @@ def _write(root, table, rows):
     for (region, day), rs in parts.items():
         d = root / region / day
         d.mkdir(parents=True, exist_ok=True)
-        pq.write_table(pa.Table.from_pylist(rs, SCHEMA[table]), d / f"{uuid.uuid4().hex}.parquet")
+        path = d / f"{uuid.uuid4().hex}.pending"
+        pq.write_table(pa.Table.from_pylist(rs, SCHEMA[table]), path)
+        path.rename(path.with_suffix(".parquet"))
     return len(rows)
 
 
 def append(table, rows):
     """Write rows (dicts) to `table`. Returns len(rows)."""
-    return _write(data_dir() / table, table, rows)
+    with LOCK:
+        return _write(data_dir() / table, table, rows)
 
 
 def drop(table):
@@ -56,8 +59,7 @@ def drop(table):
 def replace(table, rows):
     """Swap `table` for exactly `rows` (a recomputed derived table), atomically
     with respect to queries."""
-    tmp = data_dir() / f".{table}.new"
-    shutil.rmtree(tmp, ignore_errors=True)
+    tmp = data_dir() / f".{table}.{uuid.uuid4().hex}.new"
     n = _write(tmp, table, rows)
     with LOCK:
         shutil.rmtree(data_dir() / table, ignore_errors=True)
@@ -108,7 +110,7 @@ def connect():
 
 def query(sql, params=()):
     """Rows of `sql` as dicts."""
-    with LOCK:
-        cur = connect().execute(sql, params)
+    with LOCK, connect() as con:
+        cur = con.execute(sql, params)
         cols = [c[0] for c in cur.description]
         return [dict(zip(cols, r)) for r in cur.fetchall()]

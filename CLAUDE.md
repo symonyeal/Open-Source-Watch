@@ -37,6 +37,10 @@ Python engine in `engine/` runs the intelligence cycle behind it.
 - A new region is one file, `regions/<id>/region.toml`, with a `[conflict]` table;
   `py -3.14 -m engine regions` writes it into `src/lib/conflicts/generated.ts` (never
   edit that by hand). The two upstream theaters keep their TypeScript configs.
+- Optional `[context]` countries and ports select recorded economic context.
+  `engine/collect/context.py` stores releases; `engine/context.py` serves
+  `/api/context` through `fromEngine`. Units and observation dates remain attached;
+  missing measurements never become zeros. See `docs/DATA-CONTEXT.md`.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
   from them at start-up, so derived tables depend on raw reports and labels only.
 - Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`

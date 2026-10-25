@@ -49,13 +49,11 @@ export interface NavalVessel {
   lon: number;
   status: string;
   region: string;
-  lastReported: string;
   group?: string;
 }
 export interface NavalData {
   totalTracked: number;
   ships: NavalVessel[];
-  updated: string;
   note: string;
 }
 
@@ -107,7 +105,7 @@ export interface AlertEvent {
   active: boolean;
 }
 export interface AlertData {
-  status: 'ACTIVE' | 'CLEAR';
+  status: 'ACTIVE' | 'CLEAR' | 'UNKNOWN' | 'UNAVAILABLE';
   activeCount: number;
   alerts: AlertEvent[];
   lastChecked: string;

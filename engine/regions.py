@@ -26,14 +26,14 @@ DEFAULT_CLIENT = {
     "mapZoom": 5, "cities": [], "cityColors": {"default": "#999999"}, "launchSites": [],
     "strikeLocations": {}, "strikeTargets": [], "alertCities": {}, "missileOrigins": [],
     "flightColors": [], "navyColors": {}, "timeZones": [], "sourceColors": {}, "navyOrder": [],
-    "maritimeRegions": [], "countryColors": {}, "regionBoxes": [],
+    "countryColors": {}, "regionBoxes": [],
     "alertSystemName": "No air-raid feed", "alertStatusTitle": "NO AIR-RAID FEED",
     "hasDroneTracker": False,
 }
 DEFAULT_SERVER = {
     "strikeQueries": [], "countryAttribution": [], "defaultCountry": "Unknown",
     "conflictQueries": [], "conflictLocations": [], "countryQueries": [],
-    "telegramChannels": [], "ships": [], "shipRegions": [], "alertProvider": "none",
+    "telegramChannels": [], "alertProvider": "none",
 }
 
 

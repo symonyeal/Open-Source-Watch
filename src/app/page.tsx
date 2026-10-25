@@ -97,56 +97,56 @@ export default function Dashboard() {
 
       {/* Main grid - 3 rows */}
       {view === 'context' ? <main className="flex-1 min-h-0 overflow-auto p-3"><ContextBoard /></main> : (
-      <main className="flex-1 grid grid-cols-12 gap-1 p-1 overflow-hidden"
-        style={{ gridTemplateRows: '2fr 1.5fr 1.5fr' }}
+      <main className="flex-1 min-h-0 grid grid-cols-1 auto-rows-[22rem] gap-1 p-1 overflow-y-auto
+        lg:grid-cols-12 lg:auto-rows-auto lg:[grid-template-rows:2fr_1.5fr_1.5fr] lg:overflow-hidden"
       >
         {/* === ROW 1: Map center, News left, Alerts + Markets right === */}
-        <div className="col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0">
           <NewsFeed />
         </div>
-        <div className="col-span-4 min-h-0">
+        <div className="lg:col-span-4 min-h-0">
           <ConflictMap key={conflictKey} className="h-full" />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <AlertsPanel />
         </div>
-        <div className="col-span-3 min-h-0 flex flex-col gap-1">
+        <div className="lg:col-span-3 min-h-0 flex flex-col gap-1">
           <div className="flex-1 min-h-0">
             <TelegramPanel />
           </div>
         </div>
 
         {/* === ROW 2: Markets, Strikes, Polymarket, Conflicts, Flights === */}
-        <div className="col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0">
           <MarketsPanel />
         </div>
-        <div className="col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0">
           <StrikesPanel />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <PolymarketPanel />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <ConflictFeed />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <FlightsPanel />
         </div>
 
         {/* === ROW 3: Regional Alerts, Naval, Crypto, Energy, Satellite === */}
-        <div className="col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0">
           <RegionalAlertsPanel />
         </div>
-        <div className="col-span-3 min-h-0">
+        <div className="lg:col-span-3 min-h-0">
           <NavalPanel />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <CryptoPanel />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <OilPanel />
         </div>
-        <div className="col-span-2 min-h-0">
+        <div className="lg:col-span-2 min-h-0">
           <SatellitePanel />
         </div>
       </main>

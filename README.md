@@ -20,15 +20,17 @@ answer the questions with stated confidence.
 | | IRONSIGHT | Open-Source-Watch |
 | --- | --- | --- |
 | Regions | Iran/Israel, Russia/Ukraine | 7: adds Red Sea, Strait of Hormuz, Taiwan Strait, Black Sea, South Asia |
-| Sources | fetched on screen, then gone | 296 sources, every item stored with where and when it came from |
+| Sources | fetched on screen, then gone | 351 sources, every item stored with where and when it came from |
 | Trust | every source equal | each source graded A–F; each report scored 1–6 by independent corroboration |
 | Reports | a list of headlines | duplicates merged into events: 6,898 events from 42,502 observations |
-| Questions | none | 17 priority intelligence requirements, answered by indicators with confidence |
+| Questions | none | 24 priority intelligence requirements, answered by indicators with confidence |
 | Written output | none | daily intelligence summary and six-hourly situation report per region |
 | History | none | collected twice a day by a scheduled job, also while the laptop is off |
 | Energy and trade | oil futures quotes | dated oil benchmarks, port and chokepoint traffic, country energy imports |
+| Navigation and connectivity | none | daily GNSS interference cells on the map, internet outages per country |
+| Official claims and reference data | none | Taiwan's daily PLA activity counts; UCDP conflict events to score the engine against |
 
-Figures are from the stored data on 2026-10-25.
+Figures are from the stored data on 2026-10-25; source and question counts from 2026-10-29.
 
 ## How it works, and the decisions behind it
 
@@ -109,11 +111,35 @@ reporting counts with no alert thresholds, because none have been validated. Sat
 ship-detection research was assessed but is not used as observation
 ([Maritime methods](docs/MARITIME-METHODS.md)).
 
+### Navigation, connectivity and reference signals
+
+The **SIGNALS** view, and the **GNSS** layer on the map, add four measurements to each
+region ([method and limits](docs/SIGNALS.md)):
+
+- **Satellite navigation.** Aircraft report how far their GPS position can be trusted.
+  gpsjam.org counts, for each hexagonal cell and day, the aircraft that reported low
+  accuracy; cells where more than 2 % or 10 % did are drawn on the map, by gpsjam.org's
+  own formula. On 2026-10-22 to 28 Iran/Israel had 95 to 141 such cells over 10 % a
+  day and the Taiwan Strait none. Jamming is one cause, not the only one, so the
+  dashboard says "low accuracy", not "jamming". A local engine also computes the cells
+  from the aircraft it already tracks; the cell arithmetic is a Rust kernel that
+  reproduces all 47,482 of gpsjam.org's cell indices for one day.
+- **Internet outages.** IODA (Georgia Tech) detects country-wide connectivity drops in
+  routing, probing and telescope data; each outage becomes an event in the indicator
+  board.
+- **Taiwan's daily report.** The defence ministry's count of PLA aircraft sorties,
+  ships, ADIZ entries and median-line crossings, about 90 days back, beside each
+  count's median over the previous 30 reports. It is a party's claim and is shown as one.
+- **A reference to score against.** UCDP, the Uppsala conflict dataset, codes each
+  lethal incident with its date and location precision. `engine validate` measures
+  how many of them the engine found. Not measured yet: UCDP's newest monthly release
+  ends before this project's data begins.
+
 ### Runs without a server
 
 A scheduled GitHub job collects the slower feeds twice a day into the `data` branch.
 A second job then serves the stored data through the engine and dashboard once, saves
-every view of every region (133 files, 1.3 MB), and publishes them as the static
+every view of every region (140 files), and publishes them as the static
 dashboard. Storage stays small on purpose: files are grouped by month, so each row is
 rewritten at most twice, and a storage layout change made every dashboard request 2.4 to
 4 times faster.

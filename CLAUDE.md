@@ -41,6 +41,11 @@ Python engine in `engine/` runs the intelligence cycle behind it.
   `engine/collect/context.py` stores releases; `engine/context.py` serves
   `/api/context` through `fromEngine`. Units and observation dates remain attached;
   missing measurements never become zeros. See `docs/DATA-CONTEXT.md`.
+- Optional `[outages]` countries (ISO alpha-2, seat of government) select IODA
+  outages. GNSS cells, outages, Taiwan MND reports and UCDP reference events are
+  served by `/api/signals` (`engine/signals.py`); UCDP events never become
+  observations, since `engine validate` scores the engine against them. See
+  `docs/SIGNALS.md`.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
   from them at start-up, so derived tables depend on raw reports and labels only.
 - Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
@@ -55,11 +60,12 @@ exception.
 ## Run
 
 ```text
-py -3.14 -m pip install ./kernels        # Rust fusion kernel; fusion needs it
+py -3.14 -m pip install ./kernels        # Rust kernel: fusion linkage and GNSS H3 cells
 py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
 py -3.14 -m engine collect [--region R]  # one poll of every source
 py -3.14 -m engine fuse                  # recompute events and entities
 py -3.14 -m engine regions               # after editing any region.toml
+py -3.14 -m engine validate              # recall of violent events against UCDP Candidate
 git worktree add data data               # once: ./data = the cron's `data` branch
 AISSTREAM_KEY=... py -3.14 -m engine serve   # AIS for the transit indicators (free key)
 npm run dev                              # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790

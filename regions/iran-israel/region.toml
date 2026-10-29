@@ -11,6 +11,10 @@ timezone = "Asia/Jerusalem"  # local time of reports (engine.process.when)
 
 # Admiralty source reliability A-F (spec § Sources). Key: "<adapter>:<name>".
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -141,3 +145,35 @@ question = "Are there unusual thermal detections consistent with strikes?"
   watch = 5
   trigger = 25
   max_credibility = 3
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "IR", name = "Iran", lat = 35.6892, lon = 51.389 },
+  { code = "IL", name = "Israel", lat = 31.7683, lon = 35.2137 },
+  { code = "LB", name = "Lebanon", lat = 33.8938, lon = 35.5018 },
+  { code = "SY", name = "Syria", lat = 33.5138, lon = 36.2765 },
+  { code = "IQ", name = "Iraq", lat = 33.3152, lon = 44.3661 },
+  { code = "JO", name = "Jordan", lat = 31.9539, lon = 35.9106 },
+  { code = "YE", name = "Yemen", lat = 15.3694, lon = 44.191 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "II-4"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "II-4a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "II-4b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

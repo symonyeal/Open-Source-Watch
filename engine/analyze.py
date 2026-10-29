@@ -10,6 +10,8 @@ before it, z = (n − mean) / sd;
 A day has sampled AIS coverage when a valid consecutive segment has an endpoint on it;
 this does not establish full-day coverage. Fewer than 7 prior sampled days, or no
 sampled coverage on the last day, gives no data.
+GNSS and official-count indicators (metric "gnss", engine.gnss; "official",
+engine.signals) report a measured or claimed value without a threshold.
 A PIR is answered if one indicator is triggered; a collection gap if, for some
 indicator, no healthy source can produce its evidence (PRODUCERS); otherwise
 open. A kind that did not occur is not a gap.
@@ -23,14 +25,14 @@ from itertools import pairwise
 
 import numpy as np
 
-from engine import store
+from engine import gnss, signals, store
 
 MIN_DAYS = 7
 MAX_AIS_GAP = timedelta(minutes=15)  # analysis policy; not validated against live coverage
 TEXT = ("rss", "gnews", "telegram")
 # Adapters whose sources can produce each kind; the rest come from text sources.
 PRODUCERS = {"thermal_anomaly": ("firms",), "airspace_activity": ("drones",) + TEXT,
-             "air_raid_alert": ("alerts",) + TEXT}
+             "air_raid_alert": ("alerts",) + TEXT, "internet_outage": ("ioda",)}
 
 
 def gap(kind, health):
@@ -128,7 +130,11 @@ def board(r, health, t=None):
     for p in r["pir"]:
         I, miss = [], False
         for i in p["indicator"]:
-            if i.get("metric") == "transit":
+            if i.get("metric") in ("gnss", "official"):     # descriptive, no threshold
+                x = (gnss.indicator if i["metric"] == "gnss" else signals.indicator)(
+                    i, r, t, health)
+                miss |= x["status"] == "no data"
+            elif i.get("metric") == "transit":
                 x = transit_indicator(r, i, t)
                 missing = health.get("ais:aisstream") != "ok" or x["status"] == "no data"
                 miss |= missing

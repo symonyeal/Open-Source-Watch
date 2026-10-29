@@ -7,6 +7,7 @@ import type { ColorMatchRule } from '@/lib/conflicts';
 import { esc } from '@/lib/escapeHtml';
 import type { FlightData, NavalData, AlertData, StrikeEvent as StrikeData, TelegramData, DroneData } from '@/lib/types/api';
 import type { ConflictEvent } from '@/types';
+import { useGnssLayer } from './gnssLayer';
 
 let L: typeof import('leaflet') | null = null;
 
@@ -187,6 +188,7 @@ export default function ConflictMap({ className }: MapProps) {
   const [showNaval, setShowNaval] = useState(true);
   const [showCities, setShowCities] = useState(true);
   const [showStrikes, setShowStrikes] = useState(true);
+  const [showGnss, setShowGnss] = useState(true);   // Open-Source-Watch
 
   useEffect(() => {
     import('leaflet').then(leaflet => { L = leaflet; setMounted(true); });
@@ -242,6 +244,9 @@ export default function ConflictMap({ className }: MapProps) {
       flightTrailsRef.current.clear();
     };
   }, [mounted]);
+
+  // Open-Source-Watch: after the map exists (effects run in declaration order).
+  const gnssCells = useGnssLayer(mapRef, mounted, showGnss);
 
   // === COUNTRY BORDERS OVERLAY ===
   // The dark basemap draws political borders very faintly; add a crisp
@@ -893,6 +898,11 @@ export default function ConflictMap({ className }: MapProps) {
           <button onClick={() => setShowStrikes(!showStrikes)} className="text-[8px] px-1.5 py-0.5 rounded border transition-colors"
             style={{ color: showStrikes ? '#ff6600' : 'var(--text-secondary)', borderColor: showStrikes ? '#ff6600' : 'var(--border-color)', background: showStrikes ? 'rgba(255,102,0,0.1)' : 'transparent' }}>
             💥 STRIKES
+          </button>
+          <button onClick={() => setShowGnss(!showGnss)} title="Latest gpsjam.org day: cells where 2-10 % (amber) or over 10 % (red) of aircraft reported low navigation accuracy"
+            className="text-[8px] px-1.5 py-0.5 rounded border transition-colors"
+            style={{ color: showGnss ? '#ffaa00' : 'var(--text-secondary)', borderColor: showGnss ? '#ffaa00' : 'var(--border-color)', background: showGnss ? 'rgba(255,170,0,0.1)' : 'transparent' }}>
+            ⌖ GNSS {gnssCells}
           </button>
           <button onClick={() => setShowRangeRings(!showRangeRings)} className="text-[8px] px-1.5 py-0.5 rounded border transition-colors"
             style={{ color: showRangeRings ? '#ff3366' : 'var(--text-secondary)', borderColor: showRangeRings ? '#ff3366' : 'var(--border-color)', background: showRangeRings ? 'rgba(255,51,102,0.1)' : 'transparent' }}>

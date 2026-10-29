@@ -4,6 +4,7 @@
                (src/lib/fetcher.ts forwards here when ENGINE_URL is set)
 /api/telegram  upstream's TelegramData shape (src/lib/types/api.ts), from the store
 /api/indicators PIR and indicator status of a region
+/api/context, /api/signals   recorded energy/trade context; GNSS, outages, MND, UCDP
 /regions, /observations, /events, /tracks, /sources, /stream   engine-native views
 """
 import asyncio
@@ -123,6 +124,12 @@ async def context(req):
     return js(await run_in_threadpool(view, region_of(req)))
 
 
+async def signals(req):
+    from engine.signals import view
+    r = region_of(req)
+    return js(await run_in_threadpool(lambda: view(r, cycle.source_table(r))))
+
+
 def telegram_data(r, t):
     """Upstream TelegramData: the latest 3 stored posts per channel, newest first
     (src/app/api/telegram/route.ts); text is the stored excerpt, translated."""
@@ -189,7 +196,7 @@ def app(collect=True):
         Route("/fetch", fetch), Route("/api/telegram", telegram),
         Route("/api/sources", sources), Route("/api/indicators", indicators),
         Route("/api/products", products),
-        Route("/api/context", context),
+        Route("/api/context", context), Route("/api/signals", signals),
         Route("/regions", regions_), Route("/observations", observations),
         Route("/events", events), Route("/tracks", tracks), Route("/sources", sources),
         Route("/stream", stream),

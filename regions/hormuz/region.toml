@@ -11,6 +11,10 @@ timezone = "Asia/Tehran"  # local time of reports (engine.process.when)
 line = [[26.40, 56.42], [26.90, 56.33]]
 
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -136,3 +140,31 @@ telegramChannels = [
   { name = "rnintel", label = "RN Intel", color = "#66ccff" },
   { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
 ]
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "IR", name = "Iran", lat = 35.6892, lon = 51.389 },
+  { code = "OM", name = "Oman", lat = 23.588, lon = 58.3829 },
+  { code = "AE", name = "United Arab Emirates", lat = 24.4539, lon = 54.3773 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "HZ-3"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "HZ-3a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "HZ-3b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

@@ -2,9 +2,11 @@
 proxy; rebuild.
 
 A source id is "<adapter>:<name>[#k]"; PARSE and DERIVE map the adapter to its
-parser and processor. Sources sharing a URL are fetched once per poll. The latest
-response per URL is kept in CACHE, from which the proxy answers the front end
-(spec § Seam): what the dashboard shows is what was stored.
+parser and processor, FETCH to its own fetch where one URL is not one request
+(a list page and its reports, a dated window). Sources sharing a URL are fetched
+once per poll, and each is parsed by its own adapter. The latest response per URL
+is kept in CACHE, from which the proxy answers the front end (spec § Seam): what
+the dashboard shows is what was stored.
 """
 import logging
 import queue
@@ -21,20 +23,26 @@ import httpx
 
 from engine import analyze, fuse, produce, regions, store
 from engine.collect import (
-    ais, adsb, alerts, context, firms, markets, neptun, now, rss, run, telegram,
+    ais, adsb, alerts, context, firms, gpsjam, integrity, ioda, markets, mnd, neptun, now, rss,
+    run, telegram, ucdp,
 )
 from engine.process import feeds, news
 from engine.schema import DERIVED
 
-MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais, context)
+MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais, context, gpsjam, integrity,
+           mnd, ioda, ucdp)
 PARSE = {"rss": rss.parse, "gnews": rss.parse, "telegram": telegram.parse, "firms": firms.parse,
          "adsb": adsb.parse, "alerts": alerts.parse, "drones": neptun.parse,
-         "markets": markets.parse, "ais": ais.parse, "context": context.parse}
+         "markets": markets.parse, "ais": ais.parse, "context": context.parse,
+         "gpsjam": gpsjam.parse, "integrity": integrity.parse, "mnd": mnd.parse,
+         "ioda": ioda.parse, "ucdp": ucdp.parse}
+FETCH = {"gpsjam": gpsjam.fetch, "mnd": mnd.fetch, "ioda": ioda.fetch, "ucdp": ucdp.fetch}
 DERIVE = {"rss": news.derive, "gnews": news.derive, "telegram": feeds.telegram,
           "firms": feeds.firms, "adsb": feeds.adsb, "alerts": feeds.alerts,
-          "drones": feeds.neptun, "ais": feeds.ais}
+          "drones": feeds.neptun, "ais": feeds.ais, "ioda": feeds.ioda}
 
 CACHE = {}          # url -> (monotonic time, httpx.Response)
+POLLED = {}         # (region, source id) -> monotonic time of its last poll in this process
 SEEN = timedelta(days=8)   # longer than any source's lookback (the FIRMS 7-day file)
 _seen, _lock = None, threading.Lock()
 log = logging.getLogger("engine")
@@ -157,10 +165,13 @@ def collect(S, runner="local", workers=16):
     G = defaultdict(list)
     for s in S:
         G[s["url"]].append(s)
+        POLLED[s["region"], s["id"]] = time.monotonic()
 
     def one(group):
-        res, raw, runs = run(group, PARSE[adapter(group[0]["id"])], runner)
-        if res is not None:
+        a = adapter(group[0]["id"])
+        res, raw, runs = run(group, lambda body, s: PARSE[adapter(s["id"])](body, s), runner,
+                             **({"get": FETCH[a]} if a in FETCH else {}))
+        if res is not None and a not in FETCH:   # an adapter's own fetch is not the URL's response
             CACHE[group[0]["url"]] = (time.monotonic(), res)
         try:
             return keep(raw, runs)
@@ -213,13 +224,17 @@ def ingest(src, messages, runner="local"):
 
 def proxy(url):
     """The latest response for url (spec § Seam). A scheduled URL is answered from
-    CACHE while fresh, else collected now; an unscheduled URL on a scheduled host
-    is fetched and recorded as source "unscheduled:<host>"; any other is refused."""
+    CACHE while fresh, else collected now, with each other source of the URL only
+    if its own cadence has elapsed (an integrity snapshot shares the aircraft URL);
+    an unscheduled URL on a scheduled host is fetched and recorded as source
+    "unscheduled:<host>"; any other is refused."""
     S = by_url().get(url)
     if S:
         c = CACHE.get(url)
-        if not c or time.monotonic() - c[0] > max(2 * S[0]["cadence"], 30):
-            collect(S)
+        t = time.monotonic()
+        if not c or t - c[0] > max(2 * S[0]["cadence"], 30):
+            collect(S[:1] + [s for s in S[1:] if t - POLLED.get((s["region"], s["id"]), -1e18)
+                             >= 0.9 * s["cadence"]])
             c = CACHE.get(url)
         return c[1] if c else None
     host = urlsplit(url).hostname

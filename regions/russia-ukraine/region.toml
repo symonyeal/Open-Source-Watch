@@ -9,6 +9,10 @@ languages = ["en", "uk", "ru"]
 timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
 
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -151,3 +155,30 @@ question = "Is there naval or maritime activity in the Black Sea?"
   watch = 1
   trigger = 3
   max_credibility = 3
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "UA", name = "Ukraine", lat = 50.4501, lon = 30.5234 },
+  { code = "RU", name = "Russia", lat = 55.7558, lon = 37.6173 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "RU-4"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "RU-4a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "RU-4b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

@@ -18,7 +18,8 @@ KIND = {"explosions_remote_violence": "strike or explosion", "battles": "fightin
         "violence_against_civilians": "violence against civilians", "protests": "protest",
         "riots": "riot", "strategic_developments": "strategic development",
         "air_raid_alert": "air-raid alert", "maritime_incident": "maritime incident",
-        "airspace_activity": "drone or missile track", "thermal_anomaly": "thermal anomaly"}
+        "airspace_activity": "drone or missile track", "thermal_anomaly": "thermal anomaly",
+        "internet_outage": "internet outage"}
 PERIOD = {"intsum": 24, "sitrep": 6}
 
 
@@ -53,7 +54,8 @@ def report(r, board, sources, kind="intsum", t=None):
                      f"({', '.join(i['id'] for i in k)}); {judgement}.")
         elif p["status"] == "gap":
             L.append(f"- **{p['pir']}** {p['question']} Cannot be assessed: collection gap.")
-        elif any(i.get("metric") == "event_count" for i in p["indicators"]):
+        elif all(i.get("metric") in ("event_count", "gnss", "official")
+                 for i in p["indicators"]):
             L.append(f"- **{p['pir']}** {p['question']} Reporting counts only; "
                      "no calibrated alert threshold.")
         else:
@@ -68,6 +70,11 @@ def report(r, board, sources, kind="intsum", t=None):
                 th = f"z ≤ {i['watch_z']} / {i['trigger_z']}"
             elif i.get("metric") == "event_count":
                 v, th = f"{i['count']} in {i['window_h']} h", "not calibrated"
+            elif i.get("metric") == "gnss":
+                v, th = f"{i['count']} cells {i['band']} on {i['date']}", "none (descriptive)"
+            elif i.get("metric") == "official":
+                v = f"{i['count']} on {i['date']}, median {i['median']} over {i['n_prior']}"
+                th = "none (a party's claim)"
             else:
                 v, th = f"{i['count']} in {i['window_h']} h", f"{i['watch']} / {i['trigger']}"
             L.append(f"| {p['pir']} | {i['id']} {i['name']} | {v} | {th} | {i['status']} |")

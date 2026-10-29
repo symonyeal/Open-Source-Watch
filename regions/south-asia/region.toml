@@ -26,6 +26,10 @@ ports = [
 # F means reliability cannot yet be judged. No source-specific assessment
 # supports assigning new publishers a better grade in this theater.
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -160,3 +164,36 @@ newsFeeds = [
 newsRelevanceKeywords = { regex = "south asia|bangladesh|bangladeshi|\\bindia\\b|\\bindian\\b|indian ocean|pakistan|sri lanka|sri lankan|ceylon|myanmar|burma|burmese|nepal|nepali|nepalese|bhutan|bhutanese|maldives|maldivian|dhaka|chattogram|chittagong|karachi|gwadar|colombo|hambantota|yangon|thilawa|kathmandu|thimphu|mumbai|mundra|chennai|bay of bengal", flags = "i" }
 polymarketKeywords = { regex = "south asia|bangladesh|india|pakistan|sri lanka|myanmar|burma|nepal|bhutan|maldives", flags = "i" }
 polymarketExclude = { regex = "cricket|football|soccer|nba|nfl|mlb|nhl|fifa|world.?cup|ipl|election odds|crypto|bitcoin", flags = "i" }
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "BD", name = "Bangladesh", lat = 23.8103, lon = 90.4125 },
+  { code = "IN", name = "India", lat = 28.6139, lon = 77.209 },
+  { code = "PK", name = "Pakistan", lat = 33.6844, lon = 73.0479 },
+  { code = "LK", name = "Sri Lanka", lat = 6.8868, lon = 79.9187 },
+  { code = "MM", name = "Myanmar", lat = 19.7633, lon = 96.0785 },
+  { code = "NP", name = "Nepal", lat = 27.7172, lon = 85.324 },
+  { code = "BT", name = "Bhutan", lat = 27.4728, lon = 89.639 },
+  { code = "MV", name = "Maldives", lat = 4.1755, lon = 73.5093 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "SA-4"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "SA-4a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "SA-4b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

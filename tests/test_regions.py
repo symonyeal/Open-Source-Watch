@@ -42,7 +42,12 @@ def test_pir_indicators(r):
     I = [i for p in r["pir"] for i in p["indicator"]]
     E = [i for i in I if "metric" not in i or i.get("metric") == "event_count"]
     T = [i for i in I if i.get("metric") == "transit"]
-    assert I and len(E) + len(T) == len(I)
+    G = [i for i in I if i.get("metric") == "gnss"]
+    O = [i for i in I if i.get("metric") == "official"]
+    assert I and len(E) + len(T) + len(G) + len(O) == len(I)
+    assert all(i["band"] in ("medium", "high") for i in G)
+    assert all(i["field"] in ("aircraft", "ships", "official", "balloons", "adiz", "median_line")
+               for i in O)
     assert all(i["kind"] in KINDS and (i.get("metric") == "event_count"
                or 1 <= i["watch"] <= i["trigger"]) for i in E)
     assert all(i["gate"] in r["gate"] and i["trigger_z"] <= i["watch_z"] < 0 for i in T)

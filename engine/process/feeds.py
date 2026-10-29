@@ -122,6 +122,29 @@ def alerts(raws, R):
     return {"observation": out}
 
 
+def ioda(raws, R):
+    """One internet_outage per IODA event, placed at the seat of its country's
+    government (region.toml [outages]) with admin precision: IODA measures the
+    country as one unit, so outages of one country within τ of each other link
+    under the fusion rule (same unit). The id depends on the event's country,
+    datasource and start only, so a lengthening event stays one observation."""
+    out = []
+    for x in raws:
+        r, p = R[x["region"]], json.loads(x["payload"])
+        c = next(c for c in r["outages"]["countries"] if c["code"] == p["country"])
+        h = p["duration"] / 3600
+        out.append({"id": obs_id(f"ioda:{p['country']}:{p['datasource']}:{p['start']}", r["id"]),
+                    "raw_id": x["id"], "source_id": x["source_id"], "region": r["id"],
+                    "t": x["published_at"], "lat": c["lat"], "lon": c["lon"],
+                    "geo_precision": "admin", "kind": "internet_outage",
+                    "text_en": f"IODA {p['datasource']} outage signal in {c['name']} from "
+                               f"{x['published_at']:%Y-%m-%d %H:%M} UTC, {h:.1f} h listed"
+                               f" (score {p['score'] or 0:.0f})",
+                    "lang": "en", "credibility": credibility_single(r, x["source_id"]),
+                    "names": [c["name"]], "t_event": x["published_at"]})
+    return {"observation": out}
+
+
 def neptun(raws, R):
     """Track points of each drone/missile track, and one airspace_activity
     observation per track (the observation id depends on the track id only)."""

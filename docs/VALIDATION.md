@@ -3,6 +3,31 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-10-29 navigation, connectivity and reference signals
+
+Live checks used a scratch store (one poll of every source except aircraft, alerts and
+drone tracks, then fusion), not the `data` branch. Method in [Signals](SIGNALS.md).
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| The kernel's H3 cells are gpsjam.org's | every cell of gpsjam.org's 2026-10-27 file: centre, then cell of the centre; `test_kernel_cells_reproduce_gpsjam_indices` on a 474-cell sample | 47,482 of 47,482 indices reproduced; passing |
+| An aircraft counts once per cell-day, bad if any report there was | `test_aircraft_counts_once_per_cell_day_bad_if_any_report_bad` | passing |
+| Cell formula and bands are gpsjam.org's | `test_gpsjam_formula_and_bands` (2 % and 10 % edges, one bad aircraft discounted) | passing |
+| Per-aircraft rule and validity filters follow God's Eye View | `test_per_aircraft_rule`, `test_integrity_filters_follow_gods_eye_view` (version, ground, position age, derived quality, last good position, box) | passing; the rule is not validated against known interference |
+| Sources sharing a URL are parsed by their own adapters | `test_mixed_adapters_on_one_url_parse_by_their_own_adapter` | passing; before, the group took the first source's parser |
+| The proxy does not take integrity snapshots at the dashboard's aircraft rate | `test_proxy_polls_a_colocated_source_by_its_own_cadence` | passing; before the fix a dashboard session stored 284 integrity cells in minutes |
+| A stored gpsjam.org day is not fetched again | `test_gpsjam_region_cells_and_stored_days` | passing |
+| MND reports parse to the stated counts and UTC window | report 88094 (`test_mnd_list_and_report`); year boundary and failures (`test_mnd_year_boundary_and_failures`); live backfill read against report texts | 6 sorties, 7 PLAN, 1 official, 5 ADIZ, window 22:00–22:00 UTC; 81 reports, 2026-08-10 to 2026-10-29, one per day |
+| IODA outages of one country link; a failed IODA feed is a gap | `test_ioda_events_observations_and_linking` | passing; three measurements within and beyond τ give events of 2 and 1 |
+| UCDP events keep their version and region | `test_ucdp_parse_keeps_region_events_with_version`; live v26.0.9 | 2,014 events; 1,080 inside six region boxes, none in Taiwan's |
+| Recall windows, distance and eligibility | `test_recall_windows_distance_and_eligibility` | passing |
+| Engine recall of UCDP events | `engine validate` | not measured: UCDP's newest release ends 2026-10-01, collection began 2026-10-21; 0 eligible in every region |
+| Agreement of the engine's integrity snapshots with gpsjam.org | `agreement` in `/api/signals` | not measured: needs whole days of a local engine |
+| First live collection | `engine collect --adapter gpsjam mnd ioda ucdp` | 48 runs: 16 ok, 32 empty (31 IODA countries with no outage in 7 days, Taiwan's UCDP box), 0 failed; 1,373 items in 116 s, of which the one-off MND backfill took 112 s |
+| GNSS on live data | gpsjam.org 2026-10-22 to 10-28 | high cells per day: Iran/Israel 95–141, Black Sea 74–82, Russia/Ukraine 63–87, South Asia 69–104, Hormuz 2–25, Red Sea 3–30, Taiwan Strait 0 on all seven days |
+| Dashboard and static snapshot | `/api/signals` and `/api/indicators` through Next; `scripts/snapshot.mjs`; Edge screenshots of the map and SIGNALS view at 1600 and 390 px | 200; 140 routes written, 0 failed (7 new, 44–76 KB); map draws the cells only after the hook was moved below map creation |
+| Gates | pytest, ruff, pip check, cargo fmt and clippy, tsc, ESLint, `npm test`, `npm run build` | 154 passed; clean; clean; clean; clean; 0 errors, 17 warnings as before; 28 passed; built |
+
 ## 2026-10-24 engine debugging audit
 
 Measured on a copy of the `data` branch at its 2026-10-25 01:39 UTC commit (49,782

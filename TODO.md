@@ -13,6 +13,10 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [ ] Validate South Asia classifier and event thresholds against a locally reviewed sample.
 - [x] 2026-10-24 South Asia reporting counts have no alert cutoffs; shipping smoothing follows the published World Bank centered seven-day method. Supplied satellite datasets and iMoonLab methods assessed in [Maritime methods](docs/MARITIME-METHODS.md).
 - [ ] Compare PortWatch changes with independent port-authority reports before assigning disruption causes.
+- [x] 2026-10-29 Signals: gpsjam.org GNSS cells and own ADS-B integrity snapshots (Rust H3 kernel), IODA outages (`internet_outage`), Taiwan MND daily reports (TW-1c), UCDP Candidate reference and `engine validate`; SIGNALS view and map GNSS layer; [method](docs/SIGNALS.md).
+- [ ] After the UCDP October 2026 Candidate release (the September file appeared 2026-10-20), run `engine validate` on the `data` branch and record the recall grid in Validation.
+- [ ] Run a local engine for whole days, then compare its integrity cells with gpsjam.org's (agreement in the SIGNALS view).
+- [ ] Assess gpsjam.org, IODA, Taiwan MND and UCDP reliability (graded F pending).
 
 Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items below are kept as found.
 

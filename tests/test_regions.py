@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 from engine import regions
-from engine.collect import rss
+from engine.collect import mnd, rss
 from engine.schema import KINDS
 
 R = regions.regions()
@@ -46,8 +46,7 @@ def test_pir_indicators(r):
     O = [i for i in I if i.get("metric") == "official"]
     assert I and len(E) + len(T) + len(G) + len(O) == len(I)
     assert all(i["band"] in ("medium", "high") for i in G)
-    assert all(i["field"] in ("aircraft", "ships", "official", "balloons", "adiz", "median_line")
-               for i in O)
+    assert all(i["field"] in mnd.FIELDS for i in O)
     assert all(i["kind"] in KINDS and (i.get("metric") == "event_count"
                or 1 <= i["watch"] <= i["trigger"]) for i in E)
     assert all(i["gate"] in r["gate"] and i["trigger_z"] <= i["watch_z"] < 0 for i in T)

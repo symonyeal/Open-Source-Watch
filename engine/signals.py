@@ -9,9 +9,9 @@ from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 
 from engine import gnss, store, validate
+from engine.collect import mnd
 
 ADAPTERS = ("gpsjam", "integrity", "mnd", "ioda", "ucdp")
-COUNTS = ("aircraft", "ships", "official", "balloons", "adiz", "median_line")
 PRIOR = 30   # reports whose median the latest is shown beside
 
 
@@ -28,24 +28,20 @@ def official(r, n=90):
     S = [P[d] for d in sorted(P)[-n:]]
     prior = S[-PRIOR - 1:-1]
     med = {k: statistics.median(v) if (v := [p[k] for p in prior if p[k] is not None]) else None
-           for k in COUNTS}
+           for k in mnd.FIELDS}
     return {"reports": S, "latest": S[-1] if S else None, "median": med, "n_prior": len(prior),
             "unit": "per 06:00-06:00 (UTC+8) report",
             "source": "Taiwan Ministry of National Defense"}
 
 
-def indicator(i, r, t, health):
-    """Indicator of metric "official": count `field` of the latest MND report
-    whose day is within 3 days of t, beside its median over the PRIOR reports
-    before; descriptive. No data if no MND source is healthy or no report is."""
+def measure(i, r, since):
+    """Value of indicator i of metric "official" (engine.analyze): count field(i)
+    of the latest MND report if its day is on or after the date `since` (date
+    None otherwise), beside the count's median over the PRIOR reports before it."""
     o = official(r, PRIOR + 1)
-    p = o["latest"]
-    recent = p and t.date() - datetime.fromisoformat(p["day"]).date() <= timedelta(days=3)
-    ok = any(h == "ok" for s, h in health.items() if s.startswith("mnd:"))
-    return {"id": i["id"], "name": i["name"], "metric": "official", "field": i["field"],
-            "count": (p or {}).get(i["field"]) or 0, "date": p["day"] if p else None,
-            "median": o["median"][i["field"]], "n_prior": o["n_prior"],
-            "status": "observed" if ok and recent else "no data", "sources": ["mnd:Taiwan MND"]}
+    p = o["latest"] if o["latest"] and o["latest"]["day"] >= since.isoformat() else None
+    return {"field": i["field"], "count": (p or {}).get(i["field"]) or 0,
+            "date": p and p["day"], "median": o["median"][i["field"]], "n_prior": o["n_prior"]}
 
 
 def outages(r, t, days=7):
@@ -94,8 +90,8 @@ def reference(r):
 def view(r, sources, t=None):
     """The signals of region r; `sources` is its source table (cycle.source_table)."""
     t = t or datetime.now(UTC)
-    mnd = any(s["id"].startswith("mnd:") for s in sources)
-    return {"region": r["id"], "gnss": gnss.view(r, t), "official": official(r) if mnd else None,
+    claims = any(s["id"].startswith("mnd:") for s in sources)
+    return {"region": r["id"], "gnss": gnss.view(r, t), "official": official(r) if claims else None,
             "outages": outages(r, t), "reference": reference(r),
             "sources": [s for s in sources if s["id"].split(":", 1)[0] in ADAPTERS],
             "updated": t.isoformat()}

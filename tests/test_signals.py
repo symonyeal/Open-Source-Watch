@@ -23,7 +23,7 @@ JAM = (FIX / "gpsjam_2026-10-27_sample.csv").read_text(encoding="utf8")
 
 
 def body(x):
-    return lambda _: SimpleNamespace(content=json.dumps(x).encode())
+    return lambda _: collect.response(x)
 
 
 # GNSS ---------------------------------------------------------------------------
@@ -79,6 +79,12 @@ def test_gpsjam_region_cells_and_stored_days(monkeypatch):
     # A stored day is not fetched again; the others of the window are, older ones are not.
     _, raw, _ = collect.run([src], gpsjam.parse, get=body(d))
     store.append("raw_report", raw)
+    # The region's GNSS indicator counts the latest stored day's high cells.
+    high = sum(gnss.band(gnss.pct(g, b)) == "high" for _, g, b in p["cells"])
+    [x] = [i for q in analyze.board(R["black-sea"], {src["id"]: "ok"}) for i in q["indicators"]
+           if i.get("metric") == "gnss"]
+    assert high and (x["status"], x["count"], x["date"], x["sources"]) == \
+        ("observed", high, day(2), [src["id"]])
     asked = []
     manifest = "date,suspect,num_bad_aircraft_hexes,source\n" + "".join(
         f"{day(k)},false,1,merged\n" for k in (1, 2, 3, gpsjam.DAYS + 1))
@@ -198,9 +204,14 @@ def test_official_series_median_and_indicator():
     o = signals.official(r)
     assert o["latest"]["aircraft"] == 0 and o["median"]["aircraft"] == 2.5
     assert o["median"]["official"] is None and o["n_prior"] == 4
-    i = {"id": "TW-1c", "name": "x", "metric": "official", "field": "aircraft"}
-    assert signals.indicator(i, r, t, {src["id"]: "ok"})["status"] == "observed"
-    assert signals.indicator(i, r, t, {src["id"]: "failed"})["status"] == "no data"
+    def I(health, t):
+        return {i["id"]: i for p in analyze.board(r, health, t) for i in p["indicators"]}
+    x = I({src["id"]: "ok"}, t)["TW-1c"]
+    assert (x["status"], x["count"], x["date"], x["sources"]) == \
+        ("observed", 0, "2026-10-29", [src["id"]])
+    assert I({src["id"]: "failed"}, t)["TW-1c"]["status"] == "no data"
+    late = t + analyze.RECENT + timedelta(days=1)                 # latest report too old
+    assert I({src["id"]: "ok"}, late)["TW-1c"]["status"] == "no data"
 
 
 # IODA ------------------------------------------------------------------------------
@@ -224,8 +235,8 @@ def test_ioda_events_observations_and_linking():
     X = [o | {"outlet": None} for o in O]
     E = fuse.events(R["iran-israel"], X)
     assert sorted(len(e["observation_ids"]) for e in E) == [1, 2]   # within τ link
-    assert analyze.gap("internet_outage", {"ioda:IODA#IR": "ok"}) is False
-    assert analyze.gap("internet_outage", {"rss:BBC": "ok"}) is True
+    assert analyze.gap(analyze.PRODUCERS["internet_outage"], {"ioda:IODA#IR": "ok"}) is False
+    assert analyze.gap(analyze.PRODUCERS["internet_outage"], {"rss:BBC": "ok"}) is True
 
 
 # UCDP ------------------------------------------------------------------------------
@@ -260,7 +271,7 @@ def test_recall_windows_distance_and_eligibility():
     assert validate.match(U, late, tz, 1, period)[:2] == (1, 1)
     assert validate.match(U, [far | {"t_start": t}], tz, 2, period)[:2] == (1, 0)
     assert validate.match(U, [], tz, 0, (t + timedelta(days=1), t + timedelta(days=5)))[0] == 0
-    assert round(float(validate.km(30, 70, np.array([30.1]), np.array([70.0]))[0]), 1) == 11.1
+    assert round(float(regions.km(30, 70, np.array([30.1]), np.array([70.0]))[0]), 1) == 11.1
 
 
 # View ------------------------------------------------------------------------------

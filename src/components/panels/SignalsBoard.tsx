@@ -3,6 +3,7 @@
 // Open-Source-Watch: GNSS integrity (gpsjam.org, own adsb.lol snapshots), internet
 // outages (IODA), Taiwan MND daily reports and UCDP Candidate reference events of
 // the selected region, from the engine's /api/signals. Descriptive only.
+import { GNSS_COLOR } from '@/components/map/gnssLayer';
 import { useConflictFeed } from '@/lib/hooks';
 import type { GnssDay, MndReport, SignalSource, SignalsResponse } from '@/lib/types/signals';
 
@@ -75,8 +76,8 @@ function Gnss({ data }: { data: SignalsResponse }) {
             <thead><tr className={ROW}>
               <th className={TH}>Day (UTC)</th><th className={TH}>Source</th>
               <th className={`${TH} text-right`}>Cells</th>
-              <th className={`${TH} text-right`}><Swatch c="#ffaa00" />Medium</th>
-              <th className={`${TH} text-right`}><Swatch c="#ff3366" />High</th>
+              <th className={`${TH} text-right`}><Swatch c={GNSS_COLOR.medium} />Medium</th>
+              <th className={`${TH} text-right`}><Swatch c={GNSS_COLOR.high} />High</th>
             </tr></thead>
             <tbody>{days.map((d: GnssDay) => (
               <tr key={d.date + d.source} className={ROW}>
@@ -106,7 +107,7 @@ function Gnss({ data }: { data: SignalsResponse }) {
                 <td className={`${TD} whitespace-nowrap`}>{c.lat.toFixed(2)}, {c.lon.toFixed(2)}</td>
                 <td className={`${TD} text-right`}>{c.good + c.bad}</td>
                 <td className={`${TD} text-right`}>{c.bad}</td>
-                <td className={`${TD} text-right`}><Swatch c={c.band === 'high' ? '#ff3366' : '#ffaa00'} />{c.pct}%</td>
+                <td className={`${TD} text-right`}><Swatch c={GNSS_COLOR[c.band]} />{c.pct}%</td>
               </tr>
             ))}</tbody>
           </table>

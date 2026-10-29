@@ -13,12 +13,12 @@ import io
 import json
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
-from types import SimpleNamespace
 
 import numpy as np
 
 from engine import regions, store
 from engine.collect import fetch as get
+from engine.collect import response
 
 BASE = "https://gpsjam.org/data/"
 DAYS = 30
@@ -40,8 +40,7 @@ def fetch(src):
         "WHERE source_id LIKE 'gpsjam:%' AND published_at >= ?", (t0,))}
     want = [d for d in M if date.fromisoformat(d) >= t0 and date.fromisoformat(d) not in have]
     days = {d: get({"url": f"{BASE}{d}-h3_4.csv"}).text for d in want}
-    return SimpleNamespace(content=json.dumps({"manifest": {d: M[d] for d in want},
-                                               "days": days}).encode())
+    return response({"manifest": {d: M[d] for d in want}, "days": days})
 
 
 @lru_cache(maxsize=64)

@@ -54,8 +54,7 @@ def report(r, board, sources, kind="intsum", t=None):
                      f"({', '.join(i['id'] for i in k)}); {judgement}.")
         elif p["status"] == "gap":
             L.append(f"- **{p['pir']}** {p['question']} Cannot be assessed: collection gap.")
-        elif all(i.get("metric") in ("event_count", "gnss", "official")
-                 for i in p["indicators"]):
+        elif all(i["status"] == "observed" for i in p["indicators"]):   # all descriptive
             L.append(f"- **{p['pir']}** {p['question']} Reporting counts only; "
                      "no calibrated alert threshold.")
         else:

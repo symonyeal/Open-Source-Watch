@@ -16,11 +16,11 @@ import json
 import re
 from datetime import UTC, datetime
 from functools import lru_cache
-from types import SimpleNamespace
 
 from engine import regions, store
 from engine.collect import EXCERPT
 from engine.collect import fetch as get
+from engine.collect import response
 
 PAGE = "https://ucdp.uu.se/downloads/"
 CADENCE = 7 * 86400
@@ -47,7 +47,7 @@ def fetch(src):
     have = store.query("SELECT 1 FROM raw_report WHERE source_id LIKE 'ucdp:%' AND "
                        "json_extract_string(payload, '$.version') = ? LIMIT 1", (v,))
     text = "" if have else get({"url": url}, timeout=120.0).content.decode("utf-8-sig")
-    return SimpleNamespace(content=json.dumps({"version": v, "url": url, "csv": text}).encode())
+    return response({"version": v, "url": url, "csv": text})
 
 
 @lru_cache(maxsize=4)

@@ -5,6 +5,8 @@ region id or "global". An adapter module exposes
 
     sources(R)       -> list of sources, R the region registry
     parse(body, src) -> list of items {native_id, published_at, url, payload}
+    fetch(src)       -> response with `content`; optional, for a body assembled
+                        from several requests (default: GET src["url"])
 
 `run` fetches one URL and parses it for every source sharing that URL. A failed
 fetch or parse is the run's status, never an exception (spec § Errors).
@@ -13,6 +15,7 @@ import hashlib
 import json
 import time
 from datetime import UTC, datetime
+from types import SimpleNamespace
 from xml.etree.ElementTree import ParseError
 
 import httpx
@@ -40,6 +43,12 @@ def fetch(src, timeout=10.0):
                     headers={"User-Agent": UA, **src.get("headers", {})})
     res.raise_for_status()
     return res
+
+
+def response(obj):
+    """Response-like result of a fetch that assembles several requests into one
+    body: obj as JSON, read by run() as `content`."""
+    return SimpleNamespace(content=json.dumps(obj).encode())
 
 
 def status_of(e):

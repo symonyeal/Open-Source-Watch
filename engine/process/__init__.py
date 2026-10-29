@@ -11,6 +11,7 @@ import threading
 from functools import cache
 
 import httpx
+import numpy as np
 
 from engine import regions, store
 
@@ -90,6 +91,23 @@ def _geonames():
 
 
 @cache
+def _towns(pop):
+    T = [x for x in _geonames() if x[3] >= pop]
+    return [x[0] for x in T], np.array([x[1] for x in T]), np.array([x[2] for x in T])
+
+
+def nearest(lat, lon, pop=0):
+    """'<city> (<d> km)', the gazetteer city of at least pop people nearest to
+    (lat, lon); None without one."""
+    N, A, O = _towns(pop)
+    if not N:
+        return None
+    d = regions.km(lat, lon, A, O)
+    k = int(d.argmin())
+    return f"{N[k]} ({d[k]:.0f} km)"
+
+
+@cache
 def _gazetteer(rid):
     r = regions.regions()[rid]
     L = {k: (lat, lon, "country" if k in COUNTRIES else "city")
@@ -118,6 +136,7 @@ def build_geonames(zip_path):
                         + "".join("\t".join(x) + "\n" for x in rows), encoding="utf8")
     _geonames.cache_clear()
     _gazetteer.cache_clear()
+    _towns.cache_clear()
     return len(rows)
 
 

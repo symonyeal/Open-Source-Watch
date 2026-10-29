@@ -14,6 +14,7 @@ import httpx
 import numpy as np
 
 from engine import regions, store
+from engine.schema import GEO_PRECISION
 
 # Script ranges → language guess (Unicode 15 blocks).
 SCRIPTS = [("he", re.compile("[֐-׿]")), ("ar", re.compile("[؀-ۿ]")),
@@ -79,7 +80,7 @@ COUNTRIES = {
 
 GEONAMES = regions.DIR / "geonames.tsv"   # built by `engine gazetteer` (GeoNames cities15000)
 WORD = re.compile(r"[^\W\d_][\w'’-]*")
-ORDER = {"point": 0, "city": 1, "admin": 2, "country": 3}
+ORDER = {p: k for k, p in enumerate(GEO_PRECISION)}   # finest first
 
 
 @cache

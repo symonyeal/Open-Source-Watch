@@ -70,9 +70,12 @@ def report(r, board, sources, kind="intsum", t=None):
             elif i.get("metric") == "event_count":
                 v, th = f"{i['count']} in {i['window_h']} h", "not calibrated"
             elif i.get("metric") == "gnss":
-                v, th = f"{i['count']} cells {i['band']} on {i['date']}", "none (descriptive)"
+                v = "no data" if i["status"] == "no data" else \
+                    f"{i['count']} cells {i['band']} on {i['date']}"
+                th = "none (descriptive)"
             elif i.get("metric") == "official":
-                v = f"{i['count']} on {i['date']}, median {i['median']} over {i['n_prior']}"
+                v = "no data" if i["status"] == "no data" else \
+                    f"{i['count']} on {i['date']}, median {i['median']} over {i['n_prior']}"
                 th = "none (a party's claim)"
             else:
                 v, th = f"{i['count']} in {i['window_h']} h", f"{i['watch']} / {i['trigger']}"

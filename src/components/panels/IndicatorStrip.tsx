@@ -10,7 +10,7 @@ import { useConflictFeed } from '@/lib/hooks';
 import { apiUrl } from '@/lib/snapshot';
 
 interface Indicator {
-  id: string; name: string; status: string; count: number;
+  id: string; name: string; status: string; count: number | null;
   metric?: string;
   window_h?: number; watch?: number; trigger?: number; z?: number | null;
   date?: string | null; band?: string; median?: number | null; n_prior?: number;
@@ -23,7 +23,7 @@ const COLOR: Record<string, string> = { triggered: 'var(--red)', watch: '#ffaa00
 const value = (i: Indicator) => i.metric === 'gnss'
   ? `${i.count} cells ${i.band} on ${i.date ?? 'no day'} (gpsjam.org; descriptive, no threshold)`
   : i.metric === 'official'
-  ? `${i.count} on ${i.date ?? 'no report'}, median ${i.median ?? 'n/a'} over ${i.n_prior} reports (a party's claim)`
+  ? `${i.date ? `${i.count ?? 'not stated'} on ${i.date}` : 'no recent report'}, median ${i.median ?? 'n/a'} over ${i.n_prior} reports (a party's claim)`
   : i.window_h !== undefined
   ? `${i.count} in ${i.window_h}h (${i.metric === 'event_count' ? 'reporting count; no calibrated threshold' : `watch ${i.watch}, trigger ${i.trigger}`})`
   : `${i.count} observed AIS crossings, z ${i.z ?? 'n/a'}`;

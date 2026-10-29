@@ -219,6 +219,23 @@ def test_official_series_median_and_indicator():
     assert I({src["id"]: "ok"}, late)["TW-1c"]["status"] == "no data"
 
 
+def test_an_unstated_official_count_is_no_data():
+    """A report that does not state the indicator's count is not a count of zero."""
+    r, src = R["taiwan-strait"], mnd.sources(R)[0]
+    t = datetime(2026, 10, 29, 12, tzinfo=UTC)
+    p = {"id": "1", "day": "2026-10-29", "aircraft": None, "ships": 5, "official": None,
+         "balloons": None, "adiz": None, "median_line": None}
+    store.append("raw_report", [{"id": "m", "source_id": src["id"], "region": r["id"],
+                                 "fetched_at": t, "published_at": t, "url": None,
+                                 "payload": json.dumps(p)}])
+    B = analyze.board(r, {src["id"]: "ok"}, t)
+    [x] = [i for q in B for i in q["indicators"] if i["id"] == "TW-1c"]
+    assert (x["status"], x["count"], x["date"]) == ("no data", None, "2026-10-29")
+    store.append("indicator_status", analyze.snapshot(r, B, t))
+    assert store.query("SELECT count FROM indicator_status WHERE indicator = 'TW-1c'") == \
+        [{"count": None}]
+
+
 # IODA ------------------------------------------------------------------------------
 
 def test_ioda_events_observations_and_linking():
@@ -242,6 +259,11 @@ def test_ioda_events_observations_and_linking():
     assert sorted(len(e["observation_ids"]) for e in E) == [1, 2]   # within τ link
     assert analyze.gap(analyze.PRODUCERS["internet_outage"], {"ioda:IODA#IR": "ok"}) is False
     assert analyze.gap(analyze.PRODUCERS["internet_outage"], {"rss:BBC": "ok"}) is True
+    # Reports of a country, or a region, since removed from the registry derive nothing.
+    gone = [raw[0] | {"id": "x1", "payload": json.dumps(json.loads(raw[0]["payload"])
+                                                        | {"country": "ZZ"})},
+            raw[0] | {"id": "x2", "region": "atlantis", "source_id": "rss:Gone"}]
+    assert not any(cycle.derive(gone).values())
 
 
 # UCDP ------------------------------------------------------------------------------

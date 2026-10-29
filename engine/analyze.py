@@ -12,8 +12,8 @@ this does not establish full-day coverage. Fewer than 7 prior sampled days, or n
 sampled coverage on the last day, gives no data.
 Descriptive indicators (metric in MEASURES: GNSS cells, engine.gnss; official
 counts, engine.signals) report a measured or claimed value without a threshold;
-no data if no healthy source produces it or its latest value is dated before
-RECENT.
+no data if no healthy source produces it, its latest value is dated before
+RECENT, or the value is not stated (count None).
 A PIR is answered if one indicator is triggered; a collection gap if, for some
 indicator, no healthy source can produce its evidence (PRODUCERS); otherwise
 open. A kind that did not occur is not a gap.
@@ -143,7 +143,7 @@ def board(r, health, t=None):
             if i.get("metric") in MEASURES:                  # descriptive, no threshold
                 f, A = MEASURES[i["metric"]]
                 x = f(i, r, t.date() - RECENT)
-                missing = gap(A, health) or x["date"] is None
+                missing = gap(A, health) or x["date"] is None or x["count"] is None
                 miss |= missing
                 x = {"id": i["id"], "name": i["name"], "metric": i["metric"]} | x | {
                     "status": "no data" if missing else "observed",
@@ -183,5 +183,5 @@ def snapshot(r, B, t=None):
     """indicator_status rows of board B at time t (the indicator board's history)."""
     t = t or datetime.now(UTC)
     return [{"region": r["id"], "t": t, "pir": p["pir"], "indicator": i["id"],
-             "status": i["status"], "count": int(i["count"])}
+             "status": i["status"], "count": i["count"]}
             for p in B for i in p["indicators"]]

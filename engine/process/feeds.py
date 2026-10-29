@@ -128,11 +128,15 @@ def ioda(raws, R):
     government (region.toml [outages]) with admin precision: IODA measures the
     country as one unit, so outages of one country within τ of each other link
     under the fusion rule (same unit). The id depends on the event's country,
-    datasource and start only, so a lengthening event stays one observation."""
+    datasource and start only, so a lengthening event stays one observation. A
+    country no longer in [outages] has no seat to place it at, so it gives none."""
     out = []
     for x in raws:
         r, p = R[x["region"]], x["payload"]
-        c = next(c for c in r["outages"]["countries"] if c["code"] == p["country"])
+        C = {c["code"]: c for c in r.get("outages", {}).get("countries", [])}
+        if p["country"] not in C:
+            continue
+        c = C[p["country"]]
         h = p["duration"] / 3600
         out.append({"id": obs_id(f"ioda:{p['country']}:{p['datasource']}:{p['start']}", r["id"]),
                     "raw_id": x["id"], "source_id": x["source_id"], "region": r["id"],

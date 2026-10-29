@@ -18,7 +18,9 @@ track_point, event, entity) and, for each region, `/api/signals`, `/api/context`
 | A gpsjam.org day is fetched until every region stores it | `test_gpsjam_region_cells_and_stored_days` | passing |
 | A UCDP version is skipped only by the regions that store it | `test_ucdp_version_skipped_only_by_regions_that_store_it` | passing |
 | The latest version of each UCDP event is kept | `test_ucdp_parse_keeps_region_events_with_version` | passing |
-| Gates | pytest, ruff, pip check, ESLint, `npm test`, `npm run build` (kernel unchanged) | 155 passed; clean; clean; 0 errors, 17 warnings as before; 28 passed; built |
+| An MND count the latest report does not state is no data, not 0 | `test_an_unstated_official_count_is_no_data` (board and stored snapshot) | passing; fails before the fix (count 0, "observed"). On the cron store, which holds no MND report, TW-1c's count is now null instead of 0; its status was and is "no data" |
+| Rebuild survives a region or IODA country removed from the registry | `test_ioda_events_observations_and_linking`; a raw report of an unregistered region | passing; before, `KeyError` for the region and `StopIteration` for the country stopped `engine rebuild` |
+| Gates | pytest, ruff, pip check, ESLint, `npm test`, `npm run build` (kernel unchanged) | 156 passed; clean; clean; 0 errors, 17 warnings, all on lines upstream wrote (diff against `upstream/main`); 28 passed; built |
 
 ## 2026-10-29 navigation, connectivity and reference signals
 

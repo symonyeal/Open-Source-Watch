@@ -104,10 +104,12 @@ def test_proven_and_maritime_feeds_are_graded():
 
 def test_pirs_use_event_taxonomy_without_economic_thresholds():
     pirs = REGION["pir"]
-    assert {pir["id"] for pir in pirs} == {"SA-1", "SA-2", "SA-3"}
-    kinds = {indicator["kind"] for pir in pirs for indicator in pir["indicator"]}
-    assert {"maritime_incident", "battles", "violence_against_civilians", "protests"} <= kinds
-    assert all(indicator.get("metric") == "event_count"
+    assert {pir["id"] for pir in pirs} == {"SA-1", "SA-2", "SA-3", "SA-4"}
+    kinds = {indicator.get("kind") for pir in pirs for indicator in pir["indicator"]}
+    assert {"maritime_incident", "battles", "violence_against_civilians", "protests",
+            "internet_outage"} <= kinds
+    # Descriptive throughout: reporting counts and GNSS cell counts, no alert cutoffs.
+    assert all(indicator.get("metric") in ("event_count", "gnss")
                and "watch" not in indicator and "trigger" not in indicator
                for pir in pirs for indicator in pir["indicator"])
 

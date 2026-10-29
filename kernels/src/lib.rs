@@ -1,7 +1,9 @@
-//! Compiled kernels of the engine. `engine.fuse` uses each one when this module is
-//! installed (`py -3.14 -m pip install ./kernels`) and its NumPy version otherwise;
-//! `tests/test_fuse.py` checks that the two give the same labels.
+//! Compiled kernels of the engine, installed with `py -3.14 -m pip install ./kernels`:
+//! the fusion linkage of `engine.fuse` (`tests/test_fuse.py` checks it against a
+//! brute-force check of every pair) and the H3 cells of `engine.gnss` (h3o, a Rust
+//! port of Uber's H3; `tests/test_gnss.py` checks it against gpsjam.org's files).
 
+use h3o::{CellIndex, LatLng, Resolution};
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -83,7 +85,141 @@ fn components<'py>(
     Ok(lab.into_pyarray(py))
 }
 
+/// A NumPy array returned to Python.
+type Array<'py, T> = Bound<'py, PyArray1<T>>;
+
+/// Columns (day, cell, good, bad) of `aircraft_counts`.
+type Counts<'py> = (
+    Array<'py, i64>,
+    Array<'py, u64>,
+    Array<'py, i64>,
+    Array<'py, i64>,
+);
+
+fn resolution(res: u8) -> PyResult<Resolution> {
+    Resolution::try_from(res).map_err(|e| PyValueError::new_err(e.to_string()))
+}
+
+fn cell(h: u64) -> PyResult<CellIndex> {
+    CellIndex::try_from(h).map_err(|e| PyValueError::new_err(format!("{h:x}: {e}")))
+}
+
+/// H3 cell of each point at resolution `res`; 0 where lat/lon is not a coordinate
+/// (non-finite, |lat| > 90 or |lon| > 180; h3o itself only rejects non-finite values).
+#[pyfunction]
+fn cells<'py>(
+    py: Python<'py>,
+    lat: PyReadonlyArray1<'py, f64>,
+    lon: PyReadonlyArray1<'py, f64>,
+    res: u8,
+) -> PyResult<Bound<'py, PyArray1<u64>>> {
+    let (lat, lon, r) = (lat.as_slice()?, lon.as_slice()?, resolution(res)?);
+    if lat.len() != lon.len() {
+        return Err(PyValueError::new_err("arrays differ in length"));
+    }
+    let h: Vec<u64> = lat
+        .iter()
+        .zip(lon)
+        .map(|(&a, &b)| match LatLng::new(a, b) {
+            Ok(p) if a.abs() <= 90.0 && b.abs() <= 180.0 => u64::from(p.to_cell(r)),
+            _ => 0,
+        })
+        .collect();
+    Ok(h.into_pyarray(py))
+}
+
+/// Centre (lat, lon) in degrees of each cell; an invalid index is an error.
+#[pyfunction]
+fn centres<'py>(
+    py: Python<'py>,
+    h: PyReadonlyArray1<'py, u64>,
+) -> PyResult<(Array<'py, f64>, Array<'py, f64>)> {
+    let pts = h
+        .as_slice()?
+        .iter()
+        .map(|&x| cell(x).map(LatLng::from))
+        .collect::<PyResult<Vec<_>>>()?;
+    let lat: Vec<f64> = pts.iter().map(|p| p.lat()).collect();
+    let lon: Vec<f64> = pts.iter().map(|p| p.lng()).collect();
+    Ok((lat.into_pyarray(py), lon.into_pyarray(py)))
+}
+
+/// Boundary of each cell, its vertices [(lat, lon), ...] in degrees, counter-clockwise.
+#[pyfunction]
+fn boundaries(h: PyReadonlyArray1<'_, u64>) -> PyResult<Vec<Vec<(f64, f64)>>> {
+    h.as_slice()?
+        .iter()
+        .map(|&x| {
+            Ok(cell(x)?
+                .boundary()
+                .iter()
+                .map(|p| (p.lat(), p.lng()))
+                .collect())
+        })
+        .collect()
+}
+
+/// Aircraft per (day, cell), gpsjam.org's daily count (docs/SOURCES.md): an aircraft
+/// counts once in each cell-day it was seen in, as bad if any of its reports there
+/// was bad, else as good. Rows (day, cell, good, bad) sorted by day, then cell;
+/// reports with h = 0 (no coordinate) are dropped.
+///
+/// Cost O(n log n): one sort of the n reports by (day, cell, aircraft).
+#[pyfunction]
+fn aircraft_counts<'py>(
+    py: Python<'py>,
+    day: PyReadonlyArray1<'py, i64>,
+    h: PyReadonlyArray1<'py, u64>,
+    icao: PyReadonlyArray1<'py, u32>,
+    bad: PyReadonlyArray1<'py, bool>,
+) -> PyResult<Counts<'py>> {
+    let (day, h, icao, bad) = (
+        day.as_slice()?,
+        h.as_slice()?,
+        icao.as_slice()?,
+        bad.as_slice()?,
+    );
+    let n = day.len();
+    if [h.len(), icao.len(), bad.len()].iter().any(|&m| m != n) {
+        return Err(PyValueError::new_err("arrays differ in length"));
+    }
+    let (dd, hh, gg, bb) = py.detach(|| {
+        let mut o: Vec<usize> = (0..n).filter(|&i| h[i] != 0).collect();
+        o.sort_unstable_by_key(|&i| (day[i], h[i], icao[i]));
+        let (mut dd, mut hh, mut gg, mut bb) = (vec![], vec![], vec![], vec![]);
+        let mut k = 0;
+        while k < o.len() {
+            let (d, c) = (day[o[k]], h[o[k]]);
+            let (mut g, mut b) = (0, 0);
+            while k < o.len() && (day[o[k]], h[o[k]]) == (d, c) {
+                let a = icao[o[k]];
+                let mut worse = false;
+                while k < o.len() && (day[o[k]], h[o[k]], icao[o[k]]) == (d, c, a) {
+                    worse |= bad[o[k]];
+                    k += 1;
+                }
+                if worse { b += 1 } else { g += 1 }
+            }
+            dd.push(d);
+            hh.push(c);
+            gg.push(g);
+            bb.push(b);
+        }
+        (dd, hh, gg, bb)
+    });
+    Ok((
+        dd.into_pyarray(py),
+        hh.into_pyarray(py),
+        gg.into_pyarray(py),
+        bb.into_pyarray(py),
+    ))
+}
+
 #[pymodule]
 fn osw_kernels(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(components, m)?)
+    m.add_function(wrap_pyfunction!(components, m)?)?;
+    m.add_function(wrap_pyfunction!(cells, m)?)?;
+    m.add_function(wrap_pyfunction!(centres, m)?)?;
+    m.add_function(wrap_pyfunction!(boundaries, m)?)?;
+    m.add_function(wrap_pyfunction!(aircraft_counts, m)?)
 }

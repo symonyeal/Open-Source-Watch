@@ -13,6 +13,7 @@ def data(tmp_path, monkeypatch):
     monkeypatch.setenv("OSW_DATA", str(tmp_path))
     monkeypatch.setattr(cycle, "_seen", None)
     monkeypatch.setattr(cycle, "CACHE", {})
+    monkeypatch.setattr(cycle, "POLLED", {})
     monkeypatch.setattr(process, "_cache", {})
     monkeypatch.setattr(process, "google", lambda s: s)
     return tmp_path

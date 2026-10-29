@@ -62,5 +62,5 @@ KINDS = (
     "battles", "explosions_remote_violence", "violence_against_civilians",
     "protests", "riots", "strategic_developments",
     "air_raid_alert", "maritime_incident", "airspace_activity", "thermal_anomaly",
-    "report",
+    "internet_outage", "report",
 )

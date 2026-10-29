@@ -20,6 +20,7 @@ import SourceHealth from '@/components/panels/SourceHealth';
 import IndicatorStrip from '@/components/panels/IndicatorStrip';
 import ConflictToggle from '@/components/ConflictToggle';
 import ContextBoard from '@/components/panels/ContextBoard';
+import SignalsBoard from '@/components/panels/SignalsBoard';
 import { useConflict } from '@/lib/conflicts/context';
 import { SNAPSHOT } from '@/lib/snapshot';
 import { useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ const ConflictMap = dynamic(() => import('@/components/map/ConflictMap'), {
 export default function Dashboard() {
   const { key: conflictKey, config } = useConflict();
   const [uptime, setUptime] = useState(0);
-  const [view, setView] = useState<'monitor' | 'context'>('monitor');
+  const [view, setView] = useState<'monitor' | 'context' | 'signals'>('monitor');
 
   useEffect(() => {
     const start = Date.now();
@@ -75,10 +76,10 @@ export default function Dashboard() {
           <div className="flex flex-wrap items-center gap-3 text-[9px] text-[var(--text-secondary)]">
             <ConflictToggle />
             <nav aria-label="Dashboard view" className="flex gap-2">
-              {(['monitor', 'context'] as const).map(v => (
+              {(['monitor', 'context', 'signals'] as const).map(v => (
                 <button key={v} onClick={() => setView(v)} aria-pressed={view === v}
                   className={`whitespace-nowrap px-2 py-1 border rounded ${view === v ? 'text-[var(--cyan)] border-[var(--cyan)]' : 'border-[var(--border-color)]'}`}>
-                  {v === 'monitor' ? 'MONITOR' : 'ENERGY & TRADE'}
+                  {v === 'monitor' ? 'MONITOR' : v === 'context' ? 'ENERGY & TRADE' : 'SIGNALS'}
                 </button>
               ))}
             </nav>
@@ -96,7 +97,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main grid - 3 rows */}
-      {view === 'context' ? <main className="flex-1 min-h-0 overflow-auto p-3"><ContextBoard /></main> : (
+      {view !== 'monitor' ? <main className="flex-1 min-h-0 overflow-auto p-3">{view === 'context' ? <ContextBoard /> : <SignalsBoard />}</main> : (
       <main className="flex-1 min-h-0 grid grid-cols-1 auto-rows-[22rem] gap-1 p-1 overflow-y-auto
         lg:grid-cols-12 lg:auto-rows-auto lg:[grid-template-rows:2fr_1.5fr_1.5fr] lg:overflow-hidden"
       >
@@ -154,7 +155,7 @@ export default function Dashboard() {
 
       {/* Bottom status bar */}
       <footer className="hidden md:flex border-t border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-1 items-center justify-between text-[9px] text-[var(--text-secondary)] shrink-0">
-        <span>PUBLIC SOURCES: NEWS | TELEGRAM | YAHOO | EIA / FRED | IMF PORTWATCH | WORLD BANK | NASA FIRMS | ADSB.LOL</span>
+        <span>PUBLIC SOURCES: NEWS | TELEGRAM | YAHOO | EIA / FRED | IMF PORTWATCH | WORLD BANK | NASA FIRMS | ADSB.LOL | GPSJAM | IODA | TAIWAN MND | UCDP</span>
         <div className="flex items-center gap-4">
           <SourceHealth />
           <span>ALERTS: 15s | NEWS: 90s | MARKETS: 10m</span>

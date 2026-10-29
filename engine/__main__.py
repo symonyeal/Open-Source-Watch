@@ -4,7 +4,8 @@ py -3.14 -m engine rebuild
 py -3.14 -m engine compact
 py -3.14 -m engine fuse
 py -3.14 -m engine regions   # write src/lib/conflicts/generated.ts
-py -3.14 -m engine gazetteer cities15000.zip"""
+py -3.14 -m engine gazetteer cities15000.zip
+py -3.14 -m engine validate  # recall of violent events against UCDP Candidate"""
 import argparse
 from collections import Counter
 
@@ -25,6 +26,7 @@ sub.add_parser("compact")
 sub.add_parser("fuse")
 sub.add_parser("regions")
 sub.add_parser("gazetteer").add_argument("zip")
+sub.add_parser("validate")
 a = p.parse_args()
 
 if a.cmd == "collect":
@@ -47,6 +49,15 @@ elif a.cmd == "regions":
 elif a.cmd == "fuse":
     from engine import fuse
     print(fuse.fuse(), "events")
+elif a.cmd == "validate":
+    from engine import regions, signals
+    for r in regions.regions().values():
+        ref = signals.reference(r)
+        print(r["id"], "no UCDP events stored" if ref is None else
+              f"UCDP {ref['first']}..{ref['last']}, {ref['events']} events; engine collected "
+              f"{'..'.join(str(x)[:10] for x in ref['recall']['engine_period'])}")
+        for x in (ref or {}).get("recall", {}).get("grid", []):
+            print("  ", x)
 else:
     from engine.process import build_geonames
     print(build_geonames(a.zip), "gazetteer names written")

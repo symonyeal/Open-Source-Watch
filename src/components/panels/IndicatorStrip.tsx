@@ -13,13 +13,18 @@ interface Indicator {
   id: string; name: string; status: string; count: number;
   metric?: string;
   window_h?: number; watch?: number; trigger?: number; z?: number | null;
+  date?: string | null; band?: string; median?: number | null; n_prior?: number;
 }
 interface Hypothesis { id: string; text: string; inconsistent: string[] }
 interface Pir { pir: string; question: string; status: 'answered' | 'open' | 'gap'; indicators: Indicator[]; hypotheses: Hypothesis[] }
 
 const COLOR: Record<string, string> = { triggered: 'var(--red)', watch: '#ffaa00', inactive: 'var(--green)', observed: 'var(--blue)', gap: 'var(--text-secondary)' };
 
-const value = (i: Indicator) => i.window_h !== undefined
+const value = (i: Indicator) => i.metric === 'gnss'
+  ? `${i.count} cells ${i.band} on ${i.date ?? 'no day'} (gpsjam.org; descriptive, no threshold)`
+  : i.metric === 'official'
+  ? `${i.count} on ${i.date ?? 'no report'}, median ${i.median ?? 'n/a'} over ${i.n_prior} reports (a party's claim)`
+  : i.window_h !== undefined
   ? `${i.count} in ${i.window_h}h (${i.metric === 'event_count' ? 'reporting count; no calibrated threshold' : `watch ${i.watch}, trigger ${i.trigger}`})`
   : `${i.count} observed AIS crossings, z ${i.z ?? 'n/a'}`;
 

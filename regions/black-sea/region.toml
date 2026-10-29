@@ -11,6 +11,10 @@ timezone = "Europe/Kyiv"  # local time of reports (engine.process.when)
 line = [[41.083, 29.040], [41.086, 29.078]]
 
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -148,3 +152,34 @@ telegramChannels = [
   { name = "militarysummary", label = "Military Summary", color = "#999999" },
   { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
 ]
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "UA", name = "Ukraine", lat = 50.4501, lon = 30.5234 },
+  { code = "RU", name = "Russia", lat = 55.7558, lon = 37.6173 },
+  { code = "TR", name = "Turkey", lat = 39.9334, lon = 32.8597 },
+  { code = "GE", name = "Georgia", lat = 41.7151, lon = 44.8271 },
+  { code = "RO", name = "Romania", lat = 44.4268, lon = 26.1025 },
+  { code = "BG", name = "Bulgaria", lat = 42.6977, lon = 23.3219 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "BS-3"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "BS-3a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "BS-3b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

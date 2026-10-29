@@ -4,6 +4,40 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Navigation, connectivity and reference signals** (2026-10-29). Four repositories
+  were assessed as additions: IRONSIGHT (already upstream; its 10 later commits are
+  documentation and a Next patch this fork has), World Monitor (sources and page
+  formats only; its instability index and convergence score use editorial weights
+  and untested thresholds), God's Eye View (its GNSS-integrity method) and SpiderFoot
+  (domain and IP reconnaissance, no overlap; last commit 2023). Taken: gpsjam.org
+  daily GNSS cells and the engine's own ADS-B integrity snapshots, IODA outages,
+  Taiwan MND daily reports and UCDP Candidate events. Method and limits in
+  `SIGNALS.md`.
+- **GNSS from published rules** (2026-10-29). Cells use gpsjam.org's formula and
+  2/10 % bands. The per-aircraft rule (14 CFR 91.227 minima, via God's Eye View) is
+  the only one available and is labelled unvalidated. Alternative refused: God's Eye
+  View's 0.5° grid, 30-minute window and three-aircraft minimum, which are its own
+  choices; H3 resolution 4 and UTC days match gpsjam.org, so the two can be compared.
+  Cells are counted in Rust (h3o): Python has no H3 without a new dependency, and the
+  kernel was already required.
+- **Integrity snapshots share the aircraft URL** (2026-10-29). The radius query
+  adsb.lol already answers carries NIC and NACp, so no request is added. Sources that
+  share a URL are now each parsed by their own adapter; before, the group took the
+  first source's parser, which was harmless only while one adapter used each URL.
+- **Outages as observations** (2026-10-29). IODA events enter fusion as
+  `internet_outage`, a new kind, at admin precision at the seat of government, so the
+  three measurements of one outage link within τ. Country precision was refused: it
+  links nothing, and one outage would count as up to three events.
+- **MND as a series, not events** (2026-10-29). The daily report says the same thing
+  on quiet and busy days; as `strategic_developments` observations it would add one
+  event a day to TW-1a. It is a TW-1c indicator beside its 30-report median instead.
+- **UCDP as reference only** (2026-10-29). Fusing UCDP events would let the engine
+  match its own input. Matching uses UCDP's own precision classes and the fusion δ of
+  25 km; the lag after the event date is reported at 0, 1 and 2 days, not chosen.
+- **Adapter fetch** (2026-10-29). Where one URL is not one request (a list page and
+  its reports; a dated window; a manifest and its days), an adapter supplies `fetch`.
+  Its result is not cached for the recording proxy.
+
 - **Published smoothing, descriptive South Asia counts** (2026-10-24). Shipping
   uses the World Bank notebook's centered seven-day mean, requiring full windows.
   Remove unsourced 7-versus-28-day comparisons and arbitrary observation-age
@@ -201,6 +235,12 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   its attribution on the map.
 
 ## Open
+
+- Engine recall against UCDP is not measured: the newest Candidate release (September
+  2026) ends before collection began (2026-10-21). The October release should overlap.
+- The per-aircraft GNSS rule and the agreement of 10-minute snapshots with gpsjam.org
+  are unmeasured until a local engine has run for whole days.
+- gpsjam.org, IODA, Taiwan MND and UCDP are graded F pending assessment.
 
 - Thermal indicators II-3 and RU-2b still count events against fixed thresholds after
   the baseline (II-3a 42 in 12 h on 2026-10-21). Whether that reflects real strikes is

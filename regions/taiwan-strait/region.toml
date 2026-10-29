@@ -11,6 +11,11 @@ timezone = "Asia/Taipei"  # local time of reports (engine.process.when)
 line = [[25.45, 119.85], [24.85, 120.92]]
 
 [reliability]
+"gpsjam:gpsjam.org" = "F"
+"integrity:adsb.lol" = "B"
+"ioda:IODA" = "F"
+"ucdp:UCDP Candidate" = "F"
+"mnd:Taiwan MND" = "F"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"
@@ -50,6 +55,12 @@ question = "Is PLA military activity around Taiwan escalating?"
   watch = 3
   trigger = 10
   max_credibility = 4
+
+  [[pir.indicator]]
+  id = "TW-1c"
+  name = "PLA aircraft sorties, Taiwan MND daily report (a party's claim)"
+  metric = "official"
+  field = "aircraft"
 
   [[pir.indicator]]
   id = "TW-1b"
@@ -140,3 +151,29 @@ telegramChannels = [
   { name = "OSINTdefender", label = "OSINT Defender", color = "#00aaff" },
   { name = "Liveuamap", label = "Liveuamap", color = "#33cc66" },
 ]
+
+# Countries whose internet connectivity IODA measures for this region (ISO 3166-1
+# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+[outages]
+countries = [
+  { code = "TW", name = "Taiwan", lat = 25.033, lon = 121.5654 },
+]
+
+# Descriptive: gpsjam.org cell bands and IODA detections, no alert threshold.
+[[pir]]
+id = "TW-3"
+question = "Is satellite navigation or internet connectivity in the region degraded?"
+
+  [[pir.indicator]]
+  id = "TW-3a"
+  name = "GNSS cells with over 10 % of aircraft reporting low accuracy (gpsjam.org, latest day)"
+  metric = "gnss"
+  band = "high"
+
+  [[pir.indicator]]
+  id = "TW-3b"
+  name = "Internet outages detected (IODA)"
+  metric = "event_count"
+  kind = "internet_outage"
+  window_h = 48
+  max_credibility = 6

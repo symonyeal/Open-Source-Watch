@@ -182,7 +182,7 @@ npm.cmd run dev                                  # dashboard on http://localhost
 
 | Path | Contents |
 | --- | --- |
-| `engine/collect`, `engine/process` | collectors for each feed type; translation, place, time and event type |
+| `engine/collect`, `engine/process` | collectors for each feed type and readers of what they store; translation, place, time and event type |
 | `engine/fuse.py`, `kernels/` | merging reports into events; the Rust linking kernel |
 | `engine/analyze.py`, `engine/produce.py` | indicators, competing hypotheses, INTSUM and SITREP |
 | `engine/store.py`, `engine/api.py` | the Parquet store read with DuckDB; the engine's web API |

@@ -4,10 +4,10 @@ Shipping follows the World Bank chokepoints notebook's centered seven-day mean,
 restricted to complete calendar windows. The center date lags the last sample
 by three days. Missing observations never become zeros.
 """
-import json
 from datetime import UTC, date, datetime, timedelta
 
-from engine import cycle, store
+from engine import cycle
+from engine.collect.context import releases
 
 
 def mean7(points, field="value"):
@@ -51,11 +51,8 @@ def view(r, t=None):
     t = t or datetime.now(UTC)
     sources = [s for s in cycle.source_table(r) if s["id"].startswith("context:")]
     health = {(s["region"], s["id"]): s["health"] for s in sources}
-    rows = store.query("SELECT * FROM raw_report WHERE region IN (?, 'global') "
-                       "AND source_id LIKE 'context:%' QUALIFY row_number() OVER "
-                       "(PARTITION BY region, source_id ORDER BY fetched_at DESC) = 1", (r["id"],))
-    data = [series(json.loads(x["payload"]), x["fetched_at"],
-                   health.get((x["region"], x["source_id"]), "unknown"), t) for x in rows]
+    data = [series(x["payload"], x["fetched_at"],
+                   health.get((x["region"], x["source_id"]), "unknown"), t) for x in releases(r)]
     prices = {x["code"]: x for x in data if x["kind"] == "fred"}
     brent, wti = prices.get("DCOILBRENTEU"), prices.get("DCOILWTICO")
     spread = None

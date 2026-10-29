@@ -4,6 +4,24 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Raw reports read through their adapter** (2026-10-29). A payload's JSON was
+  written by its collector and decoded again, by SQL on `raw_report` or `json.loads`,
+  in seven other modules (GNSS, signals, context, fusion, the API and both
+  processors), and each source's rule for its revised reports (the longest IODA
+  listing, the latest UCDP version, the highest MND report number of a day, the latest
+  context snapshot) was written where it was read. The adapter now owns both sides:
+  `engine.collect.stored` reads and decodes raw reports by adapter, region and date;
+  the adapter's reader applies its rule (`mnd.reports`, `ioda.events`, `ucdp.events`,
+  `context.releases`, `rss.outlets`); processors receive decoded payloads. Refused:
+  moving each processor into its collector module, which would fold processing into
+  collection against the cycle's stages. Derived tables and views are unchanged on both
+  stores checked (Validation).
+- **Days and versions skipped per region** (2026-10-29). gpsjam.org days and UCDP
+  versions were skipped once any region stored them, so `engine collect --region R`,
+  or a new region, left the other regions without them. A gpsjam.org day is now
+  fetched until every region stores it. The UCDP file is read every week (1.6 MB) and
+  a region that stores its version takes nothing from it: a region whose box holds no
+  event of a version stores nothing that would mark the version read.
 - **Navigation, connectivity and reference signals** (2026-10-29). Four repositories
   were assessed as additions: IRONSIGHT (already upstream; its 10 later commits are
   documentation and a Next patch this fork has), World Monitor (sources and page

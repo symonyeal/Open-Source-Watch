@@ -48,6 +48,11 @@ Python engine in `engine/` runs the intelligence cycle behind it.
   `docs/SIGNALS.md`.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
   from them at start-up, so derived tables depend on raw reports and labels only.
+- A payload's format belongs to its adapter: `engine/collect/<adapter>.py` writes it
+  and its processor in `engine/process` reads it. Every other module reads raw reports
+  through `engine.collect.stored` or the adapter's reader (`mnd.reports`,
+  `ioda.events`, `ucdp.events`, `context.releases`, `rss.outlets`), never by SQL on
+  `payload`.
 - Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
   regenerates every derived table from them.
 

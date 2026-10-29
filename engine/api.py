@@ -21,6 +21,7 @@ from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
 from engine import cycle, regions, store
+from engine.collect import stored
 
 NO_CACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 STREAM_LAG = timedelta(minutes=15)   # longer than a poll takes from fetch to write
@@ -133,13 +134,12 @@ async def signals(req):
 def telegram_data(r, t):
     """Upstream TelegramData: the latest 3 stored posts per channel, newest first
     (src/app/api/telegram/route.ts); text is the stored excerpt, translated."""
-    X = store.query(
-        "SELECT o.text_en, r.payload FROM observation o JOIN raw_report r ON r.id = o.raw_id "
-        "WHERE o.region = ? AND o.source_id LIKE 'telegram:%' AND o.t > ?", (r["id"], t))
+    raw = {x["id"]: x["payload"] for x in stored("telegram", regions=[r["id"]], since=t)}
     C = {c["name"]: c for c in r["conflict"]["telegramChannels"]}
     by = defaultdict(list)
-    for x in X:
-        p = json.loads(x["payload"])
+    for x in store.query("SELECT raw_id, text_en FROM observation WHERE region = ? AND "
+                         "source_id LIKE 'telegram:%' AND t > ?", (r["id"], t)):
+        p = raw[x["raw_id"]]   # an observation's t is its report's date
         by[p["channel"]].append((p, x["text_en"]))
     posts = []
     for ch, P in by.items():
@@ -150,7 +150,7 @@ def telegram_data(r, t):
             posts.append({"channel": c["name"], "channelLabel": c["label"], "color": c["color"],
                           "postId": p["postId"], "text": en, "date": p["date"],
                           "url": f"https://t.me/{c['name']}/{p['postId']}"})
-    posts.sort(key=lambda p: p["date"] or "", reverse=True)
+    posts.sort(key=lambda p: (p["date"] or "", p["channel"], p["postId"]), reverse=True)
     return {"posts": posts, "channels": [c["label"] for c in C.values()],
             "updated": datetime.now(UTC).isoformat()}
 

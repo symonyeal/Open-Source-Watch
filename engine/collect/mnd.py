@@ -15,10 +15,8 @@ import json
 import re
 from datetime import UTC, datetime, timedelta
 
-from engine import store
-from engine.collect import EXCERPT
+from engine.collect import EXCERPT, response, stored
 from engine.collect import fetch as get
-from engine.collect import response
 
 SITE = "https://www.mnd.gov.tw"
 LIST = SITE + "/en/news/plaactlist"
@@ -53,9 +51,7 @@ def links(page):
 def fetch(src):
     """{report number: page html} of the reports not yet stored, from list pages
     newest first; stops at the first page with a stored report, or after PAGES."""
-    have = {x["n"] for x in store.query(
-        "SELECT DISTINCT json_extract_string(payload, '$.id') n FROM raw_report "
-        "WHERE source_id LIKE 'mnd:%'")}
+    have = {x["payload"]["id"] for x in stored("mnd")}
     out = {}
     for k in range(1, PAGES + 1):
         L = links(get({"url": LIST if k == 1 else f"{LIST}/{k}"}).text)
@@ -118,3 +114,14 @@ def parse(body, src):
     if P and not items:
         raise ValueError("No MND report on the page parsed")
     return items
+
+
+def reports(r):
+    """Payloads of region r's stored MND reports, one per reporting day (the
+    highest report number wins), in day order."""
+    P = {}
+    for x in stored("mnd", regions=[r["id"]]):
+        p = x["payload"]
+        if p["day"] not in P or int(p["id"]) > int(P[p["day"]]["id"]):
+            P[p["day"]] = p
+    return [P[d] for d in sorted(P)]

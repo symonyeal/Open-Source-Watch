@@ -5,20 +5,21 @@ flew through with the number of aircraft that reported good and bad navigation
 accuracy (`<day>-h3_4.csv`), and a manifest of the days with a `suspect` flag
 for incomplete ones. One raw report is one region's cells of one day, the cells
 whose centre lies in the region's box; its native id is the day, so a day is
-stored once. Each poll fetches the manifest and the days of the last DAYS not
-yet stored (all of them on the first poll).
+stored once. Each poll fetches the manifest and the days of the last DAYS that
+some region does not store (all of them on the first poll).
 """
 import csv
 import io
 import json
+from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 
 import numpy as np
 
-from engine import regions, store
+from engine import regions
 from engine.collect import fetch as get
-from engine.collect import response
+from engine.collect import response, stored
 
 BASE = "https://gpsjam.org/data/"
 DAYS = 30
@@ -31,14 +32,15 @@ def sources(R):
 
 
 def fetch(src):
-    """The manifest and each missing day of the last DAYS, as one JSON body
-    {"manifest": {day: row}, "days": {day: csv text}}."""
+    """The manifest and each day of the last DAYS some region lacks, as one JSON
+    body {"manifest": {day: row}, "days": {day: csv text}}. Every region stores a
+    report for every day it parses, so a day is complete when all regions have it."""
     M = {r["date"]: r for r in csv.DictReader(io.StringIO(get(src).text))}
     t0 = datetime.now(UTC).date() - timedelta(days=DAYS)
-    have = {x["d"] for x in store.query(
-        "SELECT DISTINCT CAST(published_at AS DATE) d FROM raw_report "
-        "WHERE source_id LIKE 'gpsjam:%' AND published_at >= ?", (t0,))}
-    want = [d for d in M if date.fromisoformat(d) >= t0 and date.fromisoformat(d) not in have]
+    have = defaultdict(set)
+    for x in stored("gpsjam", since=t0):
+        have[x["payload"]["date"]].add(x["region"])
+    want = [d for d in M if date.fromisoformat(d) >= t0 and not regions.regions().keys() <= have[d]]
     days = {d: get({"url": f"{BASE}{d}-h3_4.csv"}).text for d in want}
     return response({"manifest": {d: M[d] for d in want}, "days": days})
 

@@ -3,29 +3,22 @@ outages (IODA), official daily counts (Taiwan MND) and reference events (UCDP
 Candidate), each with its dates, units and collection health. Descriptive
 throughout: nothing here has a threshold.
 """
-import json
 import statistics
 from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 
-from engine import gnss, store, validate
-from engine.collect import mnd
+from engine import gnss, validate
+from engine.collect import adapter, ioda, mnd, ucdp
 
 ADAPTERS = ("gpsjam", "integrity", "mnd", "ioda", "ucdp")
 PRIOR = 30   # reports whose median the latest is shown beside
 
 
 def official(r, n=90):
-    """The region's latest n MND reports, one per reporting day (the highest
-    report number wins), and each count's median over the PRIOR reports before
-    the latest; a count a report does not state is left out of its median."""
-    P = {}
-    for x in store.query("SELECT payload FROM raw_report WHERE region = ? AND source_id "
-                         "LIKE 'mnd:%'", (r["id"],)):
-        p = json.loads(x["payload"])
-        if p["day"] not in P or int(p["id"]) > int(P[p["day"]]["id"]):
-            P[p["day"]] = p
-    S = [P[d] for d in sorted(P)[-n:]]
+    """The region's latest n MND reports, one per reporting day (mnd.reports),
+    and each count's median over the PRIOR reports before the latest; a count a
+    report does not state is left out of its median."""
+    S = mnd.reports(r)[-n:]
     prior = S[-PRIOR - 1:-1]
     med = {k: statistics.median(v) if (v := [p[k] for p in prior if p[k] is not None]) else None
            for k in mnd.FIELDS}
@@ -45,30 +38,21 @@ def measure(i, r, since):
 
 
 def outages(r, t, days=7):
-    """IODA events of the region's countries starting in the last `days`, one per
-    (country, datasource, start) at its longest listed duration, newest first."""
-    E = {}
-    for x in store.query("SELECT payload, url, fetched_at FROM raw_report WHERE region = ? "
-                         "AND source_id LIKE 'ioda:%' AND published_at >= ?",
-                         (r["id"], t - timedelta(days=days))):
-        p = json.loads(x["payload"])
-        k = (p["country"], p["datasource"], p["start"])
-        if k not in E or p["duration"] > E[k]["duration"]:
-            E[k] = p | {"url": x["url"], "fetched_at": x["fetched_at"].isoformat()}
+    """IODA events of the region's countries starting in the last `days`, each at
+    its longest listed duration (ioda.events), newest first."""
     C = {c["code"]: c["name"] for c in r.get("outages", {}).get("countries", [])}
     return {"countries": C, "events": [
-        e | {"country_name": C.get(e["country"], e["name"]),
+        e | {"fetched_at": e["fetched_at"].isoformat(),
+             "country_name": C.get(e["country"], e["name"]),
              "start_utc": datetime.fromtimestamp(e["start"], UTC).isoformat(),
              "hours": round(e["duration"] / 3600, 1)}
-        for e in sorted(E.values(), key=lambda e: -e["start"])]}
+        for e in sorted(ioda.events(r, t - timedelta(days=days)), key=lambda e: -e["start"])]}
 
 
 def reference(r):
     """The region's UCDP Candidate events (latest version of each): totals by
     month, country and type of violence, and the recall grid of engine.validate."""
-    U = validate.latest([json.loads(x["payload"]) for x in store.query(
-        "SELECT payload FROM raw_report WHERE region = ? AND source_id LIKE 'ucdp:%'",
-        (r["id"],))])
+    U = ucdp.events(r)
     if not U:
         return None
     by = defaultdict(lambda: {"events": 0, "deaths_best": 0})
@@ -90,8 +74,8 @@ def reference(r):
 def view(r, sources, t=None):
     """The signals of region r; `sources` is its source table (cycle.source_table)."""
     t = t or datetime.now(UTC)
-    claims = any(s["id"].startswith("mnd:") for s in sources)
+    claims = any(adapter(s["id"]) == "mnd" for s in sources)
     return {"region": r["id"], "gnss": gnss.view(r, t), "official": official(r) if claims else None,
             "outages": outages(r, t), "reference": reference(r),
-            "sources": [s for s in sources if s["id"].split(":", 1)[0] in ADAPTERS],
+            "sources": [s for s in sources if adapter(s["id"]) in ADAPTERS],
             "updated": t.isoformat()}

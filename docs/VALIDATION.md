@@ -3,6 +3,23 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-10-29 raw reports through their adapters
+
+Parity on copies of the `data` branch at 77246bea (2026-10-29 12:27 UTC, 113,964 raw
+reports) and of the signals scratch store (11,415 raw reports): each copy rebuilt by
+1841f087 and by this change, then compared on every derived table (observation,
+track_point, event, entity) and, for each region, `/api/signals`, `/api/context`,
+`/api/indicators` and `/api/telegram` at one fixed time, with translation off.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| Derived tables and views are unchanged | the 33 tables and views of each store, compared whole | scratch store 33 of 33 identical; cron store 32 of 33: `/api/telegram` for Russia/Ukraine listed the same 120 posts, two with the same time in the other order. Ties fell in query order; they are now broken by channel and post id |
+| Cost is unchanged | the same runs, timed once | rebuild 3.35 s → 3.28 s (scratch) and 11.0 s → 11.3 s (cron); views within the spread of single runs; repeated timings not measured |
+| A gpsjam.org day is fetched until every region stores it | `test_gpsjam_region_cells_and_stored_days` | passing |
+| A UCDP version is skipped only by the regions that store it | `test_ucdp_version_skipped_only_by_regions_that_store_it` | passing |
+| The latest version of each UCDP event is kept | `test_ucdp_parse_keeps_region_events_with_version` | passing |
+| Gates | pytest, ruff, pip check, ESLint, `npm test`, `npm run build` (kernel unchanged) | 155 passed; clean; clean; 0 errors, 17 warnings as before; 28 passed; built |
+
 ## 2026-10-29 navigation, connectivity and reference signals
 
 Live checks used a scratch store (one poll of every source except aircraft, alerts and

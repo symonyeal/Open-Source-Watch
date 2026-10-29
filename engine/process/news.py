@@ -3,7 +3,6 @@ rule (src/app/api/news/route.ts): sports/entertainment noise is dropped; items
 from an unfiltered feed or a Google News query pass; otherwise the title or
 category must match the theater's relevance keywords. Irrelevant reports stay in
 raw_report with no observation."""
-import json
 import re
 
 from engine import regions
@@ -63,7 +62,7 @@ def regional_google_news(title, source_id, K, countries):
 def derive(raws, R):
     out = []
     for x in raws:
-        r, p = R[x["region"]], json.loads(x["payload"])
+        r, p = R[x["region"]], x["payload"]
         F = rss.feeds(r)
         unfiltered = x["source_id"].startswith("gnews:") or \
             F.get(x["source_id"], {}).get("unfiltered", False)

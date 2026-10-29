@@ -1,12 +1,12 @@
 """Mechanical stages of the cycle: collect → process → store; the recording
 proxy; rebuild.
 
-A source id is "<adapter>:<name>[#k]"; PARSE and DERIVE map the adapter to its
-parser and processor, FETCH to its own fetch where one URL is not one request
-(a list page and its reports, a dated window). Sources sharing a URL are fetched
-once per poll, and each is parsed by its own adapter. The latest response per URL
-is kept in CACHE, from which the proxy answers the front end (spec § Seam): what
-the dashboard shows is what was stored.
+A source id is "<adapter>:<name>[#k]"; COLLECTOR maps the adapter to its collector
+module, DERIVE to its processor, FETCH to its own fetch where one URL is not one
+request (a list page and its reports, a dated window). Sources sharing a URL are
+fetched once per poll, and each is parsed by its own adapter. The latest response
+per URL is kept in CACHE, from which the proxy answers the front end (spec § Seam):
+what the dashboard shows is what was stored.
 """
 import logging
 import queue
@@ -23,19 +23,17 @@ import httpx
 
 from engine import analyze, fuse, produce, regions, store
 from engine.collect import (
-    ais, adsb, alerts, context, firms, gpsjam, integrity, ioda, markets, mnd, neptun, now, rss,
-    run, telegram, ucdp,
+    adapter, ais, adsb, alerts, context, decode, firms, gpsjam, integrity, ioda, markets, mnd,
+    neptun, now, rss, run, telegram, ucdp,
 )
 from engine.process import feeds, news
 from engine.schema import DERIVED
 
-MODULES = (rss, telegram, firms, adsb, alerts, neptun, markets, ais, context, gpsjam, integrity,
-           mnd, ioda, ucdp)
-PARSE = {"rss": rss.parse, "gnews": rss.parse, "telegram": telegram.parse, "firms": firms.parse,
-         "adsb": adsb.parse, "alerts": alerts.parse, "drones": neptun.parse,
-         "markets": markets.parse, "ais": ais.parse, "context": context.parse,
-         "gpsjam": gpsjam.parse, "integrity": integrity.parse, "mnd": mnd.parse,
-         "ioda": ioda.parse, "ucdp": ucdp.parse}
+# In source order: of sources sharing a URL, the first is the one the proxy always polls.
+COLLECTOR = {"rss": rss, "gnews": rss, "telegram": telegram, "firms": firms, "adsb": adsb,
+             "alerts": alerts, "drones": neptun, "markets": markets, "ais": ais,
+             "context": context, "gpsjam": gpsjam, "integrity": integrity, "mnd": mnd,
+             "ioda": ioda, "ucdp": ucdp}
 FETCH = {"gpsjam": gpsjam.fetch, "mnd": mnd.fetch, "ioda": ioda.fetch, "ucdp": ucdp.fetch}
 DERIVE = {"rss": news.derive, "gnews": news.derive, "telegram": feeds.telegram,
           "firms": feeds.firms, "adsb": feeds.adsb, "alerts": feeds.alerts,
@@ -48,13 +46,9 @@ _seen, _lock = None, threading.Lock()
 log = logging.getLogger("engine")
 
 
-def adapter(source_id):
-    return source_id.split(":", 1)[0]
-
-
 def sources(region_ids=None, adapters=None, polled=False):
     """Sources of the given regions and adapters; polled=True drops stream sources."""
-    S = [s for m in MODULES for s in m.sources(regions.regions())]
+    S = [s for m in dict.fromkeys(COLLECTOR.values()) for s in m.sources(regions.regions())]
     return [s for s in S if (not region_ids or s["region"] in region_ids)
             and (not adapters or adapter(s["id"]) in adapters)
             and not (polled and s.get("stream"))]
@@ -148,12 +142,12 @@ def prune():
 
 
 def derive(raws):
-    """{table: rows} derived from raw reports by their adapters' processors."""
+    """{table: rows} derived from raw reports, as stored, by their adapters' processors."""
     out, R = defaultdict(list), regions.regions()
-    for a in {adapter(x["source_id"]) for x in raws}:
-        if a in DERIVE:
-            for t, rows in DERIVE[a]([x for x in raws if adapter(x["source_id"]) == a], R).items():
-                out[t] += rows
+    for a in {adapter(x["source_id"]) for x in raws} & DERIVE.keys():
+        X = [decode(x) for x in raws if adapter(x["source_id"]) == a]
+        for t, rows in DERIVE[a](X, R).items():
+            out[t] += rows
     return out
 
 
@@ -169,8 +163,8 @@ def collect(S, runner="local", workers=16):
 
     def one(group):
         a = adapter(group[0]["id"])
-        res, raw, runs = run(group, lambda body, s: PARSE[adapter(s["id"])](body, s), runner,
-                             **({"get": FETCH[a]} if a in FETCH else {}))
+        res, raw, runs = run(group, lambda b, s: COLLECTOR[adapter(s["id"])].parse(b, s),
+                             runner, **({"get": FETCH[a]} if a in FETCH else {}))
         if res is not None and a not in FETCH:   # an adapter's own fetch is not the URL's response
             CACHE[group[0]["url"]] = (time.monotonic(), res)
         try:
@@ -217,7 +211,7 @@ def ingest(src, messages, runner="local"):
                                 "started_at": now(), "status": "blocked", "n_rows": 0,
                                 "latency_ms": 0, "runner": runner}])])
     body = "\n".join(messages).encode()
-    _, raw, runs = run([src], PARSE[adapter(src["id"])], runner,
+    _, raw, runs = run([src], COLLECTOR[adapter(src["id"])].parse, runner,
                        get=lambda s: SimpleNamespace(content=body))
     return save([keep(raw, runs)])
 

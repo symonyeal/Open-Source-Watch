@@ -142,10 +142,13 @@ def prune():
 
 
 def derive(raws):
-    """{table: rows} derived from raw reports, as stored, by their adapters' processors."""
+    """{table: rows} derived from raw reports, as stored, by their adapters' processors.
+    A report of a region no longer in the registry derives nothing: there is no box,
+    grade or gazetteer to process it with."""
     out, R = defaultdict(list), regions.regions()
     for a in {adapter(x["source_id"]) for x in raws} & DERIVE.keys():
-        X = [decode(x) for x in raws if adapter(x["source_id"]) == a]
+        X = [decode(x) for x in raws
+             if adapter(x["source_id"]) == a and (x["region"] in R or x["region"] == "global")]
         for t, rows in DERIVE[a](X, R).items():
             out[t] += rows
     return out

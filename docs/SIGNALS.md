@@ -44,8 +44,9 @@ sees the whole day through more receivers.
 
 The GNSS cell count and the MND counts (TW-1c) are descriptive indicators. Each
 shows its latest value, the latest gpsjam.org day or MND report dated within the
-last three days, and is "no data" when there is none or no source of it is
-healthy. One rule in `engine/analyze.py` decides this for both.
+last three days, and is "no data" when there is none, when no source of it is
+healthy, or when the latest report does not state the count (an unstated count is
+not zero). One rule in `engine/analyze.py` decides this for both.
 
 Each IODA event becomes an `internet_outage` observation placed at the seat of
 government. IODA measures a country as one unit, so its observations carry

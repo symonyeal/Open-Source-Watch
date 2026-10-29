@@ -29,12 +29,13 @@ def official(r, n=90):
 
 def measure(i, r, since):
     """Value of indicator i of metric "official" (engine.analyze): count field(i)
-    of the latest MND report if its day is on or after the date `since` (date
-    None otherwise), beside the count's median over the PRIOR reports before it."""
+    of the latest MND report if its day is on or after the date `since` (count and
+    date None otherwise; count None where the report does not state it), beside the
+    count's median over the PRIOR reports before it."""
     o = official(r, PRIOR + 1)
     p = o["latest"] if o["latest"] and o["latest"]["day"] >= since.isoformat() else None
-    return {"field": i["field"], "count": (p or {}).get(i["field"]) or 0,
-            "date": p and p["day"], "median": o["median"][i["field"]], "n_prior": o["n_prior"]}
+    return {"field": i["field"], "count": p and p[i["field"]], "date": p and p["day"],
+            "median": o["median"][i["field"]], "n_prior": o["n_prior"]}
 
 
 def outages(r, t, days=7):

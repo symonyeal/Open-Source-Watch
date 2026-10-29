@@ -56,18 +56,8 @@ def match(U, E, tz, lag, period):
     return len(keep), hit, int((reach & inside).sum()), int(inside.sum())
 
 
-def latest(P):
-    """The latest version of each UCDP event among payloads P."""
-    v = lambda p: tuple(int(x) for x in p["version"].split("."))
-    out = {}
-    for p in P:
-        if p["id"] not in out or v(p) > v(out[p["id"]]):
-            out[p["id"]] = p
-    return list(out.values())
-
-
 def recall(r, U):
-    """Recall grid of region r against its latest UCDP events U, with the engine's
+    """Recall grid of region r against its UCDP events U (ucdp.events), with the engine's
     collection period and the UCDP dates it is scored over (no grid without both)."""
     first, last = store.query(
         "SELECT min(started_at) a, max(started_at) b FROM collection_run WHERE region IN "

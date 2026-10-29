@@ -12,6 +12,9 @@ import math
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
+from engine import store
+from engine.collect import decode
+
 BASE = "https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/"
 FRED = {"DCOILBRENTEU": "Brent spot", "DCOILWTICO": "WTI spot"}
 WDI = {"EG.IMP.CONS.ZS": "Net energy imports (% of energy use)",
@@ -118,3 +121,12 @@ def parse(body, src):
     # Keep release order even when a provider reverts to an earlier value set.
     return [{"native_id": f"{digest}@{datetime.now(UTC).isoformat()}", "published_at": t,
              "url": url, "payload": payload}]
+
+
+def releases(r):
+    """The latest fetched snapshot of each series serving region r, decoded. Every
+    poll stores a snapshot, so the selection runs in the store, not over them all."""
+    return [decode(x) for x in store.query(
+        "SELECT * FROM raw_report WHERE region IN (?, 'global') AND source_id LIKE 'context:%' "
+        "QUALIFY row_number() OVER (PARTITION BY region, source_id ORDER BY fetched_at DESC) = 1",
+        (r["id"],))]

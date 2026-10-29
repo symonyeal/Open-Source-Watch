@@ -76,7 +76,7 @@ def test_gpsjam_region_cells_and_stored_days(monkeypatch):
     assert item["native_id"] == day(2) and p["suspect"] is False and p["res"] == 4
     lat, lon = osw_kernels.centres(np.array([int(h, 16) for h, *_ in p["cells"]], np.uint64))
     assert p["cells"] and all(regions.in_bbox(R["black-sea"], a, o) for a, o in zip(lat, lon))
-    # A stored day is not fetched again; the others of the window are, older ones are not.
+    # A day is fetched again until every region stores it; older days are not fetched.
     _, raw, _ = collect.run([src], gpsjam.parse, get=body(d))
     store.append("raw_report", raw)
     # The region's GNSS indicator counts the latest stored day's high cells.
@@ -91,6 +91,11 @@ def test_gpsjam_region_cells_and_stored_days(monkeypatch):
     monkeypatch.setattr(gpsjam, "get", lambda s, **_: asked.append(s["url"]) or
                         SimpleNamespace(text=manifest if s["url"].endswith("manifest.csv")
                                         else "hex,count_good_aircraft,count_bad_aircraft\n"))
+    gpsjam.fetch(src)
+    assert asked[1:] == [f"{gpsjam.BASE}{day(k)}-h3_4.csv" for k in (1, 2, 3)]
+    _, raw, _ = collect.run([s for s in S if s is not src], gpsjam.parse, get=body(d))
+    store.append("raw_report", raw)
+    asked.clear()
     gpsjam.fetch(src)
     assert asked[1:] == [f"{gpsjam.BASE}{day(k)}-h3_4.csv" for k in (1, 3)]
 
@@ -121,8 +126,8 @@ def test_mixed_adapters_on_one_url_parse_by_their_own_adapter():
     ac = {"now": 1793291463000, "ac": [{"hex": "43c001", "type": "adsb_icao", "version": 2,
           "alt_baro": 30000, "seen_pos": 1, "lat": 44.0, "lon": 34.0, "nic": 8, "nac_p": 9,
           "dbFlags": 1}]}
-    _, raw, runs = collect.run(G, lambda b, s: cycle.PARSE[cycle.adapter(s["id"])](b, s),
-                               get=body(ac))
+    parse = lambda b, s: cycle.COLLECTOR[cycle.adapter(s["id"])].parse(b, s)
+    _, raw, runs = collect.run(G, parse, get=body(ac))
     assert sorted(x["source_id"].split(":")[0] for x in raw) == ["adsb", "integrity"]
     assert {x["status"] for x in runs} == {"ok"}
 
@@ -245,15 +250,36 @@ UCDP = (FIX / "ucdp_candidate_v26_0_9_sample.csv").read_text(encoding="utf8")
 
 
 def test_ucdp_parse_keeps_region_events_with_version():
-    d = {"version": "26.0.9", "url": ucdp.PAGE, "csv": UCDP}
+    d = {"version": "26.0.9", "url": ucdp.PAGE, "csv": UCDP, "have": []}
     src = next(s for s in ucdp.sources(R) if s["region"] == "south-asia")
     items = ucdp.parse(json.dumps(d).encode(), src)
     assert items and {i["payload"]["country"] for i in items} <= {"Pakistan", "Myanmar (Burma)"}
     assert all(i["native_id"].endswith("@26.0.9") and i["payload"]["version"] == "26.0.9"
                for i in items)
     assert all(len(i["payload"]["where_description"]) <= collect.EXCERPT for i in items)
-    assert validate.latest([{"id": "1", "version": "26.0.9"}, {"id": "1", "version": "26.0.10"},
-                            {"id": "2", "version": "26.0.9"}])[0]["version"] == "26.0.10"
+    # A revised event is a new report; ucdp.events keeps its latest version.
+    _, raw, _ = collect.run([src], ucdp.parse, get=body(d))
+    later = raw[0] | {"id": "later", "payload": json.dumps(
+        json.loads(raw[0]["payload"]) | {"version": "26.0.10", "best": -1})}
+    store.append("raw_report", raw + [later])
+    U = {u["id"]: u for u in ucdp.events(R["south-asia"])}
+    assert len(U) == len(raw) and U[json.loads(later["payload"])["id"]]["best"] == -1
+
+
+def test_ucdp_version_skipped_only_by_regions_that_store_it(monkeypatch):
+    """A poll of one region must not keep the version from the others."""
+    S = {s["region"]: s for s in ucdp.sources(R)}
+    page = ('<a href="https://ucdp.uu.se/downloads/candidateged/GEDEvent_v26_0_9.csv">'
+            '<a href="https://ucdp.uu.se/downloads/candidateged/GEDEvent_v26_0_8.csv">')
+    monkeypatch.setattr(ucdp, "get", lambda s, **_: SimpleNamespace(
+        text=page, content=UCDP.encode()))
+    _, raw, _ = collect.run([S["south-asia"]], ucdp.parse, get=ucdp.fetch)
+    store.append("raw_report", raw)
+    d = json.loads(ucdp.fetch(S["south-asia"]).content)
+    assert (d["version"], d["have"]) == ("26.0.9", ["south-asia"])
+    assert ucdp.parse(json.dumps(d).encode(), S["south-asia"]) == []
+    other = ucdp.parse(json.dumps(d | {"have": ["hormuz"]}).encode(), S["south-asia"])
+    assert len(other) == len(raw) > 0
 
 
 def test_recall_windows_distance_and_eligibility():

@@ -28,6 +28,7 @@ from itertools import pairwise
 import numpy as np
 
 from engine import gnss, signals, store
+from engine.collect import adapter
 
 MIN_DAYS = 7
 MAX_AIS_GAP = timedelta(minutes=15)  # analysis policy; not validated against live coverage
@@ -42,7 +43,7 @@ RECENT = timedelta(days=3)   # a descriptive value dated earlier is no data
 
 def serving(A, health):
     """Ids of the region's sources of adapters A."""
-    return sorted(s for s in health if s.split(":", 1)[0] in A)
+    return sorted(s for s in health if adapter(s) in A)
 
 
 def gap(A, health):

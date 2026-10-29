@@ -13,13 +13,13 @@ a validated interference classifier and gpsjam does not publish its own:
 A medium or high cell is a navigation-integrity anomaly. Jamming or spoofing is
 one cause, avionics faults another, so neither is stated as the finding.
 """
-import json
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
 import numpy as np
 
-from engine import process, store
+from engine import process
+from engine.collect import stored
 
 RES = 4
 BANDS = ("low", "medium", "high")
@@ -42,9 +42,8 @@ def bad(nic, nacp, lost):
 
 def gpsjam(r, t0):
     """{day: payload} of gpsjam.org cells stored for region r since t0."""
-    return {x["d"]: json.loads(x["payload"]) for x in store.query(
-        "SELECT strftime(published_at, '%Y-%m-%d') d, payload FROM raw_report "
-        "WHERE region = ? AND source_id LIKE 'gpsjam:%' AND published_at >= ?", (r["id"], t0))}
+    return {x["payload"]["date"]: x["payload"]
+            for x in stored("gpsjam", regions=[r["id"]], since=t0)}
 
 
 def adsb(r, t0):
@@ -52,9 +51,8 @@ def adsb(r, t0):
     each aircraft counted once per cell-day, bad if any of its reports there was
     (osw_kernels.aircraft_counts)."""
     import osw_kernels
-    X = store.query("SELECT published_at, payload FROM raw_report WHERE region = ? AND "
-                    "source_id LIKE 'integrity:%' AND published_at >= ?", (r["id"], t0))
-    A = [(x["published_at"], a) for x in X for a in json.loads(x["payload"])["ac"]]
+    A = [(x["published_at"], a) for x in stored("integrity", regions=[r["id"]], since=t0)
+         for a in x["payload"]["ac"]]
     if not A:
         return {}
     day = np.array([t.date().toordinal() for t, _ in A], np.int64)

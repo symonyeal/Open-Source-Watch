@@ -11,6 +11,7 @@ from email.utils import parsedate_to_datetime
 from urllib.parse import quote
 from xml.etree import ElementTree as ET
 
+from engine import store
 from engine.collect import EXCERPT
 
 CADENCE = 300
@@ -103,3 +104,12 @@ def parse(xml, src):
                         "category": _text(e, "category") or None, "outlet": outlet or None},
         })
     return items
+
+
+def outlets():
+    """{raw report id: outlet} of the stored news items that name one (Google News
+    titles "Title - Outlet"); read in the store, as fusion needs it for every item."""
+    return {x["id"]: x["outlet"] for x in store.query(
+        "SELECT id, json_extract_string(payload, '$.outlet') outlet FROM raw_report WHERE "
+        "(source_id LIKE 'rss:%' OR source_id LIKE 'gnews:%') "
+        "AND json_extract_string(payload, '$.outlet') IS NOT NULL")}

@@ -10,6 +10,12 @@ region id or "global". An adapter module exposes
 
 `run` fetches one URL and parses it for every source sharing that URL. A failed
 fetch or parse is the run's status, never an exception (spec § Errors).
+
+A payload's format belongs to its adapter: the adapter writes it (parse), and its
+processor (engine.process) and its readers read it. Other modules decode no
+payload: they read raw reports through `stored`, or through the adapter's reader
+where its rule picks among the stored reports (mnd.reports, ioda.events,
+ucdp.events, context.releases, rss.outlets).
 """
 import hashlib
 import json
@@ -19,6 +25,8 @@ from types import SimpleNamespace
 from xml.etree.ElementTree import ParseError
 
 import httpx
+
+from engine import store
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Open-Source-Watch/0.1"
 EXCERPT = 280  # characters of article or post text kept (spec § Data model)
@@ -30,6 +38,11 @@ def now():
 
 def epoch(ms):
     return datetime.fromtimestamp(ms / 1000, UTC)
+
+
+def adapter(source_id):
+    """Adapter of a source id "<adapter>:<name>[#k]"."""
+    return source_id.split(":", 1)[0]
 
 
 def raw_id(region, source_id, native_id):
@@ -91,3 +104,26 @@ def run(S, parse, runner="local", get=fetch):
                      "status": status, "n_rows": len(rows),
                      "latency_ms": int(1000 * (time.monotonic() - t0)), "runner": runner})
     return res, raw, runs
+
+
+def decode(x):
+    """Raw report row x with the payload run() encoded as JSON decoded."""
+    return x | {"payload": json.loads(x["payload"])}
+
+
+def stored(*A, regions=None, since=None):
+    """Stored raw reports of adapters A and region ids `regions` (every adapter or
+    region if none), dated at or after `since` (published_at, or fetched_at without
+    one, as an observation's t); decoded, in fetch order."""
+    W, p = ["true"], []
+    if A:
+        W.append("(" + " OR ".join(["source_id LIKE ?"] * len(A)) + ")")
+        p += [f"{a}:%" for a in A]
+    if regions:
+        W.append("region IN (" + ", ".join(["?"] * len(regions)) + ")")
+        p += list(regions)
+    if since is not None:
+        W.append("coalesce(published_at, fetched_at) >= ?")
+        p.append(since)
+    return [decode(x) for x in store.query(
+        f"SELECT * FROM raw_report WHERE {' AND '.join(W)} ORDER BY fetched_at, id", p)]

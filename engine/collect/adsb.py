@@ -4,9 +4,10 @@ bounding box, and radius aircraft with dbFlags military (1) or interesting (2).
 Upstream also shows aircraft it classifies by callsign or type alone; the engine
 does not store those (docs/DECISIONS.md)."""
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 from engine import regions
+from engine.collect import epoch, now
 
 CADENCE = 30
 FIELDS = ("hex", "flight", "t", "r", "desc", "ownOp", "lat", "lon", "alt_baro", "gs", "track",
@@ -26,7 +27,7 @@ def sources(R):
 
 def parse(body, src):
     d = json.loads(body)
-    t0 = datetime.fromtimestamp(d["now"] / 1000, UTC) if "now" in d else datetime.now(UTC)
+    t0 = epoch(d["now"]) if "now" in d else now()
     R = regions.regions()
     items = []
     for a in d.get("ac") or []:

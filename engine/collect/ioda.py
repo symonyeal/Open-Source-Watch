@@ -13,7 +13,7 @@ The countries of a region are its `[outages]` table in region.toml. The merged
 import json
 import time
 
-from engine.collect import epoch
+from engine.collect import epoch, stored
 from engine.collect import fetch as get
 
 API = "https://api.ioda.inetintel.cc.gatech.edu/v2/outages/events"
@@ -48,3 +48,15 @@ def parse(body, src):
                          "start": e["start"], "duration": e["duration"],
                          "score": e.get("score")}}
             for e in d["data"] if e.get("location") == loc]
+
+
+def events(r, since):
+    """Payloads, with url and fetched_at, of region r's IODA events starting at or
+    after `since`, one per (country, datasource, start) at its longest listing."""
+    E = {}
+    for x in stored("ioda", regions=[r["id"]], since=since):
+        p = x["payload"]
+        k = (p["country"], p["datasource"], p["start"])
+        if k not in E or p["duration"] > E[k]["duration"]:
+            E[k] = p | {"url": x["url"], "fetched_at": x["fetched_at"]}
+    return list(E.values())

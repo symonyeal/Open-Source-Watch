@@ -15,11 +15,12 @@ distinct owners among its A/B-graded sources:
     any C/D/E source → 4;  otherwise → 6.
 """
 import hashlib
-import json
 
 import numpy as np
 
 from engine import regions, store
+from engine.collect import rss, stored
+from engine.process.feeds import entities
 
 TAU, DELTA = 7200.0, 25.0          # s, km (spec § Fusion)
 FINE = ("point", "city")
@@ -92,7 +93,7 @@ def events(r, X, runs=()):
         for I in np.split(o, np.flatnonzero(np.diff(lab[o])) + 1):
             M = [Y[i] for i in I]
             F = I[fine[I]] if fine[I].any() else I[:1]
-            S =[(regions.reliability(r, x["source_id"]), owner(r, x)) for x in M]
+            S = [(regions.reliability(r, x["source_id"]), owner(r, x)) for x in M]
             out.append({
                 "id": hashlib.sha256(f"evt\0{M[0]['id']}".encode()).hexdigest()[:32],
                 "region": r["id"], "t_start": M[0]["t"], "t_end": M[-1]["t"],
@@ -104,42 +105,11 @@ def events(r, X, runs=()):
     return out
 
 
-def entities(raws):
-    """Aircraft (ADS-B, Neptun) and vessel (AIS) entities from raw reports, latest
-    attributes win."""
-    E = {}
-    for x in sorted(raws, key=lambda x: x["fetched_at"]):
-        p = json.loads(x["payload"])
-        if x["source_id"].startswith("adsb:"):
-            h = p["hex"].strip().replace("~", "")
-            e = E.setdefault(f"icao:{h}", {"id": f"icao:{h}", "type": "aircraft", "names": set(),
-                                           "identifiers": {"icao": h}, "attributes": {}})
-            e["names"] |= {s for s in ((p.get("flight") or "").strip(), p.get("r")) if s}
-            if p.get("r"):
-                e["identifiers"]["registration"] = p["r"]
-            e["attributes"] |= {k: p[k] for k in ("t", "desc", "ownOp") if p.get(k)} | \
-                {"military": bool((p.get("dbFlags") or 0) & 1)}
-        elif x["source_id"].startswith("ais:"):
-            k = f"mmsi:{p['mmsi']}"
-            e = E.setdefault(k, {"id": k, "type": "vessel", "names": set(),
-                                 "identifiers": {"mmsi": p["mmsi"]}, "attributes": {}})
-            e["names"] |= {p["name"]} if p.get("name") else set()
-        else:
-            k = f"neptun:{p['track']}"
-            e = E.setdefault(k, {"id": k, "type": "aircraft", "names": set(),
-                                 "identifiers": {"neptun": p["track"]}, "attributes": {}})
-            e["attributes"] |= {"threat_type": p.get("threat_type")}
-    return [e | {"names": sorted(e["names"]), "identifiers": json.dumps(e["identifiers"]),
-                 "attributes": json.dumps(e["attributes"], ensure_ascii=False)}
-            for e in E.values()]
-
-
 def fuse():
     """Recompute the event and entity tables from the store (pure function of it)."""
-    R = regions.regions()
-    X = store.query(
-        "SELECT o.*, json_extract_string(r.payload, '$.outlet') AS outlet FROM observation o "
-        "JOIN raw_report r ON r.id = o.raw_id WHERE o.kind <> 'report'")
+    R, O = regions.regions(), rss.outlets()
+    X = [x | {"outlet": O.get(x["raw_id"])}
+         for x in store.query("SELECT * FROM observation WHERE kind <> 'report'")]
     runs = store.query("SELECT region, source_id, started_at, status FROM collection_run "
                        "WHERE source_id LIKE 'alerts:%'")
     E = []
@@ -147,7 +117,5 @@ def fuse():
         E += events(r, [x for x in X if x["region"] == rid],
                     [x for x in runs if x["region"] == rid])
     store.replace("event", E)
-    T = store.query("SELECT * FROM raw_report WHERE source_id LIKE 'adsb:%' "
-                    "OR source_id LIKE 'drones:%' OR source_id LIKE 'ais:%'")
-    store.replace("entity", entities(T))
+    store.replace("entity", entities(stored("adsb", "drones", "ais")))
     return len(E)

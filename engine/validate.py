@@ -16,19 +16,11 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 
-from engine import store
+from engine import fuse, regions, store
 
 VIOLENT = ("battles", "explosions_remote_violence", "violence_against_civilians")
-DELTA = 25.0          # km: the fusion δ, and the codebook's precision-2 radius
+DELTA = fuse.DELTA    # km: the fusion δ, also the codebook's precision-2 radius
 LAGS = (0, 1, 2)      # days
-R_EARTH = 6371.0088   # km, IUGG mean radius, as kernels/src/lib.rs
-
-
-def km(lat, lon, Lat, Lon):
-    """Great-circle distances (km) from one point to arrays of points."""
-    p, P = np.radians(lat), np.radians(Lat)
-    a = np.sin((P - p) / 2) ** 2 + np.cos(p) * np.cos(P) * np.sin(np.radians(Lon - lon) / 2) ** 2
-    return 2 * R_EARTH * np.arcsin(np.sqrt(a))
 
 
 def windows(U, tz, lag):
@@ -53,7 +45,7 @@ def match(U, E, tz, lag, period):
     hit, reach = 0, np.zeros(len(E), bool)
     for k in keep:
         m = (t >= s[k].timestamp()) & (t < e[k].timestamp()) & \
-            (km(U[k]["latitude"], U[k]["longitude"], lat, lon) <= DELTA)
+            (regions.km(U[k]["latitude"], U[k]["longitude"], lat, lon) <= DELTA)
         hit += bool(m.any())
         reach |= m
     if keep:

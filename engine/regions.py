@@ -17,9 +17,12 @@ import tomllib
 from functools import cache
 from pathlib import Path
 
+import numpy as np
+
 DIR = Path(__file__).resolve().parent.parent / "regions"
 TS = DIR.parent / "src" / "lib" / "conflicts" / "generated.ts"
 GRADES = "ABCDEF"
+R_EARTH = 6371.0088   # km, IUGG mean radius, as kernels/src/lib.rs
 
 # Display fields a TOML region may omit (upstream ClientConfig / ServerConfig).
 DEFAULT_CLIENT = {
@@ -124,3 +127,10 @@ def regex(d):
 def in_bbox(r, lat, lon):
     a, b, c, d = r["bbox"]
     return a <= lat <= b and c <= lon <= d
+
+
+def km(lat, lon, Lat, Lon):
+    """Great-circle distances (km) from one point to arrays of points."""
+    p, P = np.radians(lat), np.radians(Lat)
+    a = np.sin((P - p) / 2) ** 2 + np.cos(p) * np.cos(P) * np.sin(np.radians(Lon - lon) / 2) ** 2
+    return 2 * R_EARTH * np.arcsin(np.sqrt(a))

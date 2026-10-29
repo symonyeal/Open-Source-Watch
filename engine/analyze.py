@@ -10,8 +10,10 @@ before it, z = (n − mean) / sd;
 A day has sampled AIS coverage when a valid consecutive segment has an endpoint on it;
 this does not establish full-day coverage. Fewer than 7 prior sampled days, or no
 sampled coverage on the last day, gives no data.
-GNSS and official-count indicators (metric "gnss", engine.gnss; "official",
-engine.signals) report a measured or claimed value without a threshold.
+Descriptive indicators (metric in MEASURES: GNSS cells, engine.gnss; official
+counts, engine.signals) report a measured or claimed value without a threshold;
+no data if no healthy source produces it or its latest value is dated before
+RECENT.
 A PIR is answered if one indicator is triggered; a collection gap if, for some
 indicator, no healthy source can produce its evidence (PRODUCERS); otherwise
 open. A kind that did not occur is not a gap.
@@ -33,12 +35,19 @@ TEXT = ("rss", "gnews", "telegram")
 # Adapters whose sources can produce each kind; the rest come from text sources.
 PRODUCERS = {"thermal_anomaly": ("firms",), "airspace_activity": ("drones",) + TEXT,
              "air_raid_alert": ("alerts",) + TEXT, "internet_outage": ("ioda",)}
+# Descriptive metrics: measure(i, r, since) -> {count, date, ...}, and their adapters.
+MEASURES = {"gnss": (gnss.measure, ("gpsjam",)), "official": (signals.measure, ("mnd",))}
+RECENT = timedelta(days=3)   # a descriptive value dated earlier is no data
 
 
-def gap(kind, health):
-    """No healthy source of the region can produce `kind` (spec § Errors)."""
-    A = PRODUCERS.get(kind, TEXT)
-    return not any(h == "ok" for s, h in health.items() if s.split(":", 1)[0] in A)
+def serving(A, health):
+    """Ids of the region's sources of adapters A."""
+    return sorted(s for s in health if s.split(":", 1)[0] in A)
+
+
+def gap(A, health):
+    """No healthy source of the region belongs to adapters A (spec § Errors)."""
+    return not any(health[s] == "ok" for s in serving(A, health))
 
 
 def status(n, watch, trigger):
@@ -130,10 +139,14 @@ def board(r, health, t=None):
     for p in r["pir"]:
         I, miss = [], False
         for i in p["indicator"]:
-            if i.get("metric") in ("gnss", "official"):     # descriptive, no threshold
-                x = (gnss.indicator if i["metric"] == "gnss" else signals.indicator)(
-                    i, r, t, health)
-                miss |= x["status"] == "no data"
+            if i.get("metric") in MEASURES:                  # descriptive, no threshold
+                f, A = MEASURES[i["metric"]]
+                x = f(i, r, t.date() - RECENT)
+                missing = gap(A, health) or x["date"] is None
+                miss |= missing
+                x = {"id": i["id"], "name": i["name"], "metric": i["metric"]} | x | {
+                    "status": "no data" if missing else "observed",
+                    "sources": serving(A, health)}
             elif i.get("metric") == "transit":
                 x = transit_indicator(r, i, t)
                 missing = health.get("ais:aisstream") != "ok" or x["status"] == "no data"
@@ -146,7 +159,7 @@ def board(r, health, t=None):
                            and e["credibility"] <= i["max_credibility"] and e["t_end"] > w]
                 n = len(matched)
                 S = {x["source_id"] for x in P if x["kind"] == i["kind"]}
-                missing = gap(i["kind"], health)
+                missing = gap(PRODUCERS.get(i["kind"], TEXT), health)
                 miss |= missing
                 descriptive = i.get("metric") == "event_count"
                 state = "observed" if descriptive else status(n, i["watch"], i["trigger"])

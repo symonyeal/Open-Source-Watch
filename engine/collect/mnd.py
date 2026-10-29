@@ -14,14 +14,15 @@ import html as entities
 import json
 import re
 from datetime import UTC, datetime, timedelta
-from types import SimpleNamespace
 
 from engine import store
 from engine.collect import EXCERPT
 from engine.collect import fetch as get
+from engine.collect import response
 
 SITE = "https://www.mnd.gov.tw"
 LIST = SITE + "/en/news/plaactlist"
+REGION = "taiwan-strait"
 PAGES = 9          # backfill depth, about 90 days
 CADENCE = 43200
 MONTHS = {m: k for k, m in enumerate(
@@ -34,10 +35,12 @@ COUNTS = {   # field: (pattern of n, pattern of an explicit none)
     "official": (r"(\d+)\s+official\s+ships?", r"\bno\s+official\s+ships?"),
     "balloons": (r"(\d+)\s+(?:PRC\s+)?balloons?", r"\bno\s+(?:PRC\s+)?balloons?"),
 }
+FIELDS = (*COUNTS, "adiz", "median_line")   # counts of a payload; None where unstated
 
 
 def sources(R):
-    return [{"id": "mnd:Taiwan MND", "region": "taiwan-strait", "url": LIST, "cadence": CADENCE}]
+    return [{"id": "mnd:Taiwan MND", "region": REGION, "url": LIST, "cadence": CADENCE}] \
+        if REGION in R else []
 
 
 def links(page):
@@ -60,7 +63,7 @@ def fetch(src):
         out |= {n: get({"url": f"{SITE}/en/News/PLAAct/{n}"}).text for n in new}
         if len(new) < len(L) or not L:
             break
-    return SimpleNamespace(content=json.dumps(out).encode())
+    return response(out)
 
 
 def text(page):

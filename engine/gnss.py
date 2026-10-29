@@ -16,11 +16,10 @@ one cause, avionics faults another, so neither is stated as the finding.
 import json
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
-from functools import cache
 
 import numpy as np
 
-from engine import process, store, validate
+from engine import process, store
 
 RES = 4
 BANDS = ("low", "medium", "high")
@@ -80,23 +79,6 @@ def summary(day, cells, source, suspect=False):
             **{k: n[k] for k in BANDS}}
 
 
-@cache
-def towns():
-    """(names, lat, lon) of gazetteer cities of at least TOWN people."""
-    T = [x for x in process._geonames() if x[3] >= TOWN]
-    return [x[0] for x in T], np.array([x[1] for x in T]), np.array([x[2] for x in T])
-
-
-def near(lat, lon):
-    """'<city> (<d> km)', the nearest gazetteer city of at least TOWN people."""
-    N, A, O = towns()
-    if not N:
-        return None
-    d = validate.km(lat, lon, A, O)
-    k = int(d.argmin())
-    return f"{N[k]} ({d[k]:.0f} km)"
-
-
 def anomalies(cells):
     """Medium and high cells with their centres, boundaries and nearest city."""
     import osw_kernels
@@ -105,8 +87,9 @@ def anomalies(cells):
         return []
     H = np.array([int(h, 16) for h, *_ in C], np.uint64)
     lat, lon = osw_kernels.centres(H)
-    return [{"h3": h, "lat": round(a, 4), "lon": round(o, 4), "near": near(a, o), "good": g,
-             "bad": b, "pct": round(p, 1), "band": band(p),
+    return [{"h3": h, "lat": round(a, 4), "lon": round(o, 4),
+             "near": process.nearest(a, o, TOWN), "good": g, "bad": b, "pct": round(p, 1),
+             "band": band(p),
              "boundary": [[round(y, 4), round(x, 4)] for y, x in edge]}
             for (h, g, b, p), a, o, edge in zip(C, lat.tolist(), lon.tolist(),
                                                 osw_kernels.boundaries(H))]
@@ -141,15 +124,12 @@ def view(r, t=None, days=7):
             "agreement": agreement(J, A)}
 
 
-def indicator(i, r, t, health):
-    """Indicator of metric "gnss": cells at `band` or above on the latest gpsjam day
-    within 3 days of t; descriptive, no threshold. No data if no gpsjam source of
-    the region is healthy or no day is stored."""
-    J = gpsjam(r, datetime.combine(t.date() - timedelta(days=3), datetime.min.time(), UTC))
+def measure(i, r, since):
+    """Value of indicator i of metric "gnss" (engine.analyze): the cells at band(i)
+    or above on the latest gpsjam day on or after the date `since`; date None if
+    none is stored."""
+    J = gpsjam(r, datetime.combine(since, datetime.min.time(), UTC))
     last = max(J, default=None)
-    k = BANDS.index(i.get("band", "high"))
+    k = BANDS.index(i["band"])
     n = sum(BANDS.index(band(pct(g, b))) >= k for _, g, b in J[last]["cells"]) if last else 0
-    ok = any(h == "ok" for s, h in health.items() if s.startswith("gpsjam:"))
-    return {"id": i["id"], "name": i["name"], "metric": "gnss", "count": n, "date": last,
-            "band": BANDS[k], "status": "observed" if ok and last else "no data",
-            "sources": ["gpsjam:gpsjam.org"]}
+    return {"count": n, "date": last, "band": BANDS[k]}

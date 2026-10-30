@@ -1,109 +1,90 @@
 # Open-Source-Watch
 
-An open-source intelligence platform for seven conflict and shipping regions, built by
-Saimon Islam on top of the [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT)
-dashboard.
+Open-source intelligence dashboard for seven conflict and shipping regions. A Python
+engine with Rust kernels stores public reports, grades sources, merges related reports
+and produces regional indicators and summaries. The front end is based on
+[IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works.
 
-**[Open the dashboard →](https://symonyeal.github.io/Open-Source-Watch/)** It is a
-snapshot of the stored data, rebuilt after every collection, twice a day; the header
-gives its time. Run it locally (below) for live feeds.
+[Dashboard](https://symonyeal.github.io/Open-Source-Watch/). The published site is a
+snapshot, rebuilt after twice-daily collection; its header gives the snapshot time.
+Local operation supports live feeds.
 
-## What this project adds
+## Coverage
 
-IRONSIGHT is a live viewer: it fetches public feeds for two wars and shows them on a map.
-Nothing it shows is kept, graded or checked against anything else. Open-Source-Watch
-keeps IRONSIGHT's screen and puts an analysis engine behind it, written from scratch in
-Python with a Rust core, that works the way an intelligence analyst works: decide what
-you need to know, collect, grade the sources, merge reports of the same incident, then
-answer the questions with stated confidence.
+The regions are Iran/Israel, Russia/Ukraine, Red Sea, Strait of Hormuz, Taiwan Strait,
+Black Sea and South Asia. Configuration on 2026-10-29 listed 351 sources and 24 priority
+intelligence requirements. Energy, shipping, navigation and connectivity measurements
+provide context alongside news and incident reports.
 
-| | IRONSIGHT | Open-Source-Watch |
-| --- | --- | --- |
-| Regions | Iran/Israel, Russia/Ukraine | 7: adds Red Sea, Strait of Hormuz, Taiwan Strait, Black Sea, South Asia |
-| Sources | fetched on screen, then gone | 351 sources, every item stored with where and when it came from |
-| Trust | every source equal | each source graded A–F; each report scored 1–6 by independent corroboration |
-| Reports | a list of headlines | duplicates merged into events: 6,898 events from 42,502 observations |
-| Questions | none | 24 priority intelligence requirements, answered by indicators with confidence |
-| Written output | none | daily intelligence summary and six-hourly situation report per region |
-| History | none | collected twice a day by a scheduled job, also while the laptop is off |
-| Energy and trade | oil futures quotes | dated oil benchmarks, port and chokepoint traffic, country energy imports |
-| Navigation and connectivity | none | daily GNSS interference cells on the map, internet outages per country |
-| Official claims and reference data | none | Taiwan's daily PLA activity counts; UCDP conflict events to score the engine against |
+## Processing
 
-Figures are from the stored data on 2026-10-25; source and question counts from 2026-10-29.
-
-## How it works, and the decisions behind it
-
-### Every item is a record, not a screen element
+### Storage
 
 Each news item, Telegram post, air-raid alert, military aircraft position and satellite fire
-detection is stored as an unchangeable raw report with its source and fetch time:
-49,782 so far. Processing translates it, finds the place and time it describes, and
+detection is stored as an immutable raw report with its source and fetch time.
+The 2026-10-25 audit used 49,782 raw reports, 42,502 observations and 6,898 merged events.
+Processing translates each report, finds the place and time it describes, and
 classifies what kind of event it reports, producing an *observation*. Because raw
 reports are never changed, everything downstream can be rebuilt from them, and a test
 checks that a rebuild reproduces the same tables.
 
-IRONSIGHT's own code still draws the screen. Rather than rewrite its 18 data routes, the
-engine sits in front of them as a recording proxy: when the dashboard asks a news site
-or tracking service for data, the engine answers with the response it stored. In the
-first full test all 106 requests the dashboard made were served this way.
+The engine serves IRONSIGHT's 18 data routes through a recording proxy: when the
+dashboard asks a news site or tracking service for data, the engine returns its stored
+response. In the
+2026-10-21 route test, the engine handled all 106 requests: 103 returned HTTP 200 and
+three returned HTTP 502 from failed upstream feeds.
 
-### Sources are graded, and reports earn credibility
+### Source reliability and report credibility
 
 Every source carries an Admiralty reliability grade (A, completely reliable, to F,
-cannot be judged), the scale NATO and police intelligence units use. A report's
-credibility (1, confirmed, to 6, cannot be judged) is not taken on faith: it is computed
+cannot be judged). A report's credibility (1, confirmed, to 6, cannot be judged) is computed
 from how many *independent* reliable sources say the same thing. Channels with the same
 owner count once; Google News items are credited to the outlet that wrote
 them, not to Google. A report contradicted by a silent warning system scores 5,
 improbable.
 
-### Reports of the same incident are merged
+### Event fusion
 
 Reports of the same kind of event within two hours and 25 km of each other are merged
-into one event, using the conflict taxonomy of ACLED, the standard academic conflict
-dataset. Reports placed only at country level are kept apart: in the first test, the
-reports placed just at "Ukraine" all shared one map point and merged unrelated
-incidents. The linking step is written in Rust: 0.06 seconds instead of 0.54 on the
-current data, and 0.58 instead of 4.8 at nine times the history. Tests check its result
-against a brute-force check of every pair.
+into one event, using ACLED's conflict taxonomy. Country-level locations do not link
+otherwise unrelated incidents. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
+against 0.54 for the NumPy implementation, and 0.58 against 4.8 at nine times the history.
+Tests compare the result against a brute-force check of every pair.
 
-### The dashboard answers questions, not just shows feeds
+### Indicators and reports
 
-Each region is defined by one file listing its sources, their grades, and the questions
-it must answer, for example *"Is a direct missile or drone exchange between Iran and
-Israel under way?"* Each question has indicators with time windows and thresholds, shown
-in the header strip. A source that fails is reported as a gap, never as quiet: a failed
+Each region's configuration lists sources, grades and questions, such as whether a direct
+missile or drone exchange between Iran and Israel is under way. Each question has
+indicators with time windows and thresholds, shown in the header strip. A source that
+fails is reported as a gap: a failed
 feed makes its indicator *no data*, not *inactive*. Competing explanations are ranked by
 how much evidence contradicts each one (analysis of competing hypotheses), and each
 region gets a written daily summary (INTSUM) and six-hourly situation report (SITREP).
-A new region is one new file.
 
-### Measured before trusted
+## Validation
 
-- **Classifier.** The starting keyword rules were scored on 200 labelled
+- The starting keyword rules were scored on 200 labelled
   observations: 54 % correct. A trained text classifier reached 68 % under
   cross-validation and replaced them; rare event types remain weak for both.
-- **Fire detections.** 1,206 of 1,435 satellite fire detections in one day over
+- 1,206 of 1,435 satellite fire detections in one day over
   Iran/Israel were gas flares and other permanent heat sources. A detection now counts
   only if its 0.1° cell was active on fewer than 3 of the 7 previous days, which cut one strike
   indicator from 228 events to 42.
-- **Contradictions.** A rule meant to flag reports contradicted by silent sirens fired
+- A rule meant to flag reports contradicted by silent sirens fired
   falsely on live data: the reports were published hours after the alert they
   described. The rule now uses the event time stated in the text, and that case is a
   permanent test.
-- **Ship traffic** through each strait is counted only from observed gate crossings
+- Ship traffic through each strait is counted only from observed gate crossings
   between positions at most 15 minutes apart, and undated ship positions inherited from
   IRONSIGHT were removed instead of being shown as current.
 
-Every decision, the alternatives and the evidence are in
-[Decisions](docs/DECISIONS.md); every check and its result in
-[Validation](docs/VALIDATION.md).
+The dated evidence and checks are recorded in [Validation](docs/VALIDATION.md), with
+method choices in [Decisions](docs/DECISIONS.md).
 
-### South Asia, energy and trade
+## Energy and trade
 
-Select **SOUTH ASIA** for Bangladesh, India, Pakistan, Sri Lanka, Myanmar, Nepal, Bhutan
-and Maldives. The **ENERGY & TRADE** view adds dated oil spot prices (US Energy
+Select SOUTH ASIA for Bangladesh, India, Pakistan, Sri Lanka, Myanmar, Nepal, Bhutan
+and Maldives. The ENERGY & TRADE view adds dated oil spot prices (US Energy
 Information Administration, via FRED), vessel traffic at four chokepoints and nine South
 Asian ports (IMF PortWatch), and each country's energy and fuel imports (World Bank):
 17 series, each with its date, unit and collection status. South Asia indicators are
@@ -111,12 +92,12 @@ reporting counts with no alert thresholds, because none have been validated. Sat
 ship-detection research was assessed but is not used as observation
 ([Maritime methods](docs/MARITIME-METHODS.md)).
 
-### Navigation, connectivity and reference signals
+## Navigation and connectivity
 
-The **SIGNALS** view, and the **GNSS** layer on the map, add four measurements to each
+The SIGNALS view and GNSS map layer display four signal families for each
 region ([method and limits](docs/SIGNALS.md)):
 
-- **Satellite navigation.** Aircraft report how far their GPS position can be trusted.
+- Aircraft report how far their GPS position can be trusted.
   gpsjam.org counts, for each hexagonal cell and day, the aircraft that reported low
   accuracy; cells where more than 2 % or 10 % did are drawn on the map, by gpsjam.org's
   own formula. On 2026-10-22 to 28 Iran/Israel had 95 to 141 such cells over 10 % a
@@ -124,34 +105,32 @@ region ([method and limits](docs/SIGNALS.md)):
   dashboard says "low accuracy", not "jamming". A local engine also computes the cells
   from the aircraft it already tracks; the cell arithmetic is a Rust kernel that
   reproduces all 47,482 of gpsjam.org's cell indices for one day.
-- **Internet outages.** IODA (Georgia Tech) detects country-wide connectivity drops in
+- IODA (Georgia Tech) detects country-wide connectivity drops in
   routing, probing and telescope data; each outage becomes an event in the indicator
   board.
-- **Taiwan's daily report.** The defence ministry's count of PLA aircraft sorties,
-  ships, ADIZ entries and median-line crossings, about 90 days back, beside each
+- Taiwan's defence ministry reports PLA aircraft sorties, ships, ADIZ entries and
+  median-line crossings. The view shows about 90 days, beside each
   count's median over the previous 30 reports. It is a party's claim and is shown as one.
-- **A reference to score against.** UCDP, the Uppsala conflict dataset, codes each
+- UCDP, the Uppsala conflict dataset, codes each
   lethal incident with its date and location precision. `engine validate` measures
   how many of them the engine found. Not measured yet: UCDP's newest monthly release
   ends before this project's data begins.
 
-### Runs without a server
+## Published snapshot
 
 A scheduled GitHub job collects the slower feeds twice a day into the `data` branch.
 A second job then serves the stored data through the engine and dashboard once, saves
 every view of every region (140 files), and publishes them as the static
-dashboard. Storage stays small on purpose: files are grouped by month, so each row is
-rewritten at most twice, and a storage layout change made every dashboard request 2.4 to
-4 times faster.
+dashboard. Files are grouped by month, so each row is rewritten at most twice.
+The storage-layout benchmark in [Validation](docs/VALIDATION.md) recorded dashboard
+requests taking 2.4 to 4 times less time.
 
-## What this does not show
+## Limits
 
-Nothing here is verified ground truth. Each item is a claim by its source; the grade
-says how reliable the source has been judged, not whether the claim is true. Gaps in
-collection are recorded and are not quiet periods. The published dashboard is a snapshot
-and says so in its header.
+Each item is a source's claim. A reliability grade does not establish its truth.
+Collection gaps are recorded separately from periods with no reported activity.
 
-## Run it locally
+## Local use
 
 ```powershell
 py -3.14 -m pip install -r requirements.txt
@@ -175,7 +154,7 @@ npm.cmd run dev                                  # dashboard on http://localhost
 - Data is written to `./data` (or `$OSW_DATA`). `py -3.14 -m engine collect --adapter
   context` collects only the oil, shipping and country series; no key is needed. A local
   engine polls oil and shipping every six hours and country indicators daily.
-- Tests: `py -3.14 -m pytest -q` (138) and `npm test` (28). Fusion needs the kernel;
+- Tests: `py -3.14 -m pytest -q` and `npm test`. Fusion needs the kernel;
   collection does not.
 
 ## Project map
@@ -192,19 +171,19 @@ npm.cmd run dev                                  # dashboard on http://localhost
 | [Design](docs/specs/2026-10-20-open-source-watch-design.md), [Decisions](docs/DECISIONS.md), [Validation](docs/VALIDATION.md) | the plan, each choice with its evidence, each check |
 | [Data context](docs/DATA-CONTEXT.md), [Sources](docs/SOURCES.md), [Review log](docs/REVIEW-LOG.md) | energy and trade sources and limits; source research |
 
----
-
 ## Upstream: IRONSIGHT
 
 The dashboard is [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works
 (MIT); its feature list is in the upstream README. Its data sources and attribution
 follow; the region files list every source this project adds, with its grade.
 
-## Data Sources
+## Data sources
 
-**All data comes from free, publicly accessible endpoints and requires no API keys.** None of it is owned by this project — see [Credits & Attribution](#credits--attribution).
+The upstream feeds below use publicly accessible endpoints without API keys. The optional
+AISSTREAM collection described above requires a key. Data belongs to its providers;
+see [Credits & Attribution](#credits--attribution).
 
-### Live APIs & Feeds
+### APIs and feeds
 
 | Service | Data | Provider | Cost |
 |---------|------|----------|------|
@@ -228,7 +207,7 @@ follow; the region files list every source this project adds, with its grade.
 | Country border lines | [Natural Earth](https://www.naturalearthdata.com/) `ne_50m_admin_0_boundary_lines_land` | Public domain |
 | Map engine | [Leaflet](https://leafletjs.com/) | BSD-2-Clause |
 
-### News RSS Feeds
+### News RSS feeds
 
 <details>
 <summary><strong>Iran / Israel theater</strong></summary>
@@ -242,7 +221,7 @@ BBC Middle East, New York Times Middle East, Al Jazeera, Reuters World, CNN Midd
 BBC Europe, New York Times Europe, Al Jazeera, Reuters World, Fox News World, Wall Street Journal, Kyiv Independent, Ukrainska Pravda (EN), Kyiv Post, The New Voice of Ukraine (NV), Ukrinform, TASS, RT, The Moscow Times, Meduza (EN), Breaking Defense, Military Times, War on the Rocks, U.S. DoD, and war-scoped Google News searches.
 </details>
 
-### Telegram Channels
+### Telegram channels
 
 Public channels only, scraped via Telegram's public embed endpoint. Channels are periodically activity-checked; the Russia/Ukraine set was last verified for recent activity in July 2026.
 
@@ -268,7 +247,7 @@ IDF Official, Rocket Alert, Alert Israel, Times of Israel, Abu Ali Express, OSIN
 **OSINT aggregators:** OSINT Defender, War Monitor, DeepState UA, Rybar.
 </details>
 
-### Polling Intervals
+### Polling intervals
 
 | Feed | Interval |
 |------|----------|
@@ -283,9 +262,10 @@ IDF Official, Rocket Alert, Alert Israel, Times of Israel, Abu Ali Express, OSIN
 | Markets, Oil, Crypto & Polymarket | 10 minutes |
 | Fires (NASA FIRMS) | 10 minutes |
 
-## Credits & Attribution
+## Credits & attribution
 
-IRONSIGHT is a **viewer**, not a data owner. Every feed, dataset, headline, alert, track, tile, and post surfaced by this dashboard is the property of its respective provider and is used here, unmodified in substance, purely to point back to the original source. We claim **no ownership or credit** for any third-party data or open-source project listed below, and we are grateful to the people and communities who make them freely available:
+The feeds, datasets, headlines, alerts, tracks, tiles and posts belong to their providers.
+This project claims no ownership of third-party data or software. Provider attribution follows:
 
 - **News:** the news organizations and wire services listed above, via their public RSS feeds
 - **Air-raid alerts:** [Pikud HaOref](https://www.oref.org.il/) via the community Tzeva Adom mirror; Ukrainian oblast alerts via [alerts.com.ua](https://alerts.com.ua/)
@@ -297,49 +277,54 @@ IRONSIGHT is a **viewer**, not a data owner. Every feed, dataset, headline, aler
 - **Translation:** Google Translate (unofficial endpoint)
 - **Social OSINT:** public Telegram channels, owned by their respective operators
 
-If you are a provider listed here and would like your source removed or its attribution changed, please [contact us](https://noblerworks.com/).
+For upstream provider removal or attribution requests, [contact Nobler Works](https://noblerworks.com/).
 
-## Legal Disclaimer
+## Terms and limitations
 
-### Purpose and Scope
+### Use
 
-This project is provided strictly for **educational and research purposes**. It demonstrates techniques for aggregating publicly available open-source intelligence (OSINT) using modern web technologies. It is not intended for commercial use, resale of data, or any activity that violates applicable laws or third-party terms of service.
+This project is provided for education and research. It is not intended for commercial
+use, data resale or activity that violates applicable laws or third-party terms.
 
-### Data Sources
+### Access and content
 
-All data is sourced from publicly accessible endpoints. No paywalls are bypassed, no authentication is circumvented, and no copyrighted content is reproduced in full — only headlines, links, and publicly available metadata are displayed.
+Data comes from publicly accessible endpoints. The project does not bypass paywalls or
+authentication or reproduce copyrighted articles in full. It displays headlines, links
+and public metadata; stored article and post text is limited to 280 characters.
 
-### Unofficial Endpoints
+### Unofficial endpoints
 
-Some data sources rely on **unofficial or undocumented public endpoints**, including but not limited to: Yahoo Finance chart data, Google Translate, Telegram channel embeds, Google News RSS, and community alert/tracking feeds. These endpoints:
+Yahoo Finance chart data, Google Translate, Telegram embeds, Google News RSS and some
+community alert and tracking feeds use unofficial or undocumented endpoints. These endpoints:
 
 - Are not officially supported APIs and may violate the respective provider's Terms of Service
 - May stop working, change, or be blocked without notice
 - Are used here solely for non-commercial educational demonstration
 - Should be replaced with official APIs if you intend to use this project commercially or in production
 
-### Third-Party Content
+### Content rights
 
-News content, Telegram posts, financial data, alert data, drone/missile tracks, map tiles, and all other third-party content belong to their respective publishers, organizations, and data providers. This project does not claim ownership of, or credit for, any third-party content. Market data may be subject to additional redistribution restrictions from upstream data licensors.
+Market data may carry additional redistribution restrictions from upstream licensors.
+Provider ownership and attribution are listed [above](#credits--attribution).
 
-### User Responsibility
+### User responsibility
 
 By using this software, you agree that:
 
-- **You are solely responsible** for ensuring your use complies with all applicable laws and third-party terms of service in your jurisdiction
-- The authors and contributors of this project are **not liable** for any misuse, TOS violations, legal claims, or damages arising from use of this software
-- You will **not use this software** for commercial data redistribution, automated trading, or any purpose that violates the terms of the underlying data providers
-- This software is provided **"as is"** without warranty of any kind
+- You are solely responsible for compliance with applicable laws and third-party terms in your jurisdiction.
+- The authors and contributors are not liable for misuse, terms-of-service violations, legal claims or damages arising from use of the software.
+- You will not use the software for commercial data redistribution, automated trading or purposes that violate providers' terms.
+- The software is provided "as is", without warranty.
 
-### ADS-B Data Attribution
+### ADS-B attribution
 
 Military aircraft tracking data is provided by [adsb.lol](https://www.adsb.lol) under the [Open Database License (ODbL 1.0)](https://opendatacommons.org/licenses/odbl/1-0/).
 
-### Map Data Attribution
+### Map attribution
 
 Basemap tiles © Esri, HERE, Garmin, map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country boundary lines from [Natural Earth](https://www.naturalearthdata.com/) (public domain).
 
-### No Endorsement
+### Affiliation
 
 This project is not affiliated with, endorsed by, or sponsored by any of the data providers, news organizations, governments, or military entities whose data it aggregates.
 

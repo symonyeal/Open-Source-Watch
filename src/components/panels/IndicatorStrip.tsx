@@ -14,18 +14,23 @@ interface Indicator {
   metric?: string;
   window_h?: number; watch?: number; trigger?: number; z?: number | null;
   date?: string | null; band?: string; median?: number | null; n_prior?: number;
+  window_days?: number; covered?: number; areas?: { area: string; count: number }[];
 }
 interface Hypothesis { id: string; text: string; inconsistent: string[] }
 interface Pir { pir: string; question: string; status: 'answered' | 'open' | 'gap'; indicators: Indicator[]; hypotheses: Hypothesis[] }
 
 const COLOR: Record<string, string> = { triggered: 'var(--red)', watch: '#ffaa00', inactive: 'var(--green)', observed: 'var(--blue)', gap: 'var(--text-secondary)' };
 
-const value = (i: Indicator) => i.metric === 'gnss'
+const areas = (i: Indicator) => i.areas?.length ? `: ${i.areas.slice(0, 3).map(a => `${a.area} ${a.count}`).join(', ')}` : '';
+
+const value = (i: Indicator) => i.metric === 'unusual'
+  ? `${i.count} oblasts unusual in ${i.window_h}h against ${i.covered} of ${i.window_days} days before${areas(i)}`
+  : i.metric === 'gnss'
   ? `${i.count} cells ${i.band} on ${i.date ?? 'no day'} (gpsjam.org; descriptive, no threshold)`
   : i.metric === 'official'
   ? `${i.date ? `${i.count ?? 'not stated'} on ${i.date}` : 'no recent report'}, median ${i.median ?? 'n/a'} over ${i.n_prior} reports (a party's claim)`
   : i.window_h !== undefined
-  ? `${i.count} in ${i.window_h}h (${i.metric === 'event_count' ? 'reporting count; no calibrated threshold' : `watch ${i.watch}, trigger ${i.trigger}`})`
+  ? `${i.count} in ${i.window_h}h (${i.metric === 'event_count' ? 'reporting count; no calibrated threshold' : `watch ${i.watch}, trigger ${i.trigger}`})${areas(i)}`
   : `${i.count} observed AIS crossings, z ${i.z ?? 'n/a'}`;
 
 export default function IndicatorStrip() {

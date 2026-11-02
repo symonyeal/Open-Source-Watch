@@ -3,6 +3,7 @@
 //! osw rebuild | compact | fuse | regions | validate
 //! osw analyse [intsum] [sitrep]   # indicator snapshot and products, after fuse
 //! osw gazetteer <GeoNames dir>
+//! osw backtest <region> <from YYYY-MM-DD> [to] [--step hours] [--healthy]   # boards over history
 #![allow(non_snake_case)]
 
 use std::collections::BTreeMap;
@@ -67,6 +68,25 @@ fn main() {
                 }
             );
         }
+        "backtest" => {
+            let r = regions::get(a.get(1).expect("region")).expect("known region");
+            let day = |s: &String| {
+                let d = chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").expect("YYYY-MM-DD");
+                d.and_hms_opt(0, 0, 0).unwrap().and_utc()
+            };
+            let t0 = day(a.get(2).expect("from"));
+            let t1 = a
+                .get(3)
+                .filter(|x| !x.starts_with("--"))
+                .map_or(collect::now(), day);
+            let h = values(&a, "--step")
+                .first()
+                .and_then(|x| x.parse().ok())
+                .unwrap_or(6);
+            let ok = a.iter().any(|x| x == "--healthy");
+            let B = cycle::backtest(r, t0, t1, chrono::Duration::hours(h), ok);
+            println!("{}", serde_json::to_string_pretty(&B).unwrap());
+        }
         "regions" => {
             std::fs::write(regions::ts_path(), regions::build_ts()).unwrap();
             println!(
@@ -106,7 +126,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "usage: osw collect|serve|rebuild|compact|fuse|analyse|regions|gazetteer|validate"
+                "usage: osw collect|serve|rebuild|compact|fuse|analyse|backtest|regions|gazetteer|validate"
             );
             std::process::exit(2);
         }

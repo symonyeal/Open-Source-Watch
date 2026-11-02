@@ -1,6 +1,8 @@
 //! Transit counting, ACH ranking and products (analyze, produce).
 #![allow(non_snake_case)]
 
+use std::collections::HashMap;
+
 mod common;
 
 use chrono::Duration;
@@ -159,4 +161,114 @@ fn intsum_reports_each_pir_and_cites_its_standards() {
         ("high", "moderate")
     );
     assert_eq!(produce::product(r, "sitrep", text, t).period_h, 6);
+}
+
+#[test]
+fn poisson_tail() {
+    assert_eq!(analyze::tail(0, 2.0), 1.0);
+    assert!((analyze::tail(1, 0.5) - (1.0 - (-0.5f64).exp())).abs() < 1e-12);
+    // 1 − e^(−1/2)(1 + 1/2 + 1/8)
+    assert!((analyze::tail(3, 0.5) - 0.014388).abs() < 1e-6);
+}
+
+/// An explosion in Russia/Ukraine at t in oblast a, of target class x.
+fn strike(k: usize, t: Time, a: &str, x: Option<&str>) -> osw::schema::Event {
+    osw::schema::Event {
+        id: format!("e{k}"),
+        region: "russia-ukraine".into(),
+        t_start: t,
+        t_end: t,
+        kind: "explosions_remote_violence".into(),
+        credibility: 4,
+        admin1: Some(a.into()),
+        target: x.map(String::from),
+        ..Default::default()
+    }
+}
+
+/// Indicators of the Russia/Ukraine board at t, Telegram collection healthy, after
+/// `days` days of reporting and these strikes.
+fn ru_board(t: Time, days: i64, E: Vec<osw::schema::Event>) -> HashMap<String, Value> {
+    let O: Vec<_> = (0..=days)
+        .map(|k| {
+            let mut x = ob(
+                k as usize,
+                t - Duration::days(k) - Duration::hours(1),
+                None,
+                None,
+                "telegram:uniannet",
+                "report",
+                "none",
+            );
+            x.region = "russia-ukraine".into();
+            x
+        })
+        .collect();
+    store::replace(&O);
+    store::replace(&E);
+    let mut h = analyze::Health::new();
+    h.insert("telegram:uniannet".into(), "ok");
+    analyze::board(regions::get("russia-ukraine").unwrap(), &h, t)
+        .into_iter()
+        .flat_map(|p| p["indicators"].as_array().unwrap().clone())
+        .map(|i| (i["id"].as_str().unwrap().to_string(), i))
+        .collect()
+}
+
+/// Kharkiv: one strike a day for ten days, then four (p 0.022, not unusual). Samara:
+/// none, then three on energy targets (unusual, and RU-2a's trigger).
+#[test]
+fn unusual_oblasts_against_their_trailing_days() {
+    let _g = fresh("analysis_unusual");
+    let t = at(2026, 10, 30, 12, 0, 0);
+    let mut E = vec![];
+    for k in 1..=10 {
+        E.push(strike(
+            k,
+            t - Duration::days(k as i64) - Duration::hours(2),
+            "Kharkiv",
+            None,
+        ));
+    }
+    for k in 0..4 {
+        E.push(strike(
+            20 + k,
+            t - Duration::hours(k as i64 + 1),
+            "Kharkiv",
+            None,
+        ));
+    }
+    for k in 0..3 {
+        E.push(strike(
+            30 + k,
+            t - Duration::hours(k as i64 + 1),
+            "Samara Oblast",
+            Some("energy"),
+        ));
+    }
+    let B = ru_board(t, 10, E.clone());
+    let x = &B["RU-5a"];
+    assert_eq!(
+        (x["status"].as_str(), x["covered"].as_i64()),
+        (Some("triggered"), Some(10)),
+        "{x}"
+    );
+    assert_eq!(x["areas"].as_array().unwrap().len(), 1, "{x}");
+    assert_eq!(
+        (
+            x["areas"][0]["area"].as_str(),
+            x["areas"][0]["count"].as_i64()
+        ),
+        (Some("Samara Oblast"), Some(3))
+    );
+    let x = &B["RU-2a"];
+    assert_eq!(
+        (x["status"].as_str(), x["count"].as_i64()),
+        (Some("triggered"), Some(3)),
+        "{x}"
+    );
+    assert_eq!(x["areas"], json!([{"area": "Samara Oblast", "count": 3}]));
+    assert_eq!(B["RU-2c"]["status"], "triggered");
+    // Fewer than seven covered days: no baseline.
+    assert_eq!(ru_board(t, 5, E)["RU-5a"]["status"], "no data");
 }

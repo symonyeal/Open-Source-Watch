@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use chrono::Duration;
 use serde_json::Value;
 
+use crate::analyze;
 use crate::collect::{pystr, sha};
 use crate::cycle::SourceRow;
 use crate::fmt::{Time, iso};
@@ -110,6 +111,21 @@ pub fn report(r: &Region, board: &[Value], sources: &[SourceRow], kind: &str, t:
         "## Bottom line".into(),
     ];
     let ind = |p: &Value| p["indicators"].as_array().cloned().unwrap_or_default();
+    // The oblasts of a per-oblast or unusual indicator, as "A n, B m".
+    let areas = |i: &Value| -> String {
+        let A: Vec<String> = i["areas"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .take(5)
+            .map(|a| format!("{} {}", s(&a["area"]), s(&a["count"])))
+            .collect();
+        if A.is_empty() {
+            String::new()
+        } else {
+            format!(": {}", A.join(", "))
+        }
+    };
     for p in board {
         let head = format!("- **{}** {}", s(&p["pir"]), s(&p["question"]));
         let I = ind(p);
@@ -159,6 +175,24 @@ pub fn report(r: &Region, board: &[Value], sources: &[SourceRow], kind: &str, t:
                     },
                     format!("z ≤ {} / {}", s(&i["watch_z"]), s(&i["trigger_z"])),
                 ),
+                Some("unusual") => (
+                    if none {
+                        format!(
+                            "no data ({} of {} days)",
+                            s(&i["covered"]),
+                            s(&i["window_days"])
+                        )
+                    } else {
+                        format!("{} oblasts{}", s(&i["count"]), areas(&i))
+                    },
+                    format!(
+                        "≥ {MIN} in {} h, p < {P} against {} days",
+                        s(&i["window_h"]),
+                        s(&i["covered"]),
+                        MIN = analyze::MIN_UNUSUAL,
+                        P = analyze::P_UNUSUAL
+                    ),
+                ),
                 Some("event_count") => (
                     format!("{} in {} h", s(&i["count"]), s(&i["window_h"])),
                     "not calibrated".into(),
@@ -191,7 +225,7 @@ pub fn report(r: &Region, board: &[Value], sources: &[SourceRow], kind: &str, t:
                     "none (a party's claim)".into(),
                 ),
                 _ => (
-                    format!("{} in {} h", s(&i["count"]), s(&i["window_h"])),
+                    format!("{} in {} h{}", s(&i["count"]), s(&i["window_h"]), areas(&i)),
                     format!("{} / {}", s(&i["watch"]), s(&i["trigger"])),
                 ),
             };

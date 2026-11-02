@@ -121,18 +121,22 @@ question = "Is a large Russian missile or drone strike on Ukraine under way?"
   trigger = 30
   max_credibility = 4
 
+# Strikes on energy targets by oblast (process::what target class). Credibility 4
+# counts: most single-source text reports grade 4 (DECISIONS 2026-11-02).
 [[pir]]
 id = "RU-2"
-question = "Are strikes hitting energy or industrial sites?"
+question = "Where are strikes hitting energy targets?"
 
   [[pir.indicator]]
   id = "RU-2a"
-  name = "Reported strikes or explosions"
+  name = "Strikes on energy targets in one oblast"
   kind = "explosions_remote_violence"
-  window_h = 12
-  watch = 3
-  trigger = 10
-  max_credibility = 3
+  target = "energy"
+  by = "admin1"
+  window_h = 24
+  watch = 1
+  trigger = 3
+  max_credibility = 4
 
   [[pir.indicator]]
   id = "RU-2b"
@@ -142,6 +146,16 @@ question = "Are strikes hitting energy or industrial sites?"
   watch = 10
   trigger = 40
   max_credibility = 3
+
+  [[pir.indicator]]
+  id = "RU-2c"
+  name = "Oblasts with unusual strikes on energy targets (24 h against the 28 days before)"
+  metric = "unusual"
+  kind = "explosions_remote_violence"
+  target = "energy"
+  window_h = 24
+  window_days = 28
+  max_credibility = 4
 
 [[pir]]
 id = "RU-3"
@@ -194,3 +208,26 @@ question = "Is satellite navigation or internet connectivity in the region degra
   kind = "internet_outage"
   window_h = 48
   max_credibility = 6
+
+# Daily counts per oblast against the 28 days before (analyze, metric "unusual").
+[[pir]]
+id = "RU-5"
+question = "Where is strike or combat activity unusual?"
+
+  [[pir.indicator]]
+  id = "RU-5a"
+  name = "Oblasts with unusual strikes or explosions (24 h against the 28 days before)"
+  metric = "unusual"
+  kind = "explosions_remote_violence"
+  window_h = 24
+  window_days = 28
+  max_credibility = 4
+
+  [[pir.indicator]]
+  id = "RU-5b"
+  name = "Oblasts with unusual battles (24 h against the 28 days before)"
+  metric = "unusual"
+  kind = "battles"
+  window_h = 24
+  window_days = 28
+  max_credibility = 4

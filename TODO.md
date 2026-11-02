@@ -20,7 +20,10 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [x] 2026-11-02 Russia/Ukraine sites: a town with a site word is a `site` location (`site` on observations and events); 2.7 % of classified reports, 90 of 100 reviewed right ([decision](docs/DECISIONS.md), [validation](docs/VALIDATION.md)).
 - [ ] Measure the OpenStreetMap sites (`regions/sites.tsv`) once the Sites workflow has written it.
 - [x] 2026-11-02 Russia/Ukraine incident detail by rules: statement filter, sub-event, weapon, missile, target class, casualties, actors; [validation](docs/VALIDATION.md).
-- [ ] Per-oblast baselines, PIRs on the detail fields and the area INTSUM.
+- [~] 2026-11-02 Per-oblast unusual indicator, RU-2 energy strikes by oblast, RU-5, `osw backtest`
+  (Validation, in progress). Left: judge flagged oblast-days, re-measure after 28 days at full volume
+  (2026-11-17), rebuild `data` for the phase 2 fields.
+- [ ] The area INTSUM and dashboard drill-down (phase 4).
 - [ ] Check the first scheduled Collect and Pages runs on the Rust engine (Linux build, live polls).
 - [ ] After the UCDP October 2026 Candidate release (the September file appeared 2026-10-20), run `osw validate` on the `data` branch and record the recall grid in Validation.
 - [ ] Run a local engine for whole days, then compare its integrity cells with gpsjam.org's (agreement in the SIGNALS view).

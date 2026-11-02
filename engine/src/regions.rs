@@ -51,6 +51,10 @@ pub struct Indicator {
     pub trigger_z: Option<f64>,
     pub band: Option<String>,
     pub field: Option<String>,
+    /// Only events of this target class (process::what).
+    pub target: Option<String>,
+    /// "admin1": counted per oblast (analyze).
+    pub by: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]

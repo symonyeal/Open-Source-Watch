@@ -148,6 +148,7 @@ fn product_confidence_uses_the_indicator_window() {
             credibility: 2,
             admin1: None,
             admin2: None,
+            site: None,
         })
         .collect();
     store::append(&E);
@@ -190,6 +191,7 @@ fn south_asia_reporting_counts_cannot_trigger_an_uncalibrated_alert() {
             credibility: 3,
             admin1: None,
             admin2: None,
+            site: None,
         })
         .collect();
     store::append(&E);

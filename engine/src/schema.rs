@@ -339,6 +339,8 @@ table!(Obs "observation" region {
     /// First- and second-order administrative units (oblast, raion) of the place
     /// (process::place), if known.
     admin1: Option<String>, admin2: Option<String>,
+    /// The site the report names ("Novoshakhtinsk refinery"; process::place), if any.
+    site: Option<String>,
 });
 
 table!(Event "event" region {
@@ -347,8 +349,8 @@ table!(Event "event" region {
     #[serde(serialize_with = "py")] t_end: Time,
     lat: f64, lon: f64, kind: String, observation_ids: Vec<String>, n_independent: i16,
     credibility: i8,
-    /// Units of the located member nearest the event's position (fuse).
-    admin1: Option<String>, admin2: Option<String>,
+    /// Units and site of the located member nearest the event's position (fuse).
+    admin1: Option<String>, admin2: Option<String>, site: Option<String>,
 });
 
 table!(Entity "entity" global {
@@ -379,7 +381,7 @@ unique!(Event t_start region);
 unique!(Entity id);
 unique!(Product t region);
 
-pub const GEO_PRECISION: [&str; 5] = ["point", "city", "admin", "country", "none"];
+pub const GEO_PRECISION: [&str; 6] = ["point", "site", "city", "admin", "country", "none"];
 
 /// ACLED event types (ACLED Codebook 2023 §2), extended (spec § Event taxonomy).
 /// `report` is a processed item that no rule classified; fusion ignores it.

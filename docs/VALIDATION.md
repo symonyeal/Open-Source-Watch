@@ -3,6 +3,27 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-02 Russia/Ukraine sites
+
+Site matching (`engine/src/process/place.rs`) on the same 18,319 stored Russia/Ukraine
+text observations, before `regions/sites.tsv` exists: a town with a site word becomes a
+`site` location at the town's point. The OpenStreetMap sites file is checked separately
+when the Sites workflow has written it.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| Reports name sites | grain of the 5,027 classified observations | site 0 → 2.7 % (135), city 52.0 → 49.6 %; of all 18,319 text observations 223 (1.2 %) changed; oblast 61.9 %, raion 24.1 % |
+| The site placements are right | 100 of the 108 changed placements not seen in tuning (seed 20261106), judged by an independent reviewer from text and placement only, spot-checked | 90 right; the reviewer said 91, one overruled ("Moscow airfield" for Sheremetyevo) |
+| Other regions are unchanged | the comparison on the other six regions' 21,621 text observations | 0 changed |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, ESLint, `npm test`, `npm run build` | clean; clean; 121 passed; 0 errors, 17 warnings as before; 28 passed; built |
+
+Wrong placements remaining: a Russian adjective read as a village of another oblast
+("Pridneprovskaya", "Preobrazhensk", "Kamensky" plant placed in Smolensk or Sverdlovsk
+Oblast, 4); a city named for a site in its oblast ("Rostov plant", "Saint Petersburg
+refinery", "Moscow airfield", 3); "works" as a verb ("Ballistics works in Kyiv"); a
+mistranslation ("Akhtubinsk nuclear power plant", the airfield); an oil pumping station
+named an oil depot.
+
 ## 2026-11-02 Russia/Ukraine places
 
 Place matching (`engine/src/process/place.rs`) on the stored Russia/Ukraine reports of
@@ -21,8 +42,12 @@ the report text.
 
 Wrong placements remaining: person and unit names that are also places ("Vladimir
 Raevsky", "Vostok … groups"), Kyiv meaning the government, and the spelling Vinnitsa,
-absent from GeoNames. Not measured: sites (refineries, depots); OpenStreetMap's Overpass
-API did not answer on 2026-11-02.
+absent from GeoNames. Sites: the section above.
+
+The `data` branch itself was rebuilt with this engine (f61be21) on a fresh worktree of
+21a0d63e: `osw rebuild` in 8 min 18 s, oblast on 62.8 % of 32,708 observations and
+80.0 % of 4,047 events, as on the copy. 35 observation files changed, no raw report;
+events are not tracked on `data`. Pushed as 209100de.
 
 ## 2026-11-01 Rust engine
 

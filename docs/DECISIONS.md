@@ -4,6 +4,19 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Sites** (2026-11-02). A town followed by a site word ("Kstovo refinery",
+  "Engels airbase"), or preceded by one across "in", "near", "at" or "outside"
+  ("refinery in Ryazan"), is a `site` location named "<town> <kind>" in Russia/Ukraine;
+  observations and events carry it (`site`). It sits at the nearest OpenStreetMap
+  site of that kind within 30 km (100 km for a nuclear plant) from `regions/sites.tsv`,
+  or else at the town's point; a site's English name in full also matches. A bare town
+  is never a site. A Russian adjective before a site word names its town
+  ("Novokuibyshevsky refinery"). On the stored reports 2.7 % of classified observations
+  became sites, 90 of 100 judged right (Validation); other regions unchanged. The file
+  is built by the Sites workflow from the Overpass API (monthly and on demand), not
+  downloaded locally: the repository stays small and every machine gets it by
+  `git pull`. Refused: Geofabrik extracts read with pyosmium (341 MB of downloads per
+  refresh); GeoNames sites (no refinery or oil depot in UA or RU).
 - **Villages, oblasts and raions** (2026-11-02). Russia/Ukraine lists UA and RU under
   `[gazetteer]`, so `osw gazetteer` adds every populated place of both inside the box,
   their ADM1 and ADM2 units, and both countries' cities whole (Omsk, St Petersburg).

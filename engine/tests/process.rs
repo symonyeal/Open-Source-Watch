@@ -123,6 +123,45 @@ fn villages_oblasts_and_raions_roll_up() {
     assert_eq!(g("Russian drone strike in Pokrovske").precision, "none");
 }
 
+/// A town and a site word are a site (`process::place`, OSM sites); a bare town is not.
+#[test]
+fn a_town_and_a_site_word_are_a_site() {
+    let RU = r("russia-ukraine");
+    let site = |s: &str| {
+        let x = process::geocode(RU, s);
+        (x.precision, x.site, x.admin1)
+    };
+    let (p, s, a1) = site("Drones attack the Novoshakhtinsk refinery overnight");
+    assert_eq!(
+        (p, s.as_deref(), a1.as_deref()),
+        ("site", Some("Novoshakhtinsk refinery"), Some("Rostov"))
+    );
+    // The word may follow across "in" or "near"; a CHP plant is a power plant.
+    assert_eq!(
+        site("Fire at the oil refinery in Ryazan").1.as_deref(),
+        Some("Ryazan refinery")
+    );
+    assert_eq!(
+        site("Russian drones hit the CHP plant in Kyiv")
+            .1
+            .as_deref(),
+        Some("Kyiv power plant")
+    );
+    // A Russian adjective before a site word names its town.
+    assert_eq!(
+        site("Strike on the Novokuibyshevsky oil refinery")
+            .1
+            .as_deref(),
+        Some("Novokuibyshevsk refinery")
+    );
+    // A site word in another sentence, and a bare town, make no site.
+    assert_eq!(
+        site("Fire near a military airfield. In Berezniki windows broke").0,
+        "city"
+    );
+    assert_eq!(site("Explosions heard in Engels").1, None);
+}
+
 #[test]
 fn a_point_takes_the_units_of_its_nearest_place() {
     let (a1, _) = process::units_at(r("russia-ukraine"), 50.45, 30.52);

@@ -121,8 +121,8 @@ Source ─< RawReport ─< Observation >─ Event >─< Entity
 | `source` | id, name, discipline, owner, url, reliability ∈ {A..F}, cadence_s, regions, lang |
 | `collection_run` | source_id, started_at, status ∈ {ok, empty, http_error, parse_error, blocked}, n_rows, latency_ms, runner ∈ {local, cron} |
 | `raw_report` | id = sha256(source_id, native_id), source_id, fetched_at, published_at, url, payload |
-| `observation` | id, raw_id, t, lat, lon, geo_precision ∈ {point, city, admin, country, none}, region, kind, text_en, lang, credibility ∈ {1..6}, names, t_event, admin1, admin2 |
-| `event` | id, t_start, t_end, lat, lon, region, kind, observation_ids, n_independent, credibility, admin1, admin2 |
+| `observation` | id, raw_id, t, lat, lon, geo_precision ∈ {point, site, city, admin, country, none}, region, kind, text_en, lang, credibility ∈ {1..6}, names, t_event, admin1, admin2, site |
+| `event` | id, t_start, t_end, lat, lon, region, kind, observation_ids, n_independent, credibility, admin1, admin2, site |
 | `entity` | id, type ∈ {actor, unit, vessel, aircraft, site}, names, identifiers (ICAO hex, MMSI, IMO), attributes |
 | `track_point` | entity_id, t, lat, lon, heading, speed, source_id |
 | `pir` | id, region, question, status ∈ {open, answered, gap}, updated_at |
@@ -207,7 +207,9 @@ times.
   bounding box. The precision is set by the matched feature class. (Amended
   2026-11-02.) A region's `[gazetteer]` countries add every village and their oblasts
   and raions; each location carries its `admin1` and `admin2`
-  (`engine/src/process/place.rs`; rules in docs/DECISIONS.md).
+  (`engine/src/process/place.rs`; rules in docs/DECISIONS.md). A town with a site
+  word ("Kstovo refinery") is a `site` location, at the OpenStreetMap site of that kind
+  nearby (`regions/sites.tsv`) or else the town's point.
 - **Classification:** keyword rules per kind and language in the region TOML. From P3, a
   scikit-learn classifier trained on stored, labelled history.
 - **Deduplication:** exact match on `raw_report.id`, plus a near-duplicate text hash

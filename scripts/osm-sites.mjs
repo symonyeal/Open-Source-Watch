@@ -4,7 +4,8 @@
 // OpenStreetMap through the Overpass API
 // (data © OpenStreetMap contributors, ODbL 1.0; docs/SOURCES.md). One Overpass query
 // per kind and 10° tile; each answer is kept in <cache dir>/<kind>-<tile>.json and
-// reused while present.
+// reused while present (the Sites workflow keeps the directory between runs, so a run
+// cut short resumes).
 // Run: node scripts/osm-sites.mjs <cache dir>
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -60,6 +61,8 @@ async function ask(q) {
       method: 'POST',
       headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ data: q }),
+      // The server stops a query at 240 s; a connection held past that has hung.
+      signal: AbortSignal.timeout(300000),
     }).catch((e) => ({ ok: false, status: String(e) }));
     // A query that runs out of time or memory answers 200 with a partial result and a remark.
     const j = r.ok ? await r.json().catch(() => null) : null;

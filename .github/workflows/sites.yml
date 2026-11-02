@@ -27,7 +27,23 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # Overpass answers kept from earlier runs of the month, so a run the server cuts
+      # short resumes; a new month asks afresh.
+      - id: m
+        run: echo "m=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        with:
+          path: ${{ runner.temp }}/osm
+          key: osm-${{ steps.m.outputs.m }}-${{ github.run_id }}
+          restore-keys: osm-${{ steps.m.outputs.m }}-
+
       - run: node scripts/osm-sites.mjs "$RUNNER_TEMP/osm"
+
+      - if: always()
+        uses: actions/cache/save@v6
+        with:
+          path: ${{ runner.temp }}/osm
+          key: osm-${{ steps.m.outputs.m }}-${{ github.run_id }}
 
       - name: Commit and push
         run: |

@@ -8,7 +8,7 @@
 //! per URL is kept in CACHE, from which the proxy answers the front end (spec § Seam):
 //! what the dashboard shows is what was stored.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{LazyLock, Mutex, OnceLock, mpsc};
@@ -16,7 +16,7 @@ use std::time::{Duration as StdDuration, Instant};
 
 use chrono::Duration;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Value, json};
 
 use crate::analyze::{self, Health};
 use crate::collect::{self, Fail, Report, Resp, Source, adapter, decode, now};
@@ -169,10 +169,9 @@ pub fn source_table(r: &Region, t: Time) -> Vec<SourceRow> {
     let t0 = t - Duration::microseconds((horizon * 1e6) as i64);
     let R = store::rows::<Run>();
     let mut runs: HashMap<(&str, &str), Vec<&Run>> = HashMap::new();
-    for x in R
-        .iter()
-        .filter(|x| (x.region == r.id || x.region == "global") && x.started_at > t0)
-    {
+    for x in R.iter().filter(|x| {
+        (x.region == r.id || x.region == "global") && x.started_at > t0 && x.started_at <= t
+    }) {
         runs.entry((&x.region, &x.source_id)).or_default().push(x);
     }
     for v in runs.values_mut() {
@@ -205,6 +204,58 @@ pub fn health_of(S: &[SourceRow]) -> Health {
 /// Indicator board of region r with current source health (crate::analyze).
 pub fn board(r: &Region, t: Time) -> Vec<Value> {
     analyze::board(r, &health_of(&source_table(r, t)), t)
+}
+
+/// The board of region r every `step` from t0 to t1, with source health as of each
+/// time, or every source ok if `healthy` (history collected less often than the
+/// sources' cadences reads as stale): per indicator, how often it was in each state, its episodes (runs of
+/// consecutive triggered steps), the sum of its count over triggered steps, and the
+/// first step of each episode, with count and areas.
+pub fn backtest(r: &Region, t0: Time, t1: Time, step: Duration, healthy: bool) -> Vec<Value> {
+    let mut I: BTreeMap<String, (Value, BTreeMap<String, i64>, Vec<Value>, bool)> = BTreeMap::new();
+    let mut t = t0;
+    while t <= t1 {
+        let mut h = health_of(&source_table(r, t));
+        if healthy {
+            h.values_mut().for_each(|x| *x = "ok");
+        }
+        for p in analyze::board(r, &h, t) {
+            for i in p["indicators"].as_array().into_iter().flatten() {
+                let s = i["status"].as_str().unwrap_or("").to_string();
+                let x = I
+                    .entry(i["id"].as_str().unwrap_or("").into())
+                    .or_insert_with(|| {
+                        (
+                            json!({"pir": p["pir"], "id": i["id"], "name": i["name"]}),
+                            BTreeMap::new(),
+                            vec![],
+                            false,
+                        )
+                    });
+                *x.1.entry(s.clone()).or_default() += 1;
+                let on = s == "triggered";
+                if on {
+                    *x.1.entry("triggered_count".into()).or_default() +=
+                        i["count"].as_i64().unwrap_or(0);
+                }
+                if on && !x.3 {
+                    x.2.push(
+                        json!({"t": crate::fmt::iso(&t), "count": i["count"], "areas": i["areas"]}),
+                    );
+                }
+                x.3 = on;
+            }
+        }
+        t += step;
+    }
+    I.into_values()
+        .map(|(mut x, S, E, _)| {
+            x["steps"] = json!(S);
+            x["episodes"] = json!(E.len());
+            x["starts"] = json!(E);
+            x
+        })
+        .collect()
 }
 
 /// After fusion: append each region's indicator snapshot and the given products.

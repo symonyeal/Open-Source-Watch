@@ -3,6 +3,16 @@
 //! Event indicator i: the events of kind(i) with credibility ≤ c(i) whose t_end lies
 //! in the last window(i) hours are counted;
 //!     count ≥ trigger(i) → triggered;  count ≥ watch(i) → watch;  else inactive.
+//! With target(i), only events of that target class count; with by(i) = "admin1", they
+//! are counted per oblast and count is the largest (the oblasts listed as areas).
+//! Unusual indicator i (metric "unusual"): per oblast a, n_a = such events in the last
+//! window(i) hours, against the D = window_days(i) windows before it. V_k: reports of
+//! the producers of kind(i) in window k (0 the last); window k ≥ 1 is covered if
+//! V_k > 0. Over the covered windows C, the oblast's events per report, scaled to the
+//! last window's reports (collection grew twenty-fold in October 2026):
+//!     λ_a = (Σ_C counts of a + 1/2) / Σ_C V_k · V_0,   p_a = P(X ≥ n_a), X ~ Poisson(λ_a);
+//!     a is unusual iff n_a ≥ MIN_UNUSUAL and p_a < P_UNUSUAL (DECISIONS 2026-11-02);
+//!     some a unusual → triggered;  else inactive;  |C| < MIN_DAYS → no data.
 //! Transit indicator i (metric "transit"): observed crossings of gate(i) per UTC day by
 //! AIS tracks; the last complete day's count n is compared with the window(i) days
 //! before it, z = (n − mean) / sd;
@@ -41,6 +51,86 @@ const MAX_AIS_GAP: i64 = 15 * 60;
 const TEXT: [&str; 3] = ["rss", "gnews", "telegram"];
 /// A descriptive value dated earlier is no data.
 const RECENT: i64 = 3;
+/// The unusual rule (module doc): at least 3 events, and below a 1 % chance at the
+/// oblast's trailing rate.
+pub const MIN_UNUSUAL: i64 = 3;
+pub const P_UNUSUAL: f64 = 0.01;
+
+/// P(X ≥ n), X ~ Poisson(λ).
+pub fn tail(n: i64, lam: f64) -> f64 {
+    let (mut p, mut s) = ((-lam).exp(), 0.0);
+    for k in 0..n {
+        s += p;
+        p *= lam / (k + 1) as f64;
+    }
+    (1.0 - s).max(0.0)
+}
+
+/// Event e counts for event indicator i.
+fn counts(e: &Event, i: &Indicator) -> bool {
+    e.kind == i.kind.as_deref().unwrap_or("")
+        && e.credibility as i64 <= i.max_credibility.unwrap_or(6)
+        && i.target
+            .as_ref()
+            .is_none_or(|x| e.target.as_ref() == Some(x))
+}
+
+/// Unusual indicator i of region r at t (module doc) over events E and observations O.
+fn unusual(r: &Region, i: &Indicator, t: Time, E: &[&Event], O: &[Obs]) -> Value {
+    let (w, D) = (
+        Duration::hours(i.window_h.unwrap_or(24)),
+        i.window_days.unwrap_or(28),
+    );
+    // Window k ∈ 0..=D holds the times in (t − (k+1)w, t − kw].
+    let k = |x: Time| ((t - x).num_seconds() / w.num_seconds()) as usize;
+    let since = t - w * (D as i32 + 1);
+    let A = producers(i.kind.as_deref().unwrap_or(""));
+    // V[k]: the producers' reports in window k, the collection volume.
+    let mut V = vec![0i64; D as usize + 1];
+    for x in O
+        .iter()
+        .filter(|x| x.region == r.id && x.t > since && x.t <= t)
+        .filter(|x| A.contains(&adapter(&x.source_id)))
+    {
+        V[k(x.t)] += 1;
+    }
+    let C: Vec<usize> = (1..=D as usize).filter(|&k| V[k] > 0).collect();
+    let v = C.iter().map(|&k| V[k]).sum::<i64>().max(1) as f64;
+    let mut N: BTreeMap<&str, Vec<i64>> = BTreeMap::new();
+    let mut G: BTreeMap<&str, i8> = BTreeMap::new(); // best credibility in the last window
+    for e in E
+        .iter()
+        .filter(|e| counts(e, i) && e.t_end > since && e.t_end <= t)
+    {
+        if let Some(a) = &e.admin1 {
+            N.entry(a).or_insert_with(|| vec![0; D as usize + 1])[k(e.t_end)] += 1;
+            if k(e.t_end) == 0 {
+                let g = G.entry(a).or_insert(e.credibility);
+                *g = (*g).min(e.credibility);
+            }
+        }
+    }
+    let mut U: Vec<(f64, &str, i64, f64)> = N
+        .iter()
+        .map(|(a, x)| {
+            let lam = (C.iter().map(|&k| x[k]).sum::<i64>() as f64 + 0.5) / v * V[0] as f64;
+            (tail(x[0], lam), *a, x[0], lam)
+        })
+        .filter(|u| u.2 >= MIN_UNUSUAL && u.0 < P_UNUSUAL)
+        .collect();
+    U.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(b.1)));
+    let s = if C.len() < MIN_DAYS {
+        "no data"
+    } else if U.is_empty() {
+        "inactive"
+    } else {
+        "triggered"
+    };
+    json!({"id": i.id, "name": i.name, "metric": "unusual", "kind": i.kind, "target": i.target,
+           "count": U.len(), "window_h": w.num_hours(), "window_days": D, "covered": C.len(), "reports": V[0],
+           "status": s, "best_credibility": U.iter().filter_map(|u| G.get(u.1)).min(),
+           "areas": U.iter().map(|u| json!({"area": u.1, "count": u.2, "rate": round(u.3, 2), "p": round(u.0, 4)})).collect::<Vec<_>>()})
+}
 
 /// Adapters whose sources can produce each kind; the rest come from text sources.
 fn producers(kind: &str) -> Vec<&'static str> {
@@ -249,7 +339,10 @@ pub fn board(r: &Region, h: &Health, t: Time) -> Vec<Value> {
         .pir
         .iter()
         .flat_map(|p| &p.indicator)
-        .map(|i| i.window_h.unwrap_or(0))
+        .map(|i| match i.metric.as_deref() {
+            Some("unusual") => i.window_h.unwrap_or(24) * (i.window_days.unwrap_or(28) + 1),
+            _ => i.window_h.unwrap_or(0),
+        })
         .max()
         .unwrap_or(0);
     let EV = store::view::<Event>();
@@ -285,18 +378,31 @@ pub fn board(r: &Region, h: &Health, t: Time) -> Vec<Value> {
                     x["status"] = json!("no data");
                 }
                 x
+            } else if metric == "unusual" {
+                let mut x = unusual(r, i, t, &E, &OV);
+                let missing = gap(&producers(i.kind.as_deref().unwrap_or("")), h);
+                miss |= missing || x["status"] == "no data";
+                if missing {
+                    x["status"] = json!("no data");
+                }
+                x
             } else {
                 let kind = i.kind.as_deref().unwrap_or("");
                 let w = t - Duration::hours(i.window_h.unwrap_or(0));
-                let matched: Vec<&&Event> = E
-                    .iter()
-                    .filter(|e| {
-                        e.kind == kind
-                            && e.credibility as i64 <= i.max_credibility.unwrap_or(6)
-                            && e.t_end > w
-                    })
-                    .collect();
-                let n = matched.len() as i64;
+                let matched: Vec<&&Event> =
+                    E.iter().filter(|e| counts(e, i) && e.t_end > w).collect();
+                let mut A: BTreeMap<&str, i64> = BTreeMap::new();
+                if i.by.is_some() {
+                    for a in matched.iter().filter_map(|e| e.admin1.as_deref()) {
+                        *A.entry(a).or_default() += 1;
+                    }
+                }
+                let mut A: Vec<(&str, i64)> = A.into_iter().collect();
+                A.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(b.0)));
+                let n = match i.by {
+                    Some(_) => A.first().map_or(0, |a| a.1),
+                    None => matched.len() as i64,
+                };
                 let S: Vec<&str> = P
                     .iter()
                     .filter(|x| x.0 == kind)
@@ -320,6 +426,17 @@ pub fn board(r: &Region, h: &Health, t: Time) -> Vec<Value> {
                 } else {
                     x["watch"] = json!(i.watch);
                     x["trigger"] = json!(i.trigger);
+                }
+                if i.by.is_some() {
+                    x["by"] = json!(i.by);
+                    x["areas"] = json!(
+                        A.iter()
+                            .map(|a| json!({"area": a.0, "count": a.1}))
+                            .collect::<Vec<_>>()
+                    );
+                }
+                if i.target.is_some() {
+                    x["target"] = json!(i.target);
                 }
                 x
             };

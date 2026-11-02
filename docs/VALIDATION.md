@@ -3,6 +3,39 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-02 Russia/Ukraine PIRs and unusual activity by oblast (in progress)
+
+Backtest (`osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6`) on a copy of the
+store rebuilt with the phase 2 engine. The board ran every 6 hours (81 steps), first
+with source health as of each step, then with every source ok (`--healthy`).
+Unit cases are in `engine/tests/analysis.rs`.
+
+| Indicator | Health as of each step | Every source ok: steps triggered / watch, episodes | First steps of episodes (every source ok) |
+| --- | --- | --- | --- |
+| RU-1a air-raid alerts | no data 80 of 81 | 0 / 0 | none (1 alert event stored) |
+| RU-1b tracked drones and missiles | no data 80 | 0 / 0 | none |
+| RU-2a energy strikes in one oblast (24 h, 1 / 3) | no data 80 | 14 / 42, 3 | 10-23 18:00 Odesa 3; 10-31 00:00 Samara 3; 11-01 18:00 Nizhny Novgorod 3 |
+| RU-2b thermal anomalies | 29 / 12, 7 | 39 / 29, 10 | 10-17 12:00 41; 10-23 12:00 73; 10-28 06:00 77 |
+| RU-2c unusual energy strikes | no data 80 | 11 / –, 3 | 10-24 12:00 Crimea 3 (expected 0.17); 10-31 Samara 3 (0.05); 11-01 Nizhny Novgorod 3 (0.03) |
+| RU-3a maritime incidents | no data 80 | 0 / 0 | none |
+| RU-5a unusual strikes or explosions | no data 80 | 39 / –, 4 | 10-22 12:00 Poltava, Rivne, Zaporizhzhia 4 each (expected 0.76); 10-26 Voronezh 5 (0.21); 10-28 Luhansk 4 (0.78); 10-29 Volgograd 4 (0.05) |
+| RU-5b unusual battles | no data 80 | 19 / –, 7 | 10-22 Zaporizhzhia 5 (0.76); 10-27 Donetsk 7 (1.71); 11-01 Donetsk 6 (1.70) |
+
+Findings:
+- **Historical health reads as stale.** Text sources were "stale" at every step,
+  because their cadences are 2 to 5 minutes (`osw serve`) and the stored history was
+  collected by the scheduled workflow a few times a day. The text indicators are
+  therefore "no data" on the stored history. The `--healthy` run measures the rules
+  alone. Source health at a past time now counts only runs started by then
+  (`cycle::source_table`); before, later runs counted.
+- **A daily rate over-fires while collection grows.** RU-5a was triggered at 52 of 81
+  steps with a rate per day, and at 39 with the rate per report (DECISIONS).
+- **Not yet measured.** RU-5a still fires at about half of all steps: it is triggered
+  when any of about 25 oblasts is unusual. Whether the flagged oblast-days were real
+  surges is not measured, and no labelled sample exists yet. The full-volume history
+  (from 2026-10-20) is shorter than the 28-day window, so the expected rates rest on
+  the low-volume weeks before it.
+
 ## 2026-11-02 Russia/Ukraine incident detail
 
 Incident detail (`engine/src/process/what.rs`): the statement filter, ACLED sub-event,

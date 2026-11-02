@@ -94,7 +94,7 @@ fn pir_indicators() {
         };
         let E: Vec<_> = I
             .iter()
-            .filter(|i| matches!(metric(i).as_deref(), None | Some("event_count")))
+            .filter(|i| matches!(metric(i).as_deref(), None | Some("event_count" | "unusual")))
             .collect();
         let (T, G, O) = (of("transit"), of("gnss"), of("official"));
         assert!(
@@ -116,6 +116,22 @@ fn pir_indicators() {
                 let (w, t) = (i.watch.unwrap(), i.trigger.unwrap());
                 assert!(1 <= w && w <= t, "{}", i.id);
             }
+            if i.metric.as_deref() == Some("unusual") {
+                assert!(
+                    i.window_h.unwrap() > 0 && i.window_days.unwrap() >= 7,
+                    "{}",
+                    i.id
+                );
+            }
+            // The target classes of process::what.
+            assert!(
+                i.target.as_deref().is_none_or(|x| {
+                    ["energy", "military", "infrastructure", "civilian"].contains(&x)
+                }),
+                "{}",
+                i.id
+            );
+            assert!(matches!(i.by.as_deref(), None | Some("admin1")), "{}", i.id);
         }
         for i in &T {
             assert!(

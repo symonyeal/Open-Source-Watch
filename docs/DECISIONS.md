@@ -4,6 +4,30 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Unusual activity by oblast, and the Russia/Ukraine PIRs** (2026-11-02). For each
+  oblast, the indicator compares the events of one kind (and target class) in the last
+  24 hours with the 28 days before. The oblast is unusual if it has at least 3 such
+  events and a Poisson count at its trailing rate reaches that many with probability
+  below 1 % (`engine/src/analyze.rs`, metric `unusual`).
+  - The trailing rate is the oblast's events per report of the kind's producers,
+    scaled to the last day's reports. Collection grew from about 10 Russia/Ukraine
+    reports a day to 2,000–3,000 in October 2026. With a rate per day, an oblast in
+    the steady fighting was unusual on most days: RU-5a was triggered at 52 of 81
+    six-hourly steps, against 39 with the scaled rate.
+  - Fewer than 7 covered days is no data.
+  - Alternatives considered: a z-score (undefined on the many all-zero oblasts) and a
+    fixed multiple of the mean (no stated error rate).
+  - PIRs:
+    - RU-2 is now strikes on energy targets by oblast. RU-2a counts per oblast in 24 h,
+      watch 1, trigger 3; RU-2c is the unusual test. The thermal indicator stays as
+      RU-2b.
+    - RU-5 is new: unusual strikes and explosions (RU-5a) and battles (RU-5b) by
+      oblast.
+    - These count credibility up to 4, because most single-source text events grade 4
+      (82 % of explosions) and grading is out of scope.
+  - Backtest over the stored history is in Validation. The history at full volume
+    (from 2026-10-20) is shorter than the 28-day window, so the rule's error rate is
+    not yet known. Re-measure after 2026-11-17.
 - **Incident detail and the statement filter** (2026-11-02). In a region with a
   `[gazetteer]` (Russia/Ukraine), each classified text observation carries the ACLED
   sub-event type, weapon classes (drone, missile, glide bomb, artillery), missile type,

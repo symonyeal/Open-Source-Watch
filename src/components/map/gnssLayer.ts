@@ -2,7 +2,7 @@
 
 // Open-Source-Watch: GNSS integrity cells on the theater map. The latest gpsjam.org
 // day's H3 cells where 2-10 % (medium) or over 10 % (high) of aircraft reported
-// low navigation accuracy (engine/gnss.py). Kept out of ConflictMap so the
+// low navigation accuracy (engine/src/gnss.rs). Kept out of ConflictMap so the
 // upstream component changes by one hook call and one toggle.
 import { useEffect, useMemo, useRef } from 'react';
 import type * as Leaflet from 'leaflet';

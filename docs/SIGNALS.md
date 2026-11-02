@@ -32,7 +32,7 @@ unknown NIC). These are the US ADS-B Out minima of 14 CFR 91.227(c), applied as
 in [gods-eye-view](https://github.com/bilawalsidhu/gods-eye-view); gpsjam.org does
 not publish its own per-aircraft rule, and this one is not validated as an
 interference classifier. An aircraft counts once per cell and day, as bad if any
-of its reports there was bad. Cells are computed by the Rust kernel with
+of its reports there was bad. Cells are computed with
 [h3o](https://github.com/HydroniumLabs/h3o), which reproduces all 47,482 cell
 indices of gpsjam.org's 2026-10-27 file from their centres.
 
@@ -46,7 +46,7 @@ The GNSS cell count and the MND counts (TW-1c) are descriptive indicators. Each
 shows its latest value, the latest gpsjam.org day or MND report dated within the
 last three days, and is "no data" when there is none, when no source of it is
 healthy, or when the latest report does not state the count (an unstated count is
-not zero). One rule in `engine/analyze.py` decides this for both.
+not zero). One rule in `engine/src/analyze.rs` decides this for both.
 
 Each IODA event becomes an `internet_outage` observation placed at the seat of
 government. IODA measures a country as one unit, so its observations carry
@@ -64,7 +64,7 @@ when its window falls inside the engine's collection period. It is found if an
 engine event of a violent kind (battles, explosions/remote violence, violence
 against civilians) starts within 25 km during its local date, or up to one or two
 days after for later reporting. All three lags are reported; none is chosen.
-`py -3.14 -m engine validate` prints the grid. The share of engine violent events
+`osw validate` prints the grid. The share of engine violent events
 with a UCDP event in reach is shown too, but it is not precision: UCDP codes only
 lethal organized violence.
 

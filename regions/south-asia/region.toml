@@ -166,7 +166,7 @@ polymarketKeywords = { regex = "south asia|bangladesh|india|pakistan|sri lanka|m
 polymarketExclude = { regex = "cricket|football|soccer|nba|nfl|mlb|nhl|fifa|world.?cup|ipl|election odds|crypto|bitcoin", flags = "i" }
 
 # Countries whose internet connectivity IODA measures for this region (ISO 3166-1
-# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+# alpha-2). An outage is placed at the seat of government (engine/src/process/feeds.rs, ioda).
 [outages]
 countries = [
   { code = "BD", name = "Bangladesh", lat = 23.8103, lon = 90.4125 },

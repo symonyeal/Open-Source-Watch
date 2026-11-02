@@ -4,6 +4,25 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **One Rust engine** (2026-11-01). The Python engine (`engine/*.py`) and the PyO3
+  kernel (`kernels/`) are replaced by one crate, `engine/` (library and binary `osw`),
+  with the same stages, store layout, API shapes and value formats. The Parquet store is
+  read with arrow-rs instead of DuckDB, deduplicated by the same rule (order column,
+  then row content). On a copy of the `data` branch (7e2e781e, 138,811 raw reports)
+  rebuilt by both at one fixed time, every derived table and every regional view agrees
+  (Validation); the rebuild takes 7.3 s against 17.8 s. The Python code and its pytest
+  suite are archived outside the repository; the behaviour they guarded is tested in
+  `engine/tests`. Dropped with it: the keyword-rule fallback of the classifier and its
+  comparison command (the trained model is always present; the 0.68 against 0.54
+  result below stays the record).
+- **Classifier solved to optimality** (2026-11-01). scikit-learn's `LogisticRegression`
+  stops L-BFGS at its default `tol = 1e-4`, short of the optimum: refitted at
+  `tol = 1e-8` or `1e-12` it changes the kind of 23 of 99,825 stored observations, and
+  agrees there with the Rust solver, which stops at ‖∇‖∞ ≤ 1e-10 (106 iterations,
+  0.3 s). The engine's kinds are the optimum's. Near the optimum the loss changes by
+  less than its rounding error, so the line search also accepts Hager and Zhang's
+  approximate Wolfe conditions; with Armijo alone it stalled at ‖∇‖∞ ≈ 3.5e-7 after
+  20,000 iterations (about 300 s).
 - **Raw reports read through their adapter** (2026-10-29). A payload's JSON was
   written by its collector and decoded again, by SQL on `raw_report` or `json.loads`,
   in seven other modules (GNSS, signals, context, fusion, the API and both

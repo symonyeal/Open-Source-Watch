@@ -52,17 +52,17 @@ as a live data source.
 
 ## Recording and access
 
-`engine/collect/context.py` makes bounded public requests. A successful poll writes
-an immutable series snapshot to `raw_report`; `engine/context.py` reads the latest
+`engine/src/collect/context.rs` makes bounded public requests. A successful poll writes
+an immutable series snapshot to `raw_report`; `engine/src/context.rs` reads the latest
 release of each series. This keeps corrections and reversions in their retrieval
 order. A truncated provider response or an API error is a collection failure.
-No new Python or JavaScript dependencies are needed.
+No new dependencies are needed.
 
 Poll files become visible to readers only after a completed Parquet write.
 Compaction and derived-table replacement share the process's query lock. Run
 one engine writer process per data root; cross-process compaction is not coordinated.
 
-`GET /api/context?region=south-asia` on the Python engine returns the stored
+`GET /api/context?region=south-asia` on the engine returns the stored
 series, aligned spread, country scope and source health. Next.js forwards this
 view through `fromEngine`. With no engine available, it returns HTTP 503 with an
 unavailable message. It does not fetch a second, unrecorded copy of these data.

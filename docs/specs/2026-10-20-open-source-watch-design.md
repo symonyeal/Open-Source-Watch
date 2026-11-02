@@ -1,7 +1,8 @@
 # Open-Source-Watch: design
 
-Date: 2026-10-20. Status: approved 2026-10-20; amended 2026-10-21 and 2026-10-24
-(see docs/DECISIONS.md). The 2026-10-24 [economic context](../DATA-CONTEXT.md)
+Date: 2026-10-20. Status: approved 2026-10-20; amended 2026-10-21, 2026-10-24 and
+2026-11-01 (see docs/DECISIONS.md). Since 2026-11-01 the engine is one Rust crate,
+`engine/` (binary `osw`), with the stages and modules below as Rust modules. The 2026-10-24 [economic context](../DATA-CONTEXT.md)
 extends collection with FRED, PortWatch and World Bank series, an engine-native
 `/api/context` view, and the South Asia region. Economic series stay outside
 event fusion and PIR thresholds. Gaps remain unassessed in indicators and ACH.
@@ -26,25 +27,26 @@ estimative language.
 | purpose | live monitor first; storage designed in for later analysis |
 | base | GitHub fork of `NoblerWorks-HQ/IRONSIGHT` (MIT), renamed `symonyeal/Open-Source-Watch` |
 | front end | IRONSIGHT's Next.js app in its upstream layout at the repo root, minimally edited |
-| back end | system Python 3.14 for everything outside the browser; Node only builds and serves the front end |
+| back end | one Rust crate for everything outside the browser; Node only builds and serves the front end |
 | language models | none; processing is rule-based and statistical |
 | runtime | local engine for live feeds; GitHub Actions cron for slow feeds, committing to a `data` branch |
 | expansion | by chokepoint: Red Sea/Bab el-Mandeb, Hormuz, Taiwan Strait/South China Sea, Black Sea |
-| store | Parquet partitioned by `region/date`, queried with DuckDB |
+| store | Parquet partitioned by `region/date`, read with arrow-rs |
 
 ## Repository layout
 
 ```
 src/ public/ tests/ ...    IRONSIGHT, upstream layout
-engine/
+engine/src/
   collect/                 one adapter per source
   process/                 translation, geolocation, classification, deduplication
-  fuse/                    events, entities, tracks
-  analyze/                 indicators, models, ACH (P3)
-  produce/                 INTSUM, SITREP, flash alerts (P3)
-  store.py                 Parquet writer, DuckDB reader
-  api.py                   Starlette HTTP and SSE server
-  cli.py                   collect, rebuild, serve
+  fuse.rs                  events, entities, tracks
+  analyze.rs               indicators, models, ACH (P3)
+  produce.rs               INTSUM, SITREP, flash alerts (P3)
+  store.rs                 Parquet writer and reader
+  api.rs                   HTTP and SSE server
+  bin/osw.rs               collect, rebuild, serve, fuse, analyse
+engine/tests/              integration tests on recorded responses
 regions/<id>.toml          region registry: geography, sources, PIRs, indicators
 .github/workflows/         CI gate; collection cron
 docs/                      house layout; specs
@@ -75,7 +77,7 @@ one helper, `fetchWithTimeout` in `src/lib/fetcher.ts`.
   engine. The engine polls every upstream URL on its cadence, stores what it parses,
   and answers with the latest response.
 - The route then runs upstream's own shaping code on it, so the dashboard shows exactly
-  what the engine stored, and no upstream logic is copied into Python.
+  what the engine stored, and no upstream logic is copied into the engine.
 - If `ENGINE_URL` is unset, or the engine answers 502 or not at all, the helper fetches
   directly, and the fork runs as plain IRONSIGHT.
 
@@ -248,8 +250,8 @@ history are recorded in `collection_run`, never read as inactivity.
 - **Config:** every `regions/*.toml` validates against the schema. In P0–P2 each one
   agrees with its TypeScript conflict config.
 - **Front end:** upstream tests and lint are kept unchanged.
-- **Gate:** `py -3.14 -m pytest`, `py -3.14 -m ruff check .`, `npm run lint` and
-  `npm run build`, run locally and in CI.
+- **Gate:** `cargo fmt --check`, `cargo clippy`, `cargo test` in `engine/`,
+  `npm run lint`, `npm test` and `npm run build`, run locally and in CI.
 
 ## Phases
 
@@ -269,8 +271,8 @@ gave only as direction.
 **Region registry.**
 - A region after the first two is one file, `regions/<id>/region.toml`. Its `[conflict]`
   table is the dashboard's `ConflictConfig`; display fields may be omitted, and
-  `engine/regions.py` supplies defaults and derives the fires and flights boxes.
-- `py -3.14 -m engine regions` writes `src/lib/conflicts/generated.ts`, which is typed,
+  `engine/src/regions.rs` supplies defaults and derives the fires and flights boxes.
+- `osw regions` writes `src/lib/conflicts/generated.ts`, which is typed,
   so `tsc` checks every TOML region against upstream's interface. A test fails when
   the file is stale.
 - `ConflictKey` becomes `string`, the theater selector becomes a drop-down, and
@@ -319,7 +321,7 @@ better: population-weighted accuracy 0.68 against 0.54 under 3-fold cross-valida
 The rules remain the fallback.
 
 **Contradiction.**
-- `engine/process/when.py` extracts an event time stated in text: a clock time with
+- `engine/src/process/when.rs` extracts an event time stated in text: a clock time with
   an optional date, in the region's time zone. A dated time after publication is an
   announcement, and vaguer phrases yield nothing.
 - An `air_raid_alert` event supported by no warning source is contradicted (5) when a
@@ -361,4 +363,4 @@ accrues only while a local engine runs with a key.
 The README credits IRONSIGHT (MIT, Nobler Works) and every data provider, and keeps
 upstream's research-use disclaimer.
 
-GitHub topics: osint, intelligence, geospatial, conflict-monitoring, python, nextjs.
+GitHub topics: osint, intelligence, geospatial, conflict-monitoring, rust, nextjs.

@@ -33,10 +33,7 @@ graphify-out/
 
 # open-source-watch engine
 data/
-__pycache__/
-.pytest_cache/
-.ruff_cache/
+engine/target/
 
-# compiled kernels
-kernels/target/
+# snapshot JSON written by the Pages build
 /public/api/

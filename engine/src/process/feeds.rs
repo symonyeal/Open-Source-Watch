@@ -98,6 +98,8 @@ pub fn firms(raws: &[Report]) -> Vec<Obs> {
         for r in regions::all().iter().filter(|r| r.in_bbox(lat, lon)) {
             out.push(Obs {
                 id: obs_id(&firms_key(p), &r.id),
+                admin1: None,
+                admin2: None,
                 raw_id: x.id.clone(),
                 source_id: x.source_id.clone(),
                 region: r.id.clone(),
@@ -232,9 +234,24 @@ pub fn alerts(raws: &[Report]) -> Vec<Obs> {
             Some(_) => "city",
             None => "none",
         };
+        // An oblast alert ("kharkiv oblast") is that oblast; a city's units follow
+        // from its position (process::units).
+        let admin1 = hit.as_ref().filter(|_| prec == "admin").and_then(|h| {
+            let title: Vec<String> = h
+                .split(' ')
+                .map(|w| {
+                    let mut c = w.chars();
+                    c.next()
+                        .map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
+                })
+                .collect();
+            super::geocode(r, &title.join(" ")).admin1
+        });
         let t = x.t();
         out.push(Obs {
             id: obs_id(&x.id, "0"),
+            admin1,
+            admin2: None,
             raw_id: x.id.clone(),
             source_id: x.source_id.clone(),
             region: r.id.clone(),
@@ -273,6 +290,8 @@ pub fn ioda(raws: &[Report]) -> Vec<Obs> {
         let t = x.published_at.unwrap();
         let score = p["score"].as_f64().unwrap_or(0.0);
         out.push(Obs {
+            admin1: None,
+            admin2: None,
             id: obs_id(
                 &format!(
                     "ioda:{code}:{}:{}",
@@ -330,6 +349,8 @@ pub fn neptun(raws: &[Report]) -> (Vec<Track>, Vec<Obs>) {
         let text = p["text"].as_str().unwrap_or("");
         O.push(Obs {
             id: obs_id(&format!("neptun:{track}"), "0"),
+            admin1: None,
+            admin2: None,
             raw_id: x.id.clone(),
             source_id: x.source_id.clone(),
             region: r.id.clone(),

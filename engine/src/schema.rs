@@ -336,6 +336,9 @@ table!(Obs "observation" region {
     text_en: String, lang: String, credibility: i8, names: Vec<String>,
     /// Stated event time (process::when), if any.
     #[serde(serialize_with = "py_opt")] t_event: Option<Time>,
+    /// First- and second-order administrative units (oblast, raion) of the place
+    /// (process::place), if known.
+    admin1: Option<String>, admin2: Option<String>,
 });
 
 table!(Event "event" region {
@@ -344,6 +347,8 @@ table!(Event "event" region {
     #[serde(serialize_with = "py")] t_end: Time,
     lat: f64, lon: f64, kind: String, observation_ids: Vec<String>, n_independent: i16,
     credibility: i8,
+    /// Units of the located member nearest the event's position (fuse).
+    admin1: Option<String>, admin2: Option<String>,
 });
 
 table!(Entity "entity" global {

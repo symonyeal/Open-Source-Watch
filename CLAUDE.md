@@ -33,7 +33,10 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
 - Upstream's shaping code is the only copy: the engine serves upstream responses
   (`/fetch`), and every engine source URL is built exactly as the upstream route builds
   it (tests check this against Node). `/api/telegram` is the one engine-shaped route.
-- The gazetteer is `regions/geonames.tsv`, rebuilt by `osw gazetteer`.
+- The gazetteer is `regions/geonames.tsv`, rebuilt by `osw gazetteer <GeoNames dir>`
+  (cities15000.zip, admin1CodesASCII.txt, admin2Codes.txt and `<CC>.zip` for each
+  country a region lists under `[gazetteer]`); never edit it by hand. Places, their
+  oblast and raion, and the rules of matching live in `engine/src/process/place.rs`.
 - A new region is one file, `regions/<id>/region.toml`, with a `[conflict]` table;
   `osw regions` writes it into `src/lib/conflicts/generated.ts` (never
   edit that by hand). The two upstream theaters keep their TypeScript configs.

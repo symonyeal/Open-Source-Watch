@@ -20,6 +20,7 @@ records. Status is **inspected** (read for this project) or **cited** (not yet r
 | RFC 2822 §3.3 date-time | RSS `pubDate` parsing | cited |
 | Google Translate unofficial endpoint `translate.googleapis.com/translate_a/single` | translation, as upstream | inspected 2026-10-21 (upstream `src/lib/hebrew.ts`) |
 | GeoNames, `cities15000.zip`, download.geonames.org/export/dump, CC BY 4.0, readme.txt column list | gazetteer | inspected 2026-10-21 |
+| GeoNames country dumps `UA.zip`, `RU.zip`, `admin1CodesASCII.txt`, `admin2Codes.txt` (same site and licence); feature codes P, ADM1, ADM2, PPLA, PPLA2 | villages, oblasts, raions and their seats (`engine/src/process/place.rs`) | inspected 2026-11-02 |
 | NASA FIRMS, VIIRS S-NPP C2 active fire CSV; FIRMS FAQ on the confidence classes l/n/h | thermal anomalies | cited |
 | adsb.lol API v2 (`/v2/mil`, `/v2/lat/{lat}/lon/{lon}/dist/{d}`), readsb `dbFlags` bits | aircraft tracks | inspected 2026-10-21 (live responses) |
 | Tzeva Adom notifications API; alerts.com.ua `/api/states` | air-raid alerts | inspected 2026-10-21 (live responses; Tzeva Adom empty, test uses upstream's interface) |

@@ -146,6 +146,8 @@ fn product_confidence_uses_the_indicator_window() {
             observation_ids: vec![format!("o-{k}")],
             n_independent: 2,
             credibility: 2,
+            admin1: None,
+            admin2: None,
         })
         .collect();
     store::append(&E);
@@ -163,10 +165,10 @@ fn south_asia_gazetteer_includes_places_beyond_curated_capitals() {
         ("Protests in Lahore", "Lahore"),
         ("Fighting near Mandalay", "Mandalay"),
     ] {
-        let (lat, lon, precision, names) = process::geocode(r, title);
-        assert_eq!(precision, "city", "{title}");
-        assert!(names.iter().any(|n| n == name), "{names:?}");
-        assert!(lat.is_some() && lon.is_some());
+        let g = process::geocode(r, title);
+        assert_eq!(g.precision, "city", "{title}");
+        assert!(g.names.iter().any(|n| n == name), "{:?}", g.names);
+        assert!(g.lat.is_some() && g.lon.is_some());
     }
 }
 
@@ -186,6 +188,8 @@ fn south_asia_reporting_counts_cannot_trigger_an_uncalibrated_alert() {
             observation_ids: vec![format!("o-{k}")],
             n_independent: 1,
             credibility: 3,
+            admin1: None,
+            admin2: None,
         })
         .collect();
     store::append(&E);

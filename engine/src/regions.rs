@@ -112,6 +112,17 @@ pub struct Outages {
     pub countries: Vec<Country>,
 }
 
+/// Countries whose every populated place and administrative unit is in the
+/// gazetteer (process::place); elsewhere it holds GeoNames cities15000 only.
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Gazetteer {
+    pub countries: Vec<String>,
+    /// Phrases that share a place's name but name something else (a person),
+    /// matched case-sensitively and never located.
+    pub not_places: Vec<String>,
+}
+
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct Region {
@@ -127,6 +138,7 @@ pub struct Region {
     pub link: Vec<Link>,
     pub context: Context,
     pub outages: Outages,
+    pub gazetteer: Gazetteer,
     /// The server config plus the client tables the engine reads, as in conflict.json.
     #[serde(skip)]
     pub conflict: Value,

@@ -4,6 +4,26 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Villages, oblasts and raions** (2026-11-02). Russia/Ukraine lists UA and RU under
+  `[gazetteer]`, so `osw gazetteer` adds every populated place of both inside the box,
+  their ADM1 and ADM2 units, and both countries' cities whole (Omsk, St Petersburg).
+  Every place carries its oblast and raion, and so do observations and events
+  (`admin1`, `admin2`); sensor points take the units of the nearest place within
+  30 km. On the 5,018 classified stored observations of the region, an oblast is now
+  known for 62 % (none before) and the unlocated share fell from 32.2 % to 20.7 %
+  (Validation). Rules, each from a reviewed miss: a name before a unit word is the
+  unit ("Kharkiv region" was placed on the city 351 times); the first place named
+  wins among equals, not the longest; a village needs a locative word before it
+  ("Yana Peshkova" is a village); a name shared by places resolves only by an oblast
+  named, or a city, or a tenfold known population (GeoNames writes 0 for unknown);
+  a town followed by a speech verb ("Kyiv says") or "group" is not a place, by
+  "direction" or "axis" it is its oblast; a curated `not_places` list masks people
+  ("Volodymyr Zelensky": Volodymyr is a city). Refused: all Latin alternate names of
+  villages (7.3 MB more for UA alone, names of people); GeoNames sites (no refinery or
+  oil depot in UA or RU; OpenStreetMap is next). The products' "near X" now names the
+  chosen place: before, it was the first name matched, a country for 421 of 2,557
+  located events. Other regions keep their rules; their stored locations are unchanged
+  except 21 Red Sea and 4 Black Sea gains (Taiz; Ukrainian alternate names).
 - **One Rust engine** (2026-11-01). The Python engine (`engine/*.py`) and the PyO3
   kernel (`kernels/`) are replaced by one crate, `engine/` (library and binary `osw`),
   with the same stages, store layout, API shapes and value formats. The Parquet store is

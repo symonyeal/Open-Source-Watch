@@ -98,6 +98,8 @@ pub fn ob(
         credibility: 3,
         names: vec![],
         t_event: None,
+        admin1: None,
+        admin2: None,
     }
 }
 

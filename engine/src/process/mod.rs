@@ -5,21 +5,23 @@
 
 pub mod feeds;
 pub mod news;
+pub mod place;
 pub mod when;
+
+pub use place::{Geo, build_geonames, geocode, nearest, units_at};
 
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use std::sync::{LazyLock, Mutex, OnceLock};
+use std::sync::{LazyLock, Mutex};
 
 use serde_json::Value;
 
 use crate::classifier;
 use crate::collect::{Report, sha};
 use crate::fmt::Time;
-use crate::geo::km;
 use crate::regions::{self, Region};
-use crate::schema::{GEO_PRECISION, Obs};
+use crate::schema::Obs;
 use crate::store;
 
 /// Language guess by script (Unicode 15 blocks): Hebrew, Arabic, Cyrillic, else English.
@@ -109,7 +111,7 @@ pub fn translate(s: &str) -> String {
     t
 }
 
-const COUNTRIES: [&str; 32] = [
+pub(crate) const COUNTRIES: [&str; 32] = [
     "iran",
     "israel",
     "iraq",
@@ -144,89 +146,6 @@ const COUNTRIES: [&str; 32] = [
     "maldives",
 ];
 
-/// A gazetteer city: name, position, population.
-pub struct Town {
-    pub name: String,
-    pub lat: f64,
-    pub lon: f64,
-    pub pop: i64,
-}
-
-/// regions/geonames.tsv, built by `osw gazetteer` (GeoNames cities15000).
-pub fn geonames() -> &'static [Town] {
-    static G: OnceLock<Vec<Town>> = OnceLock::new();
-    G.get_or_init(|| {
-        fs::read_to_string(regions::dir().join("geonames.tsv"))
-            .unwrap_or_default()
-            .lines()
-            .skip(1)
-            .filter_map(|l| {
-                let f: Vec<&str> = l.split('\t').collect();
-                Some(Town {
-                    name: f.first()?.to_string(),
-                    lat: f.get(1)?.parse().ok()?,
-                    lon: f.get(2)?.parse().ok()?,
-                    pop: f.get(4)?.parse().ok()?,
-                })
-            })
-            .collect()
-    })
-}
-
-/// '<city> (<d> km)', the gazetteer city of at least pop people nearest to
-/// (lat, lon); None without one.
-pub fn nearest(lat: f64, lon: f64, pop: i64) -> Option<String> {
-    let mut best: Option<(f64, &Town)> = None;
-    for t in geonames().iter().filter(|t| t.pop >= pop) {
-        let d = km(lat, lon, t.lat, t.lon);
-        if best.is_none_or(|b| d < b.0) {
-            best = Some((d, t));
-        }
-    }
-    best.map(|(d, t)| format!("{} ({d:.0} km)", t.name))
-}
-
-/// A gazetteer place: position and precision.
-type Place = (f64, f64, &'static str);
-
-/// (L, C): the conflict's curated strikeLocations, matched case-insensitively, and
-/// GeoNames cities inside the region's box, matched as capitalised words. Names
-/// under 5 letters need population >= 500,000 ("Hit", "Kut" are words).
-pub fn gazetteer(r: &Region) -> &'static (HashMap<String, Place>, HashMap<String, Place>) {
-    static G: LazyLock<
-        Mutex<HashMap<String, &'static (HashMap<String, Place>, HashMap<String, Place>)>>,
-    > = LazyLock::new(Default::default);
-    let mut g = G.lock().unwrap();
-    g.entry(r.id.clone()).or_insert_with(|| {
-        let mut L = HashMap::new();
-        for (k, v) in r
-            .client("strikeLocations")
-            .as_object()
-            .into_iter()
-            .flatten()
-        {
-            let p = if COUNTRIES.contains(&k.as_str()) {
-                "country"
-            } else {
-                "city"
-            };
-            L.insert(
-                k.clone(),
-                (v[0].as_f64().unwrap(), v[1].as_f64().unwrap(), p),
-            );
-        }
-        let mut T: Vec<&Town> = geonames().iter().collect();
-        T.sort_by_key(|t| t.pop); // largest wins a name
-        let mut C = HashMap::new();
-        for t in T {
-            if r.in_bbox(t.lat, t.lon) && (t.name.chars().count() >= 5 || t.pop >= 500_000) {
-                C.insert(t.name.clone(), (t.lat, t.lon, "city"));
-            }
-        }
-        Box::leak(Box::new((L, C)))
-    })
-}
-
 /// Unicode general category L (letter), N (number) or Nd (decimal) of c, the
 /// classes of Python's `\w` (L, N, `_`) and `\d` (Nd); ASCII without a lookup.
 pub fn category(c: char, class: &str) -> bool {
@@ -250,7 +169,7 @@ pub fn wordchar(c: char) -> bool {
 }
 
 /// The words of s as `[^\W\d_][\w'’-]*` finds them.
-fn words(s: &str) -> Vec<&str> {
+pub(crate) fn words(s: &str) -> Vec<&str> {
     let start = |c: char| category(c, "L") || (category(c, "N") && !category(c, "Nd"));
     let more = |c: char| wordchar(c) || "'’-".contains(c);
     let mut out = vec![];
@@ -270,45 +189,6 @@ fn words(s: &str) -> Vec<&str> {
         out.push(&s[i..j]);
     }
     out
-}
-
-/// (lat, lon, precision, names) of the most specific place named in s: the finest
-/// precision, then the longest name. O(len(s)) phrase lookups.
-pub fn geocode(r: &Region, s: &str) -> (Option<f64>, Option<f64>, &'static str, Vec<String>) {
-    let (L, C) = gazetteer(r);
-    let w = words(s);
-    let mut hits: Vec<(String, Place)> = vec![];
-    let mut put = |k: String, p: Place| match hits.iter_mut().find(|h| h.0 == k) {
-        Some(h) => h.1 = p,
-        None => hits.push((k, p)),
-    };
-    for n in [3, 2, 1] {
-        for i in 0..(w.len() + 1).saturating_sub(n) {
-            let g = w[i..i + n].join(" ");
-            let gl = g.to_lowercase();
-            if let Some(p) = L.get(&gl) {
-                put(gl, *p);
-            } else if let Some(p) = C
-                .get(&g)
-                .filter(|_| g.chars().next().is_some_and(char::is_uppercase))
-            {
-                put(g, *p);
-            }
-        }
-    }
-    let order = |p: &str| GEO_PRECISION.iter().position(|x| *x == p).unwrap();
-    let Some(best) = hits
-        .iter()
-        .min_by_key(|(k, p)| (order(p.2), std::cmp::Reverse(k.chars().count())))
-    else {
-        return (None, None, "none", vec![]);
-    };
-    (
-        Some(best.1.0),
-        Some(best.1.1),
-        best.1.2,
-        hits.iter().map(|h| h.0.clone()).collect(),
-    )
 }
 
 /// Admiralty credibility of a one-observation event (spec § Credibility).
@@ -335,7 +215,7 @@ pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
         .zip(E)
         .zip(K)
         .map(|(((r, x, text), en), kind)| {
-            let (lat, lon, prec, names) = geocode(r, &en);
+            let g = geocode(r, &en);
             let t: Time = x.t();
             Obs {
                 id: obs_id(&x.id, "0"),
@@ -343,50 +223,32 @@ pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
                 source_id: x.source_id.clone(),
                 region: r.id.clone(),
                 t,
-                lat,
-                lon,
-                geo_precision: prec.into(),
+                lat: g.lat,
+                lon: g.lon,
+                geo_precision: g.precision.into(),
                 kind,
                 t_event: when::event_time(&en, t, &r.timezone),
                 text_en: en,
                 lang: lang(text).into(),
                 credibility: credibility_single(r, &x.source_id),
-                names,
+                names: g.names,
+                admin1: g.admin1,
+                admin2: g.admin2,
             }
         })
         .collect()
 }
 
-/// Write regions/geonames.tsv from GeoNames cities15000.zip (geonames.org export
-/// dump, CC BY 4.0): name and ASCII name of every city inside some region's box.
-/// Returns the rows written; takes effect at the next start.
-pub fn build_geonames(zip_path: &str) -> usize {
-    let mut z = zip::ZipArchive::new(fs::File::open(zip_path).unwrap()).unwrap();
-    let mut text = String::new();
-    std::io::Read::read_to_string(&mut z.by_name("cities15000.txt").unwrap(), &mut text).unwrap();
-    let mut out: std::collections::BTreeMap<(String, String), [String; 5]> = Default::default();
-    for l in text.lines() {
-        // geonameid name asciiname alternatenames lat lon ... country(8) ... population(14)
-        let f: Vec<&str> = l.split('\t').collect();
-        let (Ok(lat), Ok(lon)) = (f[4].parse::<f64>(), f[5].parse::<f64>()) else {
-            continue;
-        };
-        if regions::all().iter().any(|r| r.in_bbox(lat, lon)) {
-            for n in [f[1], f[2]] {
-                out.insert(
-                    (n.into(), f[8].into()),
-                    [n, f[4], f[5], f[8], f[14]].map(String::from),
-                );
-            }
+/// Give every observation located to a point or city without units the units of
+/// its nearest populated place (`units_at`), so sensor detections roll up as text
+/// reports do. Coarser locations are a unit's or country's centre and get none.
+pub fn units(X: &mut [Obs]) {
+    for x in X {
+        if let (None, Some(lat), Some(lon), Some(r)) =
+            (&x.admin1, x.lat, x.lon, regions::get(&x.region))
+            && (x.geo_precision == "point" || x.geo_precision == "city")
+        {
+            (x.admin1, x.admin2) = units_at(r, lat, lon);
         }
     }
-    let mut rows: Vec<&[String; 5]> = out.values().collect();
-    rows.sort();
-    let body: String = rows.iter().map(|x| x.join("\t") + "\n").collect();
-    fs::write(
-        regions::dir().join("geonames.tsv"),
-        format!("name\tlat\tlon\tcountry\tpopulation\n{body}"),
-    )
-    .unwrap();
-    rows.len()
 }

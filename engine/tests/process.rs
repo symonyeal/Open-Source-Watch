@@ -51,7 +51,7 @@ fn geonames_city_and_short_words() {
             "Poltava",
         ),
     ] {
-        let names = process::geocode(r(rid), s).3;
+        let names = process::geocode(r(rid), s).names;
         assert!(names.iter().any(|n| n == place), "{rid}: {names:?}");
         assert!(!names.iter().any(|n| n == "Hit"), "{rid}: {names:?}");
     }
@@ -60,13 +60,77 @@ fn geonames_city_and_short_words() {
 #[test]
 fn geocode_prefers_the_most_specific_place() {
     let II = r("iran-israel");
-    let (lat, lon, prec, names) = process::geocode(II, "Strike near Isfahan, Iran");
-    assert_eq!((lat, lon, prec), (Some(32.65), Some(51.67), "city"));
+    let g = process::geocode(II, "Strike near Isfahan, Iran");
     assert_eq!(
-        names.iter().map(String::as_str).collect::<BTreeSet<_>>(),
+        (g.lat, g.lon, g.precision),
+        (Some(32.65), Some(51.67), "city")
+    );
+    assert_eq!(g.names[0], "isfahan"); // the chosen place first
+    assert_eq!(
+        g.names.iter().map(String::as_str).collect::<BTreeSet<_>>(),
         BTreeSet::from(["isfahan", "iran"])
     );
-    assert_eq!(process::geocode(II, "Nothing here").2, "none");
+    assert_eq!(process::geocode(II, "Nothing here").precision, "none");
+}
+
+/// Russia/Ukraine has every UA and RU place, oblast and raion (`[gazetteer]`); each
+/// case is a rule of process::place, from a reviewed miss (osw-intel plan).
+#[test]
+fn villages_oblasts_and_raions_roll_up() {
+    let RU = r("russia-ukraine");
+    let g = |s: &str| process::geocode(RU, s);
+    let unit = |s: &str| {
+        let x = g(s);
+        (x.precision, x.admin1, x.admin2, x.names.first().cloned())
+    };
+    // A name before a unit word is the unit, never the city of that name.
+    let x = g("Russian drones attack Kharkiv region overnight");
+    assert_eq!(
+        (x.precision, x.admin1.as_deref()),
+        ("admin", Some("Kharkiv"))
+    );
+    // "X region" of a federal city is its oblast; an OVA is the oblast's administration.
+    assert_eq!(
+        g("Drone attack on the Moscow region").admin1.as_deref(),
+        Some("Moscow Oblast")
+    );
+    assert_eq!(g("Two injured, Dnipropetrovsk OVA said").precision, "admin");
+    // A village rolls up to raion and oblast; Russian spellings are alternate names.
+    let x = g("Three civilians injured in Shebekino, Belgorod region");
+    assert_eq!(
+        (x.precision, x.admin1.as_deref()),
+        ("city", Some("Belgorod Oblast"))
+    );
+    assert_eq!(
+        g("Missile strike on a market in Kharkov").admin1.as_deref(),
+        Some("Kharkiv")
+    );
+    // A front axis is its town's oblast.
+    assert_eq!(
+        unit("Heaviest fighting on the Pokrovsk axis").1.as_deref(),
+        Some("Donetsk")
+    );
+    // The first place named wins among equals; a capital that speaks is not a place.
+    assert_eq!(
+        unit("Russia pounds Kyiv with missiles as Moscow says 808 drones downed")
+            .3
+            .as_deref(),
+        Some("kyiv")
+    );
+    // People, and villages without a locative word or with an ambiguous name, are not places.
+    assert_eq!(g("Volodymyr Zelensky meets envoys").precision, "none");
+    assert_eq!(g("Gymnast Yana Peshkova was killed").precision, "none");
+    assert_eq!(g("Russian drone strike in Pokrovske").precision, "none");
+}
+
+#[test]
+fn a_point_takes_the_units_of_its_nearest_place() {
+    let (a1, _) = process::units_at(r("russia-ukraine"), 50.45, 30.52);
+    assert_eq!(a1.as_deref(), Some("Kyiv City"));
+    assert_eq!(
+        process::units_at(r("russia-ukraine"), 30.0, 30.0),
+        (None, None)
+    );
 }
 
 #[test]

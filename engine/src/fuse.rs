@@ -17,7 +17,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use crate::collect::{Report, rss, sha, stored};
 use crate::fmt::Time;
-use crate::geo::{Point, components};
+use crate::geo::{Point, components, km};
 use crate::np;
 use crate::process::feeds::entities;
 use crate::regions::{self, Region};
@@ -146,13 +146,22 @@ pub fn events(
                 .collect();
             let lat: Vec<f64> = F.iter().map(|&i| P[i].lat).collect();
             let lon: Vec<f64> = F.iter().map(|&i| P[i].lon).collect();
+            let (a, o) = (np::mean(&lat), np::mean(&lon));
+            let m = *F
+                .iter()
+                .min_by(|&&i, &&j| {
+                    km(a, o, P[i].lat, P[i].lon).total_cmp(&km(a, o, P[j].lat, P[j].lon))
+                })
+                .unwrap();
             out.push(Event {
+                admin1: Y[m].admin1.clone(),
+                admin2: Y[m].admin2.clone(),
                 id: sha(&format!("evt\0{}", M[0].id), 32),
                 region: r.id.clone(),
                 t_start: M[0].t,
                 t_end: M[M.len() - 1].t,
-                lat: np::mean(&lat),
-                lon: np::mean(&lon),
+                lat: a,
+                lon: o,
                 kind: kind.into(),
                 observation_ids: M.iter().map(|x| x.id.clone()).collect(),
                 n_independent: S

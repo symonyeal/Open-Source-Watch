@@ -156,6 +156,18 @@ question = "Is there naval or maritime activity in the Black Sea?"
   trigger = 3
   max_credibility = 3
 
+# Countries whose every populated place, oblast and raion is in the gazetteer
+# (`osw gazetteer`, engine/src/process/place.rs); elsewhere only cities15000.
+[gazetteer]
+countries = ["UA", "RU"]
+# Words that are also UA or RU place names but, in this region's reporting, name
+# people, peoples or things (Human is a Polish name of Uman).
+not_places = [
+  "Volodymyr Zelensky", "Volodymyr Zelenskyy", "Volodymyr Zelenskiy",
+  "Zelensky", "Zelenskyy", "Zelenskiy", "Kremlev", "German", "Human", "Radio",
+  "Pravda",
+]
+
 # Countries whose internet connectivity IODA measures for this region (ISO 3166-1
 # alpha-2). An outage is placed at the seat of government (engine/src/process/feeds.rs, ioda).
 [outages]

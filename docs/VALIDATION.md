@@ -3,6 +3,27 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-02 Russia/Ukraine places
+
+Place matching (`engine/src/process/place.rs`) on the stored Russia/Ukraine reports of
+the `data` branch at 21a0d63e: 5,018 observations classified as events, before and
+after, and samples of the placements that changed, drawn at random and judged against
+the report text.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| Reports are placed more finely | grain of the 5,018 observations: city or village / oblast or raion / country / none | before 51.0 / 0 / 16.8 / 32.2 %; after 52.1 / 12.9 / 14.4 / 20.7 %; oblast known 0 → 61.8 %, raion 0 → 23.8 % |
+| The changed placements are right | 100 changed placements from a held-out sample, judged by an independent reviewer and spot-checked | 89 right, 7 wrong, 4 digests naming several places; the four tuning samples before it scored 73, 80, 83 and 74 right |
+| INTSUM names the place chosen | events whose first name is a country | 421 → 0 |
+| Other regions are unchanged | the same comparison for the other six regions | four unchanged; Red Sea, 21 more placed (Taiz), and Black Sea, 4 more (Ukrainian spellings such as Oleshki), all right |
+| History takes the units | `osw rebuild` on a copy of the store (156,355 raw reports, 11 min 53 s) | Russia/Ukraine: oblast on 62.8 % of 32,708 observations and 80.0 % of 4,047 events; raion on 14.5 % and 22.1 % |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, ESLint, `npm test`, `npm run build` | clean; clean; 120 passed (118 and the two place tests); 0 errors, 17 warnings as before; 0 failed; built |
+
+Wrong placements remaining: person and unit names that are also places ("Vladimir
+Raevsky", "Vostok … groups"), Kyiv meaning the government, and the spelling Vinnitsa,
+absent from GeoNames. Not measured: sites (refineries, depots); OpenStreetMap's Overpass
+API did not answer on 2026-11-02.
+
 ## 2026-11-01 Rust engine
 
 Parity on a copy of the `data` branch at 7e2e781e (138,811 raw reports), rebuilt by the

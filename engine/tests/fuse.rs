@@ -290,6 +290,8 @@ fn indicator_board() {
             observation_ids: vec![format!("o{k}")],
             n_independent: 1,
             credibility: 3,
+            admin1: None,
+            admin2: None,
         })
         .collect();
     store::replace(&E);

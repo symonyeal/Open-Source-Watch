@@ -2,7 +2,7 @@
 //! osw serve [--port 8790] [--no-collect]
 //! osw rebuild | compact | fuse | regions | validate
 //! osw analyse [intsum] [sitrep]   # indicator snapshot and products, after fuse
-//! osw gazetteer cities15000.zip
+//! osw gazetteer <GeoNames dir>
 #![allow(non_snake_case)]
 
 use std::collections::BTreeMap;
@@ -76,7 +76,7 @@ fn main() {
         }
         "gazetteer" => println!(
             "{} gazetteer names written",
-            process::build_geonames(a.get(1).expect("zip path"))
+            process::build_geonames(a.get(1).expect("GeoNames directory"))
         ),
         "validate" => {
             for r in regions::all() {

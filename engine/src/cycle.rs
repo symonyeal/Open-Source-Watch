@@ -311,6 +311,7 @@ pub fn derive(raws: &[Raw]) -> Derived {
             _ => {}
         }
     }
+    crate::process::units(&mut D.obs);
     D
 }
 

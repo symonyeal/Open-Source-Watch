@@ -34,6 +34,17 @@ response. In the
 2026-10-21 route test, the engine handled all 106 requests: 103 returned HTTP 200 and
 three returned HTTP 502 from failed upstream feeds.
 
+### Place
+
+Places come from GeoNames. For Russia/Ukraine the gazetteer holds every Ukrainian and
+Russian village in the region, with its oblast and raion, so each report and event
+carries both; a report that names only an oblast ("Kharkiv region") is placed at the
+oblast, not the city. On the region's 5,018 classified stored reports, the share
+with a known oblast rose from none to 62 %, and the share with no location fell from
+32 % to 21 %. In a reviewed sample of 100 changed placements, 89 were right, 7 wrong
+and 4 were roundups of several places. Other regions use towns of 15,000 people or
+more.
+
 ### Source reliability and report credibility
 
 Every source carries an Admiralty reliability grade (A, completely reliable, to F,

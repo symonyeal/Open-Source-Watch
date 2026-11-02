@@ -1,4 +1,4 @@
-// Open-Source-Watch: shape of the engine's /api/signals (engine/signals.py).
+// Open-Source-Watch: shape of the engine's /api/signals (engine/src/signals.rs).
 
 export interface GnssCell {
   h3: string; lat: number; lon: number; near: string | null; good: number; bad: number; pct: number;

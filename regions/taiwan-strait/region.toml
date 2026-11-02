@@ -4,7 +4,7 @@ id = "taiwan-strait"
 name = "Taiwan Strait"
 bbox = [21.0, 27.5, 116.0, 123.0]  # lat_min, lat_max, lon_min, lon_max
 languages = ["en", "zh"]
-timezone = "Asia/Taipei"  # local time of reports (engine.process.when)
+timezone = "Asia/Taipei"  # local time of reports (engine/src/process/when.rs)
 
 [gate.taiwan-strait]
 # Across the strait, Pingtan (Fujian) to Hsinchu (Taiwan), approximate.
@@ -153,7 +153,7 @@ telegramChannels = [
 ]
 
 # Countries whose internet connectivity IODA measures for this region (ISO 3166-1
-# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+# alpha-2). An outage is placed at the seat of government (engine/src/process/feeds.rs, ioda).
 [outages]
 countries = [
   { code = "TW", name = "Taiwan", lat = 25.033, lon = 121.5654 },

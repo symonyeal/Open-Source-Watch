@@ -3,6 +3,28 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-01 Rust engine
+
+Parity on a copy of the `data` branch at 7e2e781e (138,811 raw reports), rebuilt by the
+Python engine and by `engine/`, then compared on every derived table (observation,
+track_point, event, entity) and, for each region, `/api/signals`, `/api/context`,
+`/api/indicators`, `/api/telegram`, `/sources`, INTSUM and SITREP at
+2026-11-01 00:00 UTC, offline (no translation requests).
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| Derived tables and views are unchanged | the 54 tables and views, compared whole, against the Python engine with its classifier refitted at `tol = 1e-8` | 54 of 54 identical (99,825 observations, 15,292 events); `last_run`, a time of the comparison run, excluded from the source table |
+| The classifier's kinds are the optimum's | the 23 observations whose kind differs from Python at its default `tol = 1e-4`, refitted at `1e-4`, `1e-8`, `1e-12` | Rust agrees with `1e-8` and `1e-12` on 23 of 23, with `1e-4` on 0 |
+| Training converges | ‖∇‖∞ of the loss at the returned weights | ≤ 1e-10 after 106 iterations, 0.29 s; before the line-search change 3.5e-7 after 20,000 (273–337 s) |
+| Cost | the rebuild of the same store, timed once | Python 17.8 s, Rust 7.3 s |
+| `generated.ts` is the export of the region files | `osw regions`, then `git diff` | only the header line (the command name) differs |
+| The server answers the dashboard's routes | `osw serve --no-collect` on the rebuilt copy: `/regions`, `/api/indicators`, `/api/signals`, `/api/context`, `/api/telegram`, `/events`, `/observations`, `/api/products` | all 200 |
+| The pytest suite's behaviour holds | 109 of its 113 tests ported to `engine/tests` (111 tests with two added) on the same fixtures; the two keyword-rule tests dropped with the rules | passing; not ported: a processor that panics loses no reports, and `/fetch` serving a stored response (both need an injected fetch; the offline `/fetch` failure is tested) |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, ESLint, `npm test`, `npm run build` | clean; clean; 118 passed; 0 errors, 17 warnings as before; 28 passed; built |
+
+Not measured: a live collection by the Rust engine on GitHub Actions (the first
+scheduled run after the push is the check), and the Linux build.
+
 ## 2026-10-29 raw reports through their adapters
 
 Parity on copies of the `data` branch at 77246bea (2026-10-29 12:27 UTC, 113,964 raw

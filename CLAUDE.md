@@ -8,7 +8,7 @@ Codex reads the same file through [AGENTS.md](AGENTS.md).
 
 Open-Source-Watch is a fork of [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT)
 (MIT, Nobler Works). The Next.js front end is upstream's, in upstream's layout; the
-Python engine in `engine/` runs the intelligence cycle behind it.
+Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle behind it.
 
 ## Always on
 
@@ -17,7 +17,7 @@ Python engine in `engine/` runs the intelligence cycle behind it.
 | Report no outcome that was not read back from the result that produced it. | A requested behaviour is not a result. |
 | Name a failed collection by its status, never by its cause until the cause is shown. | A blocked endpoint and a changed format both end as an empty feed. |
 | Cite only what [Sources](docs/SOURCES.md) records, and add the entry in the change that uses it. | Grades, taxonomies and endpoints are justified by their source. |
-| Add a dependency only after measurement. Use the system Python 3.14; no virtual environment. | One environment on this machine. |
+| Add a dependency only after measurement. | Each crate is code to audit and build. |
 | State what was measured and what was not. | "Not measured" is a finding. |
 | Leave upstream files in place; edit them minimally. | `git merge upstream/main` must keep working. |
 | Upstream URLs reach the engine only through `fetchWithTimeout` (the recording proxy); a route returns an engine view only through `fromEngine`. | With `ENGINE_URL` unset the app is plain IRONSIGHT, and upstream's shaping code stays the only copy. |
@@ -29,31 +29,31 @@ Python engine in `engine/` runs the intelligence cycle behind it.
 - Feeds, channels and keywords live in `src/lib/conflicts/*.ts`. The engine reads their
   export `regions/<id>/conflict.json` (`node scripts/export-regions.mjs`); never edit
   that JSON by hand.
-- The table schemas live in `engine/schema.py`, the event taxonomy in `KINDS` there.
+- The table schemas live in `engine/src/schema.rs`, the event taxonomy in `KINDS` there.
 - Upstream's shaping code is the only copy: the engine serves upstream responses
   (`/fetch`), and every engine source URL is built exactly as the upstream route builds
   it (tests check this against Node). `/api/telegram` is the one engine-shaped route.
-- The gazetteer is `regions/geonames.tsv`, rebuilt by `py -3.14 -m engine gazetteer`.
+- The gazetteer is `regions/geonames.tsv`, rebuilt by `osw gazetteer`.
 - A new region is one file, `regions/<id>/region.toml`, with a `[conflict]` table;
-  `py -3.14 -m engine regions` writes it into `src/lib/conflicts/generated.ts` (never
+  `osw regions` writes it into `src/lib/conflicts/generated.ts` (never
   edit that by hand). The two upstream theaters keep their TypeScript configs.
 - Optional `[context]` countries and ports select recorded economic context.
-  `engine/collect/context.py` stores releases; `engine/context.py` serves
+  `engine/src/collect/context.rs` stores releases; `engine/src/context.rs` serves
   `/api/context` through `fromEngine`. Units and observation dates remain attached;
   missing measurements never become zeros. See `docs/DATA-CONTEXT.md`.
 - Optional `[outages]` countries (ISO alpha-2, seat of government) select IODA
   outages. GNSS cells, outages, Taiwan MND reports and UCDP reference events are
-  served by `/api/signals` (`engine/signals.py`); UCDP events never become
-  observations, since `engine validate` scores the engine against them. See
+  served by `/api/signals` (`engine/src/signals.rs`); UCDP events never become
+  observations, since `osw validate` scores the engine against them. See
   `docs/SIGNALS.md`.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
   from them at start-up, so derived tables depend on raw reports and labels only.
-- A payload's format belongs to its adapter: `engine/collect/<adapter>.py` writes it
-  and its processor in `engine/process` reads it. Every other module reads raw reports
-  through `engine.collect.stored` or the adapter's reader (`mnd.reports`,
-  `ioda.events`, `ucdp.events`, `context.releases`, `rss.outlets`), never by SQL on
-  `payload`.
-- Raw reports are the only state that cannot be recomputed. `py -3.14 -m engine rebuild`
+- A payload's format belongs to its adapter: `engine/src/collect/<adapter>.rs` writes it
+  and its processor in `engine/src/process` reads it. Every other module reads raw reports
+  through `collect::stored` or the adapter's reader (`mnd::reports`,
+  `ioda::events`, `ucdp::events`, `context::releases`, `rss::outlets`), never by
+  parsing `payload` elsewhere.
+- Raw reports are the only state that cannot be recomputed. `osw rebuild`
   regenerates every derived table from them.
 
 ## Code
@@ -64,26 +64,26 @@ exception.
 
 ## Run
 
+`osw` is `engine/target/release/osw` after `cargo build --release` in `engine/`.
+
 ```text
-py -3.14 -m pip install ./kernels        # Rust kernel: fusion linkage and GNSS H3 cells
-py -3.14 -m engine serve                 # API on :8790, collects every source by cadence
-py -3.14 -m engine collect [--region R]  # one poll of every source
-py -3.14 -m engine fuse                  # recompute events and entities
-py -3.14 -m engine regions               # after editing any region.toml
-py -3.14 -m engine validate              # recall of violent events against UCDP Candidate
-git worktree add data data               # once: ./data = the cron's `data` branch
-AISSTREAM_KEY=... py -3.14 -m engine serve   # AIS for the transit indicators (free key)
-npm run dev                              # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790
+osw serve                    # API on :8790, collects every source by cadence
+osw collect [--region R]     # one poll of every source
+osw fuse                     # recompute events and entities
+osw analyse intsum sitrep    # indicator snapshot and products
+osw regions                  # after editing any region.toml
+osw validate                 # recall of violent events against UCDP Candidate
+git worktree add data data   # once: ./data = the cron's `data` branch
+AISSTREAM_KEY=... osw serve  # AIS for the transit indicators (free key)
+npm run dev                  # IRONSIGHT front end; set ENGINE_URL=http://127.0.0.1:8790
 ```
 
 ## Before a change is finished
 
 ```text
-cargo fmt --check; cargo clippy --release -- -D warnings   # in kernels/, if changed
-py -3.14 -m pip install ./kernels         # after a kernel change, before pytest
-py -3.14 -m pytest -q
-py -3.14 -m ruff check .
-py -3.14 -m pip check
+cargo fmt --check                                     # in engine/
+cargo clippy --release --all-targets -- -D warnings
+cargo test --release
 npm run lint
 npm test
 npm run build

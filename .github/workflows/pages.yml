@@ -22,7 +22,7 @@ jobs:
   pages:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     permissions:
       contents: read
       pages: write
@@ -32,24 +32,24 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
-          python-version: "3.14"
-          cache: pip
+          workspaces: engine
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: python -m pip install -r requirements.txt ./kernels
+      - run: cargo build --release --manifest-path engine/Cargo.toml
       - run: npm ci
 
       - name: Fuse the stored data and serve it
         run: |
           git fetch --depth 1 origin data
           git worktree add --detach data origin/data
-          python -m engine fuse
-          python -c "from engine import cycle; cycle.analyse(('intsum', 'sitrep'))"
-          python -m engine serve --no-collect > engine.log 2>&1 &
+          engine/target/release/osw fuse
+          engine/target/release/osw analyse intsum sitrep
+          engine/target/release/osw serve --no-collect > engine.log 2>&1 &
           timeout 60 sh -c 'until curl -sf http://127.0.0.1:8790/regions > /dev/null; do sleep 1; done'
 
       - name: Snapshot every route

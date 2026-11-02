@@ -4,7 +4,7 @@ id = "hormuz"
 name = "Strait of Hormuz"
 bbox = [23.0, 28.5, 53.0, 60.0]  # lat_min, lat_max, lon_min, lon_max
 languages = ["en", "fa", "ar"]
-timezone = "Asia/Tehran"  # local time of reports (engine.process.when)
+timezone = "Asia/Tehran"  # local time of reports (engine/src/process/when.rs)
 
 [gate.hormuz]
 # Across the narrows, Musandam (Oman) to Larak island (Iran), approximate.
@@ -142,7 +142,7 @@ telegramChannels = [
 ]
 
 # Countries whose internet connectivity IODA measures for this region (ISO 3166-1
-# alpha-2). An outage is placed at the seat of government (engine.process.feeds.ioda).
+# alpha-2). An outage is placed at the seat of government (engine/src/process/feeds.rs, ioda).
 [outages]
 countries = [
   { code = "IR", name = "Iran", lat = 35.6892, lon = 51.389 },

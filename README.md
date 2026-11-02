@@ -1,7 +1,7 @@
 # Open-Source-Watch
 
-Open-source intelligence dashboard for seven conflict and shipping regions. A Python
-engine with Rust kernels stores public reports, grades sources, merges related reports
+Open-source intelligence dashboard for seven conflict and shipping regions. A Rust
+engine stores public reports, grades sources, merges related reports
 and produces regional indicators and summaries. The front end is based on
 [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works.
 
@@ -103,7 +103,7 @@ region ([method and limits](docs/SIGNALS.md)):
   own formula. On 2026-10-22 to 28 Iran/Israel had 95 to 141 such cells over 10 % a
   day and the Taiwan Strait none. Jamming is one cause, not the only one, so the
   dashboard says "low accuracy", not "jamming". A local engine also computes the cells
-  from the aircraft it already tracks; the cell arithmetic is a Rust kernel that
+  from the aircraft it already tracks; its cell arithmetic
   reproduces all 47,482 of gpsjam.org's cell indices for one day.
 - IODA (Georgia Tech) detects country-wide connectivity drops in
   routing, probing and telescope data; each outage becomes an event in the indicator
@@ -133,9 +133,8 @@ Collection gaps are recorded separately from periods with no reported activity.
 ## Local use
 
 ```powershell
-py -3.14 -m pip install -r requirements.txt
-py -3.14 -m pip install ./kernels                 # Rust fusion kernel (needs cargo)
-py -3.14 -m engine serve                          # engine on http://127.0.0.1:8790
+cargo build --release --manifest-path engine/Cargo.toml
+engine\target\release\osw serve                  # engine on http://127.0.0.1:8790
 ```
 
 In a second PowerShell terminal:
@@ -148,23 +147,22 @@ npm.cmd run dev                                  # dashboard on http://localhost
 
 - Without `ENGINE_URL`, the incident feeds use their direct sources and the Energy &
   Trade view reports that its engine is unavailable.
-- Set `AISSTREAM_KEY` (free at aisstream.io) before `engine serve` to count ship transits.
+- Set `AISSTREAM_KEY` (free at aisstream.io) before `osw serve` to count ship transits.
 - To add a region, copy `regions/red-sea/region.toml`, edit it, and run
-  `py -3.14 -m engine regions`.
-- Data is written to `./data` (or `$OSW_DATA`). `py -3.14 -m engine collect --adapter
+  `osw regions`.
+- Data is written to `./data` (or `$OSW_DATA`). `osw collect --adapter
   context` collects only the oil, shipping and country series; no key is needed. A local
   engine polls oil and shipping every six hours and country indicators daily.
-- Tests: `py -3.14 -m pytest -q` and `npm test`. Fusion needs the kernel;
-  collection does not.
+- Tests: `cargo test --release` in `engine/`, and `npm test`.
 
 ## Project map
 
 | Path | Contents |
 | --- | --- |
-| `engine/collect`, `engine/process` | collectors for each feed type and readers of what they store; translation, place, time and event type |
-| `engine/fuse.py`, `kernels/` | merging reports into events; the Rust linking kernel |
-| `engine/analyze.py`, `engine/produce.py` | indicators, competing hypotheses, INTSUM and SITREP |
-| `engine/store.py`, `engine/api.py` | the Parquet store read with DuckDB; the engine's web API |
+| `engine/src/collect`, `engine/src/process` | collectors for each feed type and readers of what they store; translation, place, time and event type |
+| `engine/src/fuse.rs` | merging reports into events |
+| `engine/src/analyze.rs`, `engine/src/produce.rs` | indicators, competing hypotheses, INTSUM and SITREP |
+| `engine/src/store.rs`, `engine/src/api.rs` | the Parquet store; the engine's web API |
 | `regions/<id>/region.toml` | one file per region: sources, grades, questions, indicators |
 | `src/` | IRONSIGHT's Next.js dashboard, with the engine seams |
 | `.github/workflows/` | tests, twice-daily collection, the static dashboard |

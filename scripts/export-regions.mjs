@@ -1,4 +1,4 @@
-// Export what the Python engine reads from the TypeScript code, so the engine
+// Export what the engine reads from the TypeScript code, so the engine
 // never hand-copies it (spec § Seam, P0-P2):
 //   regions/<key>/conflict.json  each conflict's server config (+ map tables)
 //   regions/global.json          market symbols and the Hebrew alert vocabulary

@@ -37,6 +37,9 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
   (cities15000.zip, admin1CodesASCII.txt, admin2Codes.txt and `<CC>.zip` for each
   country a region lists under `[gazetteer]`); never edit it by hand. Places, their
   oblast and raion, and the rules of matching live in `engine/src/process/place.rs`.
+- The sites are `regions/sites.tsv` (OSM, ODbL), rewritten by `node scripts/osm-sites.mjs
+  <cache dir>`, which the Sites workflow runs monthly and on demand; never edit it by
+  hand. No local download is needed: every machine reads the committed file.
 - A new region is one file, `regions/<id>/region.toml`, with a `[conflict]` table;
   `osw regions` writes it into `src/lib/conflicts/generated.ts` (never
   edit that by hand). The two upstream theaters keep their TypeScript configs.

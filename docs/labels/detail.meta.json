@@ -1,0 +1,13 @@
+{
+  "drawn": "2026-11-02",
+  "from": "russia-ukraine classified text observations (kind not report, sensors left out) of the data branch after step 0, deduplicated by text; each sample leaves out the reports of the earlier ones",
+  "samples": {
+    "tune": "week of 2026-10-19, 250, tuning",
+    "heldout": "week of 2026-10-26, 250, tuning",
+    "test": "week of 2026-10-26, 250, held out; the statement filter's weapon clause was chosen after it",
+    "fresh": "week of 2026-10-26, seed 20261112, 250, held out, final"
+  },
+  "labeller": "one labelling agent per sample, blind to the rules' output, by detail-guide.md; 30 rows of test (28 agree) and of fresh (29 agree) spot-checked by hand",
+  "conventions": "an unspecified Russian strike is Shelling/artillery/missile attack; drone and missile shoot-downs are strategic_developments, Disrupted weapons use; casualties with no target named are civilian; railway stations are infrastructure",
+  "corrections": "fresh n=112: injured 16 (the count of missiles) set to null at the spot-check"
+}

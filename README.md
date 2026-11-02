@@ -47,6 +47,16 @@ and 4 were roundups of several places. A town with a site word ("Kstovo refinery
 (`regions/sites.tsv`, refreshed monthly by the Sites workflow): 2.7 % of the classified
 reports, 90 of 100 reviewed right. Other regions use towns of 15,000 people or more.
 
+### What happened
+
+For Russia/Ukraine each report also carries, by keyword rules, the ACLED sub-event type,
+the weapons (drone, missile and its type, glide bomb, artillery), the target class
+(energy, military, infrastructure, civilian), people killed and injured, and who acted on
+whom. A statement filed as a strike ("Zelensky: 2 ways to halt strikes") is set aside
+as a plain report. On a fresh labelled sample the filter set aside 28 of 50 statements
+and 4 of 163 real incidents; each field's precision and recall are in
+[validation](docs/VALIDATION.md), and the labels in `docs/labels/`.
+
 ### Source reliability and report credibility
 
 Every source carries an Admiralty reliability grade (A, completely reliable, to F,

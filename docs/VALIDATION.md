@@ -3,6 +3,42 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-02 Russia/Ukraine incident detail
+
+Incident detail (`engine/src/process/what.rs`): the statement filter, ACLED sub-event,
+weapon, missile type, target class, killed, injured and the actor pair, measured
+against four samples of 250 Russia/Ukraine reports labelled by hand
+(`docs/labels/detail-*.jsonl`, by `detail-guide.md`). The rules were tuned on two
+samples and scored on two held out. A labelling agent that did not see the rules' output
+labelled each sample, and 30 rows of each held-out sample were checked by hand. A
+prediction is right when it equals the label. Precision is right among the rows the
+rules fill; recall is right among the rows the label fills.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| The labels are right | 30 rows of each held-out sample checked by hand | test 28 agree; fresh 29 agree. The one fresh error (n 112, injured 16, a count of missiles) was corrected before scoring |
+| The filter keeps real events | first held-out sample (test), rules frozen | 19 of 178 labelled events dropped (event P 0.87, R 0.89). A clause that keeps any report naming a weapon was added after this score; on the same sample it drops 10 |
+| The filter keeps real events, final | second held-out sample (fresh, seed 20261112), not seen before scoring | 4 of 165 labelled events dropped (R 0.98); 57 of 85 statements dropped. On the violent kinds the filter acts on (`engine/tests/what.rs`): 4 of 163 events and 28 of 50 statements dropped |
+| The fields are right | fresh sample, P / R | sub-event 0.77 / 0.88; target 0.76 / 0.78; killed 0.84 / 0.82; injured 0.71 / 0.66; actor pair 0.85 / 0.83; missile type 0.65 / 0.87; weapon 0.78 / 0.93 (drone 0.79 / 0.97, missile 0.70 / 0.95, glide bomb 1.00 / 0.67 of 3, artillery 0.88 / 0.70 of 10) |
+| The engine computes what was scored | engine rules (`osw::process::what`) against the probe's output on fresh | identical |
+| History takes the detail | `osw rebuild` of a copy of the store (156,355 raw reports, 9 min 11 s), against the store before phase 1b | Russia/Ukraine: 563 of 26,012 observations moved to report, events 4,047 → 3,829. Of the events, sub-event 40.6 %, weapon 27.9 %, target 27.6 %, actor 33.5 %, killed 6.6 %, injured 6.4 %, missile type 2.7 %. Targets: civilian 477, military 286, infrastructure 148, energy 146. Placements: the 223 site placements of phase 1b, no other |
+| Other regions are unchanged | the same comparison for the other six regions (84,651 observations) | 0 kinds, 0 placements and 0 detail fields changed; events unchanged |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, ESLint, `npm test`, `npm run build` | clean; clean; 124 passed (121 and the three detail tests); 0 errors, 17 warnings as before; 28 passed; built |
+
+Remaining errors, fresh sample:
+- **Statements that name a weapon are kept.** The weapon clause trades them for real
+  events. 19 of the 27 wrong weapons are on statements, for example "Drone violates
+  Moldovan airspace" and North Korea's drone demonstration. These lower weapon precision
+  (0.78) and event precision (0.85).
+- **Air defence hit read as the weapon used.** "S-400 Triumph … hit" gives missile type
+  S-400 (3 of the 7 wrong missile types). A "ballistic threat" before explosions gives
+  ballistic (1).
+- **Injured taken from the wrong number.** Ages ("two girls aged 15 and 16" gives 15)
+  and periods ("699 times in past 24 hours, six injured" gives 24). Spelled-out numbers
+  are missed.
+
+The samples are text alone (280 characters at most); the rules see the same text.
+
 ## 2026-11-02 Russia/Ukraine sites
 
 Site matching (`engine/src/process/place.rs`) on the same 18,319 stored Russia/Ukraine

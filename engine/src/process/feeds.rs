@@ -124,6 +124,7 @@ pub fn firms(raws: &[Report]) -> Vec<Obs> {
                 credibility: credibility_single(r, &x.source_id),
                 names: vec![],
                 t_event: Some(t),
+                ..Default::default()
             });
         }
     }
@@ -267,6 +268,7 @@ pub fn alerts(raws: &[Report]) -> Vec<Obs> {
             credibility: credibility_single(r, &x.source_id),
             names: places,
             t_event: Some(t),
+            ..Default::default()
         });
     }
     out
@@ -321,6 +323,7 @@ pub fn ioda(raws: &[Report]) -> Vec<Obs> {
             credibility: credibility_single(r, &x.source_id),
             names: vec![c.name.clone()],
             t_event: Some(t),
+            ..Default::default()
         });
     }
     out
@@ -372,6 +375,7 @@ pub fn neptun(raws: &[Report]) -> (Vec<Track>, Vec<Obs>) {
                 .map(|s| vec![s.to_string()])
                 .unwrap_or_default(),
             t_event: Some(t),
+            ..Default::default()
         });
     }
     (T, O)

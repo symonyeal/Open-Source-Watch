@@ -149,6 +149,7 @@ fn product_confidence_uses_the_indicator_window() {
             admin1: None,
             admin2: None,
             site: None,
+            ..Default::default()
         })
         .collect();
     store::append(&E);
@@ -192,6 +193,7 @@ fn south_asia_reporting_counts_cannot_trigger_an_uncalibrated_alert() {
             admin1: None,
             admin2: None,
             site: None,
+            ..Default::default()
         })
         .collect();
     store::append(&E);

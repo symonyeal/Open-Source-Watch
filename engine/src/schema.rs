@@ -270,7 +270,7 @@ pub trait Unique: Table {
 
 macro_rules! table {
     ($S:ident $name:literal $region:tt { $($(#[$m:meta])* $f:ident : $T:ty),* $(,)? }) => {
-        #[derive(Clone, Debug, PartialEq, Serialize)]
+        #[derive(Clone, Debug, Default, PartialEq, Serialize)]
         pub struct $S { $($(#[$m])* pub $f: $T),* }
 
         impl Table for $S {
@@ -341,6 +341,13 @@ table!(Obs "observation" region {
     admin1: Option<String>, admin2: Option<String>,
     /// The site the report names ("Novoshakhtinsk refinery"; process::place), if any.
     site: Option<String>,
+    /// Incident detail (process::what), in regions with a gazetteer: ACLED sub-event
+    /// type, weapon classes in text order, missile type, target class (energy,
+    /// military, infrastructure, civilian), people killed and injured, and the sides
+    /// (Russia, Ukraine, other) that acted and were acted on.
+    sub_event: Option<String>, weapon: Vec<String>, missile: Option<String>,
+    target: Option<String>, killed: Option<i32>, injured: Option<i32>,
+    actor1: Option<String>, actor2: Option<String>,
 });
 
 table!(Event "event" region {
@@ -351,6 +358,11 @@ table!(Event "event" region {
     credibility: i8,
     /// Units and site of the located member nearest the event's position (fuse).
     admin1: Option<String>, admin2: Option<String>, site: Option<String>,
+    /// Detail of the members (fuse): the largest counts, every weapon, else the
+    /// first member's value.
+    sub_event: Option<String>, weapon: Vec<String>, missile: Option<String>,
+    target: Option<String>, killed: Option<i32>, injured: Option<i32>,
+    actor1: Option<String>, actor2: Option<String>,
 });
 
 table!(Entity "entity" global {

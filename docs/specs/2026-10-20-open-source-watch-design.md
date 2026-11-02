@@ -121,8 +121,8 @@ Source ─< RawReport ─< Observation >─ Event >─< Entity
 | `source` | id, name, discipline, owner, url, reliability ∈ {A..F}, cadence_s, regions, lang |
 | `collection_run` | source_id, started_at, status ∈ {ok, empty, http_error, parse_error, blocked}, n_rows, latency_ms, runner ∈ {local, cron} |
 | `raw_report` | id = sha256(source_id, native_id), source_id, fetched_at, published_at, url, payload |
-| `observation` | id, raw_id, t, lat, lon, geo_precision ∈ {point, site, city, admin, country, none}, region, kind, text_en, lang, credibility ∈ {1..6}, names, t_event, admin1, admin2, site |
-| `event` | id, t_start, t_end, lat, lon, region, kind, observation_ids, n_independent, credibility, admin1, admin2, site |
+| `observation` | id, raw_id, t, lat, lon, geo_precision ∈ {point, site, city, admin, country, none}, region, kind, text_en, lang, credibility ∈ {1..6}, names, t_event, admin1, admin2, site, sub_event, weapon, missile, target, killed, injured, actor1, actor2 |
+| `event` | id, t_start, t_end, lat, lon, region, kind, observation_ids, n_independent, credibility, admin1, admin2, site, sub_event, weapon, missile, target, killed, injured, actor1, actor2 |
 | `entity` | id, type ∈ {actor, unit, vessel, aircraft, site}, names, identifiers (ICAO hex, MMSI, IMO), attributes |
 | `track_point` | entity_id, t, lat, lon, heading, speed, source_id |
 | `pir` | id, region, question, status ∈ {open, answered, gap}, updated_at |
@@ -153,6 +153,14 @@ The taxonomy is ACLED's event types and sub-event types:
 It is extended with four kinds: `air_raid_alert`, `maritime_incident`,
 `airspace_activity` and `thermal_anomaly`. A processed item that no rule classifies has
 kind `report`, and fusion ignores it (amended 2026-10-21).
+
+(Amended 2026-11-02.) In a region with a `[gazetteer]`, an observation also carries its
+incident detail (`engine/src/process/what.rs`): `sub_event` (ACLED sub-event type),
+`weapon` (drone, missile, glide_bomb, artillery), `missile`, `target` (energy, military,
+infrastructure, civilian), `killed`, `injured`, `actor1` and `actor2`. A report classed
+as battles, explosions/remote violence or violence against civilians that states no
+incident and names no weapon is a statement and gets kind `report`. An event takes its
+members' largest counts, every weapon, and otherwise its first member's value.
 
 ### Credibility
 

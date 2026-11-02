@@ -6,6 +6,7 @@
 pub mod feeds;
 pub mod news;
 pub mod place;
+pub mod what;
 pub mod when;
 
 pub use place::{Geo, build_geonames, geocode, nearest, units_at};
@@ -205,9 +206,17 @@ pub fn obs_id(raw: &str, k: &str) -> String {
     sha(&format!("obs\0{raw}\0{k}"), 32)
 }
 
+/// Kinds of violence a statement is filed as ("Zelensky: 2 ways to halt strikes");
+/// one that states no incident (`what::detail`) is a report instead.
+const VIOLENT: [&str; 3] = [
+    "battles",
+    "explosions_remote_violence",
+    "violence_against_civilians",
+];
+
 /// Observations of [(r, x, text)], raw report x of region r whose claim is `text`:
-/// translated, geocoded, classified, graded, with the event time it states
-/// (spec § Processing).
+/// translated, geocoded, classified, graded, with the event time it states and, in a
+/// region with a gazetteer, its incident detail (spec § Processing).
 pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
     let E: Vec<String> = Y.iter().map(|(_, _, s)| translate(s)).collect();
     let K = classifier::predict(&E);
@@ -217,6 +226,18 @@ pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
         .map(|(((r, x, text), en), kind)| {
             let g = geocode(r, &en);
             let t: Time = x.t();
+            let fine = !r.gazetteer.countries.is_empty();
+            let d = if fine && kind != "report" {
+                what::detail(&en, g.kind, g.country.as_deref())
+            } else {
+                what::Detail::default()
+            };
+            let kind = if fine && !d.event && VIOLENT.contains(&kind.as_str()) {
+                "report".into()
+            } else {
+                kind
+            };
+            let s = |x: Option<&str>| x.map(String::from);
             Obs {
                 id: obs_id(&x.id, "0"),
                 raw_id: x.id.clone(),
@@ -235,6 +256,14 @@ pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
                 admin1: g.admin1,
                 admin2: g.admin2,
                 site: g.site,
+                sub_event: s(d.sub_event),
+                weapon: d.weapon.iter().map(|x| x.to_string()).collect(),
+                missile: s(d.missile),
+                target: s(d.target),
+                killed: d.killed,
+                injured: d.injured,
+                actor1: s(d.actor1),
+                actor2: s(d.actor2),
             }
         })
         .collect()

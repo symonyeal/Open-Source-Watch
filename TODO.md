@@ -19,7 +19,8 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [x] 2026-11-02 Russia/Ukraine places: every UA/RU village, oblast and raion; `admin1`/`admin2` on observations and events; 89 of 100 reviewed placements right ([decision](docs/DECISIONS.md), [validation](docs/VALIDATION.md)).
 - [x] 2026-11-02 Russia/Ukraine sites: a town with a site word is a `site` location (`site` on observations and events); 2.7 % of classified reports, 90 of 100 reviewed right ([decision](docs/DECISIONS.md), [validation](docs/VALIDATION.md)).
 - [ ] Measure the OpenStreetMap sites (`regions/sites.tsv`) once the Sites workflow has written it.
-- [ ] Event detail by rules: statement filter, sub-type, weapon, target class, casualties, actors; then per-oblast baselines, PIRs and the area INTSUM.
+- [x] 2026-11-02 Russia/Ukraine incident detail by rules: statement filter, sub-event, weapon, missile, target class, casualties, actors; [validation](docs/VALIDATION.md).
+- [ ] Per-oblast baselines, PIRs on the detail fields and the area INTSUM.
 - [ ] Check the first scheduled Collect and Pages runs on the Rust engine (Linux build, live polls).
 - [ ] After the UCDP October 2026 Candidate release (the September file appeared 2026-10-20), run `osw validate` on the `data` branch and record the recall grid in Validation.
 - [ ] Run a local engine for whole days, then compare its integrity cells with gpsjam.org's (agreement in the SIGNALS view).
@@ -34,7 +35,7 @@ Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items belo
 - [x] 2026-10-21 P3: TOML region registry (generated.ts); indicator history; INTSUM/SITREP; ACH; classifier (0.68 vs 0.54); event times and contradiction.
 - [x] 2026-10-21 P4: chokepoint regions; AIS adapter (needs key); transit indicator; thermal baseline; Supply-Chain-Cuts links.
 - [ ] Set `AISSTREAM_KEY` locally and confirm a live PositionReport; transit PIRs need 7 days of coverage.
-- [ ] Label a second sample from another week to check the classifier does not overfit one news cycle.
+- [ ] Label a second sample from another week to check the classifier does not overfit one news cycle (the detail samples cover two weeks of Russia/Ukraine, not the kind classifier).
 
 ## Audit findings (2026-10-02)
 

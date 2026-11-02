@@ -52,6 +52,10 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
   served by `/api/signals` (`engine/src/signals.rs`); UCDP events never become
   observations, since `osw validate` scores the engine against them. See
   `docs/SIGNALS.md`.
+- Incident detail (sub-event, weapon, target, casualties, actors, statement filter) is
+  `engine/src/process/what.rs`, for regions with a `[gazetteer]`; its labelled samples are
+  `docs/labels/detail-*.jsonl` (guide `detail-guide.md`), and `tests/what.rs` pins the
+  filter's measured rates: change a rule, re-measure, and update both.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
   from them at start-up, so derived tables depend on raw reports and labels only.
 - A payload's format belongs to its adapter: `engine/src/collect/<adapter>.rs` writes it

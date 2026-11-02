@@ -4,6 +4,21 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Incident detail and the statement filter** (2026-11-02). In a region with a
+  `[gazetteer]` (Russia/Ukraine), each classified text observation carries the ACLED
+  sub-event type, weapon classes (drone, missile, glide bomb, artillery), missile type,
+  target class (energy, military, infrastructure, civilian; a site's kind decides
+  first), killed and injured counts and the actor pair (`engine/src/process/what.rs`,
+  keyword rules, no language model). An event takes its members' largest counts, every
+  weapon named and otherwise its first member's value. A report filed as battles,
+  explosions or violence against civilians that states no incident becomes `report`,
+  which fusion ignores ("Zelensky: 2 ways to halt strikes"). A report that names a
+  weapon is kept: without that clause the filter dropped 19 of 175 real incidents on
+  one held-out week ("Russia attacks Ukraine with 433 drones"); with it, 4 of 163 on a
+  fresh sample, for 28 of 50 statements removed instead of more. Strategic
+  developments, alerts and airspace reports are never dropped. Measured per field on
+  the labelled samples in `docs/labels/detail-*.jsonl` (Validation); other regions are
+  unchanged until each is measured.
 - **Sites** (2026-11-02). A town followed by a site word ("Kstovo refinery",
   "Engels airbase"), or preceded by one across "in", "near", "at" or "outside"
   ("refinery in Ryazan"), is a `site` location named "<town> <kind>" in Russia/Ukraine;

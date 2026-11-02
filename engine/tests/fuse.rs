@@ -293,6 +293,7 @@ fn indicator_board() {
             admin1: None,
             admin2: None,
             site: None,
+            ..Default::default()
         })
         .collect();
     store::replace(&E);

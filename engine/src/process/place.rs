@@ -240,6 +240,8 @@ pub struct Geo {
     pub admin2: Option<String>,
     /// The site's name, if the place is a site.
     pub site: Option<String>,
+    /// The site's kind (a kind of `SITE_WORDS`), if the place is a site.
+    pub kind: Option<&'static str>,
     /// ISO alpha-2 country of the place's first-order unit, if known.
     pub country: Option<String>,
     /// The chosen place's name first, then every other place named, in text order.
@@ -445,6 +447,8 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
         precision: &'static str,
         a1: Option<String>,
         a2: Option<String>,
+        /// The site's kind (`SITE_WORDS`), if the hit is a site.
+        kind: Option<&'static str>,
     }
     let unit_hit = |a: usize, name: String, at: usize| {
         let (a1, a2) = units(&G[a]);
@@ -456,6 +460,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
             precision: "admin",
             a1,
             a2,
+            kind: None,
         }
     };
     // The kind of the site word that starts at word j, and its length in words.
@@ -552,6 +557,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
                 precision: "site",
                 a1,
                 a2,
+                kind: SITE_WORDS.iter().map(|x| x.1).find(|k| *k == S[s].kind),
             });
         }
     }
@@ -628,6 +634,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
                     precision,
                     a1,
                     a2,
+                    kind: None,
                 }
             } else if g.chars().next().is_some_and(char::is_uppercase)
                 && let Some(a) = row(&g, k)
@@ -645,6 +652,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
                     precision: "city",
                     a1,
                     a2,
+                    kind: None,
                 }
             } else {
                 continue;
@@ -662,6 +670,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
                         lat,
                         lon,
                         precision: "site",
+                        kind: Some(k),
                         ..hit
                     }
                 }
@@ -715,6 +724,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
         admin1: h.a1,
         admin2: h.a2,
         site: (h.precision == "site").then_some(h.name),
+        kind: h.kind,
         names,
     }
 }

@@ -92,6 +92,11 @@ pub fn contradicted(r: &Region, M: &[&Obs], alerts: &[Time], runs: &[&Run]) -> b
     })
 }
 
+/// The first of members M (in time order) to have field f.
+fn first(M: &[&Obs], f: impl Fn(&Obs) -> &Option<String>) -> Option<String> {
+    M.iter().find_map(|x| f(x).clone())
+}
+
 /// Event rows of region r from its observations X (with their outlets) and its
 /// warning source's collection runs.
 pub fn events(
@@ -157,6 +162,19 @@ pub fn events(
                 admin1: Y[m].admin1.clone(),
                 admin2: Y[m].admin2.clone(),
                 site: Y[m].site.clone(),
+                sub_event: first(&M, |x| &x.sub_event),
+                weapon: M.iter().flat_map(|x| &x.weapon).fold(vec![], |mut w, k| {
+                    if !w.contains(k) {
+                        w.push(k.clone());
+                    }
+                    w
+                }),
+                missile: first(&M, |x| &x.missile),
+                target: first(&M, |x| &x.target),
+                killed: M.iter().filter_map(|x| x.killed).max(),
+                injured: M.iter().filter_map(|x| x.injured).max(),
+                actor1: first(&M, |x| &x.actor1),
+                actor2: first(&M, |x| &x.actor2),
                 id: sha(&format!("evt\0{}", M[0].id), 32),
                 region: r.id.clone(),
                 t_start: M[0].t,

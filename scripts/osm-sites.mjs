@@ -3,13 +3,21 @@
 // lat 41-70° N, lon 19-60° E (Ukraine, European Russia and their neighbours), from
 // OpenStreetMap through the Overpass API
 // (data © OpenStreetMap contributors, ODbL 1.0; docs/SOURCES.md). One Overpass query
-// per kind; each answer is kept in <cache dir>/<kind>.json and reused while present.
+// per kind and 10° tile; each answer is kept in <cache dir>/<kind>-<tile>.json and
+// reused while present.
 // Run: node scripts/osm-sites.mjs <cache dir>
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
-const URL = 'https://overpass-api.de/api/interpreter';
+// Public instances, tried in turn on failure (wiki.openstreetmap.org/wiki/Overpass_API).
+const URLS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
 const UA = 'Open-Source-Watch/1.0 (github.com/symonyeal/Open-Source-Watch)';
-const BOX = '(41,19,70,60)';
+// lat 41-70, lon 19-60 in 10° tiles (south, west, north, east): one query over the
+// whole box ran past five minutes and failed (2026-11-02).
+const TILES = [41, 51, 61].flatMap((s) => [19, 29, 39, 49].map((w) => [s, w, Math.min(s + 10, 70), Math.min(w + 10, 60)]));
 const REF = 'НПЗ|НПК|НОРСИ|[Нн]ефтеперераб|[Нн]афтоперероб|[Нн]ефтепродукт|[Rr]efinery';
 const DEPOT = '[Нн]ефтебаз|[Нн]афтобаз|[Нн]ефтехранил|[Оо]il depot|[Пп]ерекачивающ|ЛПДС|НПС';
 // Tag filters by kind (OSM wiki: landuse, man_made, aeroway, military, power, harbour,
@@ -42,13 +50,13 @@ const KINDS = {
   plant: ['nwr["man_made"="works"]["name"]["wikidata"]'],
 };
 
-// The box only, not the country areas: an area query over Russia timed out (2026-11-02),
-// and a site is used only near a town the report names (process::place).
-const query = (F) => `[out:json][timeout:600];(${F.map((f) => `${f}${BOX};`).join('')});out center tags;`;
+// Boxes, not country areas: an area query over Russia timed out (2026-11-02), and a
+// site is used only near a town the report names (process::place).
+const query = (F, b) => `[out:json][timeout:240];(${F.map((f) => `${f}(${b});`).join('')});out center tags;`;
 
 async function ask(q) {
   for (let k = 1; k <= 8; k++) {
-    const r = await fetch(URL, {
+    const r = await fetch(URLS[(k - 1) % URLS.length], {
       method: 'POST',
       headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ data: q }),
@@ -86,10 +94,19 @@ const dir = process.argv[2];
 if (!dir) throw new Error('usage: node scripts/osm-sites.mjs <cache dir>');
 mkdirSync(dir, { recursive: true });
 const rows = new Map();
+// The elements of one kind over all tiles, each tile asked once and cached.
+async function elements(kind, F) {
+  const E = [];
+  for (const [i, b] of TILES.entries()) {
+    const p = `${dir}/${kind}-${i}.json`;
+    if (!existsSync(p)) writeFileSync(p, JSON.stringify(await ask(query(F, b.join(',')))));
+    E.push(...JSON.parse(readFileSync(p, 'utf8')).elements);
+  }
+  return E;
+}
+
 for (const [kind, F] of Object.entries(KINDS)) {
-  const p = `${dir}/${kind}.json`;
-  if (!existsSync(p)) writeFileSync(p, JSON.stringify(await ask(query(F))));
-  for (const e of JSON.parse(readFileSync(p, 'utf8')).elements) {
+  for (const e of await elements(kind, F)) {
     const t = e.tags ?? {};
     const g = e.center ?? e;
     const raw = t['name:en'] ?? t.int_name ?? t.name;

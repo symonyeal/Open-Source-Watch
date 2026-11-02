@@ -42,8 +42,10 @@ carries both; a report that names only an oblast ("Kharkiv region") is placed at
 oblast, not the city. On the region's 5,018 classified stored reports, the share
 with a known oblast rose from none to 62 %, and the share with no location fell from
 32 % to 21 %. In a reviewed sample of 100 changed placements, 89 were right, 7 wrong
-and 4 were roundups of several places. Other regions use towns of 15,000 people or
-more.
+and 4 were roundups of several places. A town with a site word ("Kstovo refinery",
+"airfield near Millerovo") is placed at the site, from OpenStreetMap
+(`regions/sites.tsv`, refreshed monthly by the Sites workflow): 2.7 % of the classified
+reports, 90 of 100 reviewed right. Other regions use towns of 15,000 people or more.
 
 ### Source reliability and report credibility
 

@@ -100,6 +100,7 @@ pub fn firms(raws: &[Report]) -> Vec<Obs> {
                 id: obs_id(&firms_key(p), &r.id),
                 admin1: None,
                 admin2: None,
+                site: None,
                 raw_id: x.id.clone(),
                 source_id: x.source_id.clone(),
                 region: r.id.clone(),
@@ -252,6 +253,7 @@ pub fn alerts(raws: &[Report]) -> Vec<Obs> {
             id: obs_id(&x.id, "0"),
             admin1,
             admin2: None,
+            site: None,
             raw_id: x.id.clone(),
             source_id: x.source_id.clone(),
             region: r.id.clone(),
@@ -292,6 +294,7 @@ pub fn ioda(raws: &[Report]) -> Vec<Obs> {
         out.push(Obs {
             admin1: None,
             admin2: None,
+            site: None,
             id: obs_id(
                 &format!(
                     "ioda:{code}:{}:{}",
@@ -351,6 +354,7 @@ pub fn neptun(raws: &[Report]) -> (Vec<Track>, Vec<Obs>) {
             id: obs_id(&format!("neptun:{track}"), "0"),
             admin1: None,
             admin2: None,
+            site: None,
             raw_id: x.id.clone(),
             source_id: x.source_id.clone(),
             region: r.id.clone(),

@@ -234,19 +234,20 @@ pub fn observations(Y: &[(&Region, &Report, String)]) -> Vec<Obs> {
                 names: g.names,
                 admin1: g.admin1,
                 admin2: g.admin2,
+                site: g.site,
             }
         })
         .collect()
 }
 
-/// Give every observation located to a point or city without units the units of
+/// Give every observation located to a point, site or city without units the units of
 /// its nearest populated place (`units_at`), so sensor detections roll up as text
 /// reports do. Coarser locations are a unit's or country's centre and get none.
 pub fn units(X: &mut [Obs]) {
     for x in X {
         if let (None, Some(lat), Some(lon), Some(r)) =
             (&x.admin1, x.lat, x.lon, regions::get(&x.region))
-            && (x.geo_precision == "point" || x.geo_precision == "city")
+            && ["point", "site", "city"].contains(&x.geo_precision.as_str())
         {
             (x.admin1, x.admin2) = units_at(r, lat, lon);
         }

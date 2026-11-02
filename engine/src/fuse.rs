@@ -2,7 +2,7 @@
 //!
 //! Observations o, o' of a region are linked when
 //!     kind(o) = kind(o') ≠ report,   |t − t'| ≤ τ,   and
-//!     d(o, o') ≤ δ  if both are located to city precision or finer,
+//!     d(o, o') ≤ δ  if both are located to city precision or finer (site, point),
 //!     lat/lon equal (the same administrative unit) if neither is country-level.
 //! Events are the connected components of this graph (single linkage, geo::components),
 //! so the partition does not depend on input order. A country-level observation links
@@ -124,7 +124,7 @@ pub fn events(
                 t: secs(&x.t),
                 lat: x.lat.unwrap(),
                 lon: x.lon.unwrap_or(f64::NAN),
-                fine: x.geo_precision == "point" || x.geo_precision == "city",
+                fine: ["point", "site", "city"].contains(&x.geo_precision.as_str()),
                 country: x.geo_precision == "country",
             })
             .collect();
@@ -156,6 +156,7 @@ pub fn events(
             out.push(Event {
                 admin1: Y[m].admin1.clone(),
                 admin2: Y[m].admin2.clone(),
+                site: Y[m].site.clone(),
                 id: sha(&format!("evt\0{}", M[0].id), 32),
                 region: r.id.clone(),
                 t_start: M[0].t,

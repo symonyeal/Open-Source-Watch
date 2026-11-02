@@ -7,8 +7,14 @@
 //! oblast, krai; ADM2: raion). Every place carries the names of its two units, so a
 //! report located to a village rolls up to raion and oblast.
 //!
+//! Sites (refineries, oil depots, airfields, power plants, substations, ports,
+//! bridges, dams, plants) are `regions/sites.tsv`, written by `scripts/osm-sites.mjs`
+//! from OpenStreetMap (ODbL). A report names a site by a town and a site word
+//! ("Novoshakhtinsk refinery", "airfield near Millerovo") or by the site's English
+//! name; a bare town is never a site.
+//!
 //! Legend: g, a gazetteer row and its index; a1, a2 the names of a place's first- and
-//! second-order units; K the candidate rows of one name.
+//! second-order units; K the candidate rows of one name; k a site kind.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
@@ -57,6 +63,36 @@ pub fn geonames() -> &'static [Town] {
                     kind: f.get(5)?.to_string(),
                     a1: f.get(6)?.to_string(),
                     a2: f.get(7)?.to_string(),
+                })
+            })
+            .collect()
+    })
+}
+
+/// One site of regions/sites.tsv: its Latin name (OSM `name:en`, `int_name` or a
+/// transliteration of `name`), position, and kind (a kind of `SITE_WORDS`).
+pub struct Site {
+    pub name: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub kind: String,
+}
+
+/// regions/sites.tsv, built by `scripts/osm-sites.mjs`; empty without it.
+pub fn sites() -> &'static [Site] {
+    static S: OnceLock<Vec<Site>> = OnceLock::new();
+    S.get_or_init(|| {
+        fs::read_to_string(regions::dir().join("sites.tsv"))
+            .unwrap_or_default()
+            .lines()
+            .skip(1)
+            .filter_map(|l| {
+                let f: Vec<&str> = l.split('\t').collect();
+                Some(Site {
+                    name: f.first()?.to_string(),
+                    lat: f.get(1)?.parse().ok()?,
+                    lon: f.get(2)?.parse().ok()?,
+                    kind: f.get(3)?.to_string(),
                 })
             })
             .collect()
@@ -134,6 +170,66 @@ const VILLAGE_CUES: [&str; 18] = [
     "over", "into", "by", "between", "and", "via",
 ];
 
+/// Site words, lower case, and the kind each names: "Kstovo oil refinery", "Engels
+/// airbase", "Odesa port". Where two end at one word the longer is meant ("CHP plant"
+/// is a power plant). A site is called "<town> <kind word>" (`SITE_NAMES`), however
+/// the report words it.
+const SITE_WORDS: [(&str, &str); 33] = [
+    ("oil refinery", "refinery"),
+    ("refinery", "refinery"),
+    ("oil depot", "oil_depot"),
+    ("fuel depot", "oil_depot"),
+    ("oil terminal", "oil_depot"),
+    ("oil pumping station", "oil_depot"),
+    ("pumping station", "oil_depot"),
+    ("military airfield", "airfield"),
+    ("airfield", "airfield"),
+    ("airbase", "airfield"),
+    ("air base", "airfield"),
+    ("aerodrome", "airfield"),
+    ("airport", "airfield"),
+    ("nuclear power plant", "nuclear_plant"),
+    ("nuclear power station", "nuclear_plant"),
+    ("npp", "nuclear_plant"),
+    ("thermal power plant", "power_plant"),
+    ("power plant", "power_plant"),
+    ("power station", "power_plant"),
+    ("chp plant", "power_plant"),
+    ("tpp", "power_plant"),
+    ("chp", "power_plant"),
+    ("hpp", "power_plant"),
+    ("substation", "substation"),
+    ("seaport", "port"),
+    ("sea port", "port"),
+    ("port", "port"),
+    ("bridge", "bridge"),
+    ("dam", "dam"),
+    ("chemical plant", "plant"),
+    ("plant", "plant"),
+    ("factory", "plant"),
+    ("works", "plant"),
+];
+
+/// The words a site's name ends in, by kind, and km: the furthest the site lies
+/// from the town it is named after. A nuclear plant is named after its oblast's
+/// capital or a town far off ("Zaporizhzhia" plant at Enerhodar, 55 km).
+const SITE_NAMES: [(&str, &str, f64); 10] = [
+    ("refinery", "refinery", 30.0),
+    ("oil_depot", "oil depot", 30.0),
+    ("airfield", "airfield", 30.0),
+    ("nuclear_plant", "nuclear power plant", 100.0),
+    ("power_plant", "power plant", 30.0),
+    ("substation", "substation", 30.0),
+    ("port", "port", 30.0),
+    ("bridge", "bridge", 30.0),
+    ("dam", "dam", 30.0),
+    ("plant", "plant", 30.0),
+];
+
+/// Words between a site word and the town it names ("refinery in Ryazan", "airfield
+/// near Millerovo").
+const SITE_CUES: [&str; 4] = ["in", "near", "at", "outside"];
+
 /// A located place: position, precision, the names of its units, and its name.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Geo {
@@ -142,6 +238,10 @@ pub struct Geo {
     pub precision: &'static str,
     pub admin1: Option<String>,
     pub admin2: Option<String>,
+    /// The site's name, if the place is a site.
+    pub site: Option<String>,
+    /// ISO alpha-2 country of the place's first-order unit, if known.
+    pub country: Option<String>,
     /// The chosen place's name first, then every other place named, in text order.
     pub names: Vec<String>,
 }
@@ -160,6 +260,45 @@ struct Index {
     cells: HashMap<(i32, i32), Vec<usize>>,
     /// One first-order unit row by the unit's name (a place's `a1`).
     oblast: HashMap<String, usize>,
+    /// Sites within 30 km of an indexed place, in a region that lists gazetteer
+    /// countries: (site row, the place's row).
+    sites: Vec<(usize, usize)>,
+    /// Indices into `sites` by lower-case English name, for names in full.
+    S: HashMap<String, Vec<usize>>,
+}
+
+/// The populated row of I nearest to (lat, lon) within 30 km. Cost: the places of
+/// the 3 × 3 cells of 0.5° around the point.
+fn nearest_place(I: &Index, lat: f64, lon: f64) -> Option<usize> {
+    let G = geonames();
+    let (i, j) = cell(lat, lon);
+    let mut best: Option<(f64, usize)> = None;
+    for di in -1..=1 {
+        for dj in -1..=1 {
+            for &a in I.cells.get(&(i + di, j + dj)).into_iter().flatten() {
+                let d = km(lat, lon, G[a].lat, G[a].lon);
+                if d <= 30.0 && best.is_none_or(|b| (d, a) < b) {
+                    best = Some((d, a));
+                }
+            }
+        }
+    }
+    best.map(|b| b.1)
+}
+
+/// The site of kind k nearest to (lat, lon) within its kind's distance
+/// (`SITE_NAMES`), among I's sites.
+fn site_near(I: &Index, k: &str, lat: f64, lon: f64) -> Option<usize> {
+    let S = sites();
+    let R = SITE_NAMES.iter().find(|x| x.0 == k).map_or(30.0, |x| x.2);
+    I.sites
+        .iter()
+        .map(|&(s, _)| s)
+        .filter(|&s| S[s].kind == k)
+        .map(|s| (km(lat, lon, S[s].lat, S[s].lon), s))
+        .filter(|x| x.0 <= R)
+        .min_by(|x, y| x.0.total_cmp(&y.0).then(x.1.cmp(&y.1)))
+        .map(|x| x.1)
 }
 
 fn cell(lat: f64, lon: f64) -> (i32, i32) {
@@ -195,6 +334,8 @@ fn index(r: &Region) -> &'static Index {
             U2: HashMap::new(),
             cells: HashMap::new(),
             oblast: HashMap::new(),
+            sites: vec![],
+            S: HashMap::new(),
         };
         for (a, t) in geonames().iter().enumerate() {
             // A listed country's cities count wherever they lie; everything else
@@ -219,6 +360,25 @@ fn index(r: &Region) -> &'static Index {
             }
             if t.kind == "city" || t.kind == "village" {
                 I.cells.entry(cell(t.lat, t.lon)).or_default().push(a);
+            }
+        }
+        if !fine.is_empty() {
+            for (s, x) in sites().iter().enumerate() {
+                let Some(a) = nearest_place(&I, x.lat, x.lon) else {
+                    continue;
+                };
+                // A name in full is an English one: two words or more, the last a
+                // site word's ("Kirishi Refinery", "Crimean Bridge").
+                let n = x.name.to_lowercase();
+                let last = n.rsplit(' ').next().unwrap_or("");
+                if n.contains(' ')
+                    && SITE_WORDS
+                        .iter()
+                        .any(|(p, _)| p.rsplit(' ').next() == Some(last))
+                {
+                    I.S.entry(n).or_default().push(I.sites.len());
+                }
+                I.sites.push((s, a));
             }
         }
         Box::leak(Box::new(I))
@@ -251,20 +411,7 @@ fn resolve(K: &[usize], A1: &[&str]) -> Option<usize> {
 /// the region's indexed places; (None, None) without one. Cost: the places of the
 /// 3 × 3 cells of 0.5° around the point.
 pub fn units_at(r: &Region, lat: f64, lon: f64) -> (Option<String>, Option<String>) {
-    let (I, G) = (index(r), geonames());
-    let (i, j) = cell(lat, lon);
-    let mut best: Option<(f64, usize)> = None;
-    for di in -1..=1 {
-        for dj in -1..=1 {
-            for &a in I.cells.get(&(i + di, j + dj)).into_iter().flatten() {
-                let d = km(lat, lon, G[a].lat, G[a].lon);
-                if d <= 30.0 && best.is_none_or(|b| (d, a) < b) {
-                    best = Some((d, a));
-                }
-            }
-        }
-    }
-    best.map_or((None, None), |(_, a)| units(&G[a]))
+    nearest_place(index(r), lat, lon).map_or((None, None), |a| units(&geonames()[a]))
 }
 
 fn units(t: &Town) -> (Option<String>, Option<String>) {
@@ -311,6 +458,31 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
             a2,
         }
     };
+    // The kind of the site word that starts at word j, and its length in words.
+    let site_at = |j: usize| -> Option<(&'static str, usize)> {
+        SITE_WORDS.iter().find_map(|&(p, k)| {
+            let q: Vec<&str> = p.split(' ').collect();
+            let x = lower.get(j..j + q.len())?;
+            x.iter()
+                .zip(&q)
+                .all(|(a, b)| a == b)
+                .then_some((k, q.len()))
+        })
+    };
+    // Words j and j + 1 with nothing but space between ("airfield. In Berezniki"
+    // are not).
+    let joined = |j: usize| s[end(w[j])..start(w[j + 1])].trim().is_empty();
+    // The kind of the longest site word that ends at word j - 1, adjacent to j.
+    let site_before = |j: usize| -> Option<&'static str> {
+        SITE_WORDS
+            .iter()
+            .map(|&(p, k)| (p.split(' ').count(), k))
+            .filter(|&(m, k)| j >= m && joined(j - 1) && site_at(j - m) == Some((k, m)))
+            .max_by_key(|x| x.0)
+            .map(|x| x.1)
+    };
+    let S = sites();
+    let label = |k: &'static str| SITE_NAMES.iter().find(|x| x.0 == k).map_or(k, |x| x.1);
     let mut hits: Vec<Hit> = vec![];
     let mut put = |h: Hit| match hits.iter_mut().find(|x| x.name == h.name) {
         Some(x) => {
@@ -360,6 +532,57 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
         found.into_iter().for_each(&mut put);
     }
     let A: Vec<&str> = A1.iter().map(|x| x.0.as_str()).collect();
+    // Sites named in full ("Zaporizhzhia Nuclear Power Plant"), longest first.
+    for n in (2..=6).rev() {
+        for i in 0..(w.len() + 1).saturating_sub(n) {
+            if used[i..i + n].iter().any(|u| *u) || !w[i].starts_with(char::is_uppercase) {
+                continue;
+            }
+            let Some([x]) = I.S.get(&lower[i..i + n].join(" ")).map(Vec::as_slice) else {
+                continue;
+            };
+            let (s, a) = I.sites[*x];
+            let (a1, a2) = units(&G[a]);
+            used[i..i + n].fill(true);
+            put(Hit {
+                name: S[s].name.clone(),
+                at: i,
+                lat: S[s].lat,
+                lon: S[s].lon,
+                precision: "site",
+                a1,
+                a2,
+            });
+        }
+    }
+    // The row a town's name g denotes; before a site word of kind k, also the row
+    // of its Russian adjective ("Novokuibyshevsky refinery": Novokuibyshevsk), and
+    // the only one of its rows with a site of kind k nearby.
+    let row = |g: &str, k: Option<&str>| -> Option<usize> {
+        let mut N = vec![g.to_string()];
+        if k.is_some() {
+            for x in ["skiy", "sky", "skaya", "skoye", "skii"] {
+                if let Some(st) = g.strip_suffix(x) {
+                    N.extend([format!("{st}sk"), st.into(), format!("{st}skiy")]);
+                }
+            }
+        }
+        N.iter().find_map(|n| {
+            let K = I.C.get(n)?;
+            resolve(K, &A).or_else(|| {
+                let k = k?;
+                let F: Vec<usize> = K
+                    .iter()
+                    .copied()
+                    .filter(|&a| site_near(I, k, G[a].lat, G[a].lon).is_some())
+                    .collect();
+                match F[..] {
+                    [a] => Some(a),
+                    _ => None,
+                }
+            })
+        })
+    };
     for n in [3, 2, 1] {
         for i in 0..(w.len() + 1).saturating_sub(n) {
             if used[i..i + n].iter().any(|u| *u) {
@@ -376,9 +599,21 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
             let g = w[i..i + n].join(" ");
             let gl = g.to_lowercase();
             let town = I.L.get(&gl).is_none_or(|p| p.2 == "city");
+            let curated = I.L.contains_key(&gl);
             if town && NOT_PLACE_WORDS.contains(&next) {
                 continue;
             }
+            // A site word directly after the name, or before it across a word of
+            // `SITE_CUES` ("refinery in Ryazan"), in a fine-gazetteer region.
+            let k = (!next.is_empty())
+                .then(|| site_at(i + n).map(|x| x.0))
+                .flatten()
+                .or_else(|| {
+                    let j = i.checked_sub(1)?;
+                    (fine && SITE_CUES.contains(&lower[j].as_str()) && joined(j))
+                        .then(|| site_before(j))
+                        .flatten()
+                });
             let hit = if let Some(&(lat, lon, precision)) = I.L.get(&gl) {
                 let (a1, a2) = if precision == "city" {
                     units_at(r, lat, lon)
@@ -395,14 +630,15 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
                     a2,
                 }
             } else if g.chars().next().is_some_and(char::is_uppercase)
-                && let Some(a) = I.C.get(&g).and_then(|K| resolve(K, &A))
+                && let Some(a) = row(&g, k)
                 && (G[a].kind == "city"
+                    || k.is_some()
                     || i.checked_sub(1)
                         .is_some_and(|j| VILLAGE_CUES.contains(&lower[j].as_str())))
             {
                 let (a1, a2) = units(&G[a]);
                 Hit {
-                    name: g,
+                    name: G[a].name.clone(),
                     at: i,
                     lat: G[a].lat,
                     lon: G[a].lon,
@@ -413,6 +649,24 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
             } else {
                 continue;
             };
+            // A town and a site word are the town's site of that kind: the nearest
+            // OSM site of the kind within its distance (`site_near`), else the
+            // town's point.
+            let hit = match k {
+                Some(k) if hit.precision == "city" => {
+                    let p = site_near(I, k, hit.lat, hit.lon).map(|s| (S[s].lat, S[s].lon));
+                    let (lat, lon) = p.unwrap_or((hit.lat, hit.lon));
+                    let town = if curated { &g } else { &hit.name };
+                    Hit {
+                        name: format!("{town} {}", label(k)),
+                        lat,
+                        lon,
+                        precision: "site",
+                        ..hit
+                    }
+                }
+                _ => hit,
+            };
             if !AXIS_WORDS.contains(&next) {
                 put(hit);
             } else if let Some(&o) = hit.a1.as_ref().and_then(|a| I.oblast.get(a)) {
@@ -422,7 +676,7 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
     }
     hits.sort_by_key(|h| h.at);
     let outside = |h: &Hit| {
-        h.precision == "city"
+        (h.precision == "city" || h.precision == "site")
             && A1.iter().any(|x| x.1 < h.at)
             && !A1
                 .iter()
@@ -452,12 +706,15 @@ pub fn geocode(r: &Region, s: &str) -> Geo {
             .map(|k| hits[k].name.clone()),
     );
     let h = hits.swap_remove(b);
+    let country = h.a1.as_ref().and_then(|a| I.oblast.get(a));
     Geo {
         lat: Some(h.lat),
         lon: Some(h.lon),
         precision: h.precision,
+        country: country.map(|&o| G[o].country.clone()),
         admin1: h.a1,
         admin2: h.a2,
+        site: (h.precision == "site").then_some(h.name),
         names,
     }
 }

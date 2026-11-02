@@ -292,6 +292,7 @@ fn indicator_board() {
             credibility: 3,
             admin1: None,
             admin2: None,
+            site: None,
         })
         .collect();
     store::replace(&E);

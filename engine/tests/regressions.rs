@@ -155,7 +155,7 @@ fn product_confidence_uses_the_indicator_window() {
     store::append(&E);
     let r = regions::get("red-sea").unwrap();
     let board = analyze::board(r, &health(&[("rss:BBC", "ok")]), t);
-    let text = produce::report(r, &board, &[], "sitrep", t);
+    let text = produce::report(r, &board, &[], "sitrep", t, None);
     assert!(text.contains("(RS-1a); high confidence"), "{text}");
 }
 
@@ -208,5 +208,8 @@ fn south_asia_reporting_counts_cannot_trigger_an_uncalibrated_alert() {
     assert!(
         i.get("watch").is_none_or(Value::is_null) && i.get("trigger").is_none_or(Value::is_null)
     );
-    assert!(produce::report(r, &board, &[], "sitrep", t).contains("no calibrated alert threshold"));
+    assert!(
+        produce::report(r, &board, &[], "sitrep", t, None)
+            .contains("no calibrated alert threshold")
+    );
 }

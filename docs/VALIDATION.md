@@ -3,7 +3,30 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
-## 2026-11-02 Russia/Ukraine PIRs and unusual activity by oblast (in progress)
+## 2026-11-02 Flagged oblast-days judged; area INTSUM; `data` rebuilt
+
+The 64 oblast-days flagged in the backtest below (rebuilt store at 5b4d3cd7, every
+source ok) were judged from the texts of the events each counted
+(`docs/labels/unusual-flags.jsonl`, 296 events, an independent reviewer blind to the
+rule, two flags checked by hand). A flag is supported if it holds at least 3 real,
+distinct incidents in the oblast.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| Flags are real surges | supported flags of 64 | RU-2c 0 of 7; RU-5a 8 of 48; RU-5b 5 of 9; 13 of 64 (20 %) |
+| Why flags fail | the 296 events' labels | real 108, duplicate 149, misplaced 5, not an event 34. Most artefacts are one incident fused into several events: reports of one night's strike run for a day, fusion links within τ = 2 h (Kstovo refinery, 11-01: 3 events, 24 + 1 + 4 reports) |
+| Counting places instead of events helps | the same backtest with each oblast's window counting distinct raions, then distinct gazetteer points, scored on the judged flags | raions: 7 flags, 2 of 13 supported kept (29 %); points: 19 flags, 3 of 13 kept (16 %). Separate strikes share a raion or the oblast's point, so neither rule was kept |
+| The area INTSUM is the region's report restricted | `area_intsum` (`engine/tests/analysis.rs`) | the region INTSUM tables its oblasts; an oblast's INTSUM keeps its events and the per-oblast indicators at its count |
+| `data` carries the phase 2 fields | `osw rebuild` of 5b4d3cd7 (158,002 raw reports, 43 s, offline from the translation cache) | Russia/Ukraine violent observations: target 0.9 → 70.2 %, actor 1.0 → 84.0 %, killed 0.7 → 20.6 %, site 0 → 3.3 %; 4,413 → 3,847 after the statement filter; 22 observation files changed, no raw report |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, tsc, ESLint, `npm test`, `npm run build` | clean; clean; 127 passed (126 and `area_intsum`) in three runs; a fourth, started while a local `osw serve` was stopping, failed one test, not reproduced; clean; 0 errors, 17 warnings as before; 28 passed; built |
+
+The unusual indicators (RU-2c, RU-5a, RU-5b) are therefore right about one flag in
+five on this history. Duplicate events, not the Poisson baseline, are the main error;
+the fix belongs in incident linking, not in the indicator. `context_collection_reaches_recorded_view`
+viewed a run at a time before it started, which health as of a time now excludes; the
+test views after the run.
+
+## 2026-11-02 Russia/Ukraine PIRs and unusual activity by oblast
 
 Backtest (`osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6`) on a copy of the
 store rebuilt with the phase 2 engine. The board ran every 6 hours (81 steps), first

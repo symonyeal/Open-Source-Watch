@@ -209,8 +209,8 @@ pub fn board(r: &Region, t: Time) -> Vec<Value> {
 /// The board of region r every `step` from t0 to t1, with source health as of each
 /// time, or every source ok if `healthy` (history collected less often than the
 /// sources' cadences reads as stale): per indicator, how often it was in each state, its episodes (runs of
-/// consecutive triggered steps), the sum of its count over triggered steps, and the
-/// first step of each episode, with count and areas.
+/// consecutive triggered steps), the sum of its count over triggered steps, and every
+/// triggered step with its count and areas (`start` on the first of an episode).
 pub fn backtest(r: &Region, t0: Time, t1: Time, step: Duration, healthy: bool) -> Vec<Value> {
     let mut I: BTreeMap<String, (Value, BTreeMap<String, i64>, Vec<Value>, bool)> = BTreeMap::new();
     let mut t = t0;
@@ -238,10 +238,9 @@ pub fn backtest(r: &Region, t0: Time, t1: Time, step: Duration, healthy: bool) -
                     *x.1.entry("triggered_count".into()).or_default() +=
                         i["count"].as_i64().unwrap_or(0);
                 }
-                if on && !x.3 {
-                    x.2.push(
-                        json!({"t": crate::fmt::iso(&t), "count": i["count"], "areas": i["areas"]}),
-                    );
+                if on {
+                    x.2.push(json!({"t": crate::fmt::iso(&t), "count": i["count"],
+                                    "areas": i["areas"], "start": !x.3}));
                 }
                 x.3 = on;
             }
@@ -251,8 +250,8 @@ pub fn backtest(r: &Region, t0: Time, t1: Time, step: Duration, healthy: bool) -
     I.into_values()
         .map(|(mut x, S, E, _)| {
             x["steps"] = json!(S);
-            x["episodes"] = json!(E.len());
-            x["starts"] = json!(E);
+            x["episodes"] = json!(E.iter().filter(|e| e["start"] == true).count());
+            x["triggered"] = json!(E);
             x
         })
         .collect()
@@ -268,7 +267,7 @@ pub fn analyse(kinds: &[&str], t: Time) {
         P.extend(
             kinds
                 .iter()
-                .map(|k| produce::product(r, k, produce::report(r, &B, &T, k, t), t)),
+                .map(|k| produce::product(r, k, produce::report(r, &B, &T, k, t, None), t)),
         );
     }
     store::append(&S);

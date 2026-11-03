@@ -4,6 +4,21 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Area INTSUM** (2026-11-02). A region whose events carry `admin1` gets an "Areas"
+  table in its INTSUM (events, strikes, fighting, energy targets, killed, injured and
+  the indicators that flag each oblast), and each oblast has an INTSUM of its own: the
+  same report restricted to the oblast's events and to the indicators counted by
+  oblast (`produce::of_area`). The dashboard opens it from the oblasts the header strip
+  flags (`src/lib/areas.ts`); the static snapshot writes only those. One report
+  function serves both, and no route or table was added.
+  - Alternatives considered: a stored product per oblast and cycle (about 30 more
+    rows per run for Russia/Ukraine, mostly unread) and a separate drill-down view.
+- **Unusual counts stay event counts** (2026-11-02). Counting an oblast's distinct
+  raions or gazetteer points per window, instead of events, was tried against the 64
+  judged flags (Validation): neither raised precision without losing most of the 13
+  supported flags. The indicators keep counting events, at about 20 % precision on the
+  history, until incident linking across a day is designed and measured.
+
 - **Unusual activity by oblast, and the Russia/Ukraine PIRs** (2026-11-02). For each
   oblast, the indicator compares the events of one kind (and target class) in the last
   24 hours with the 28 days before. The oblast is unusual if it has at least 3 such

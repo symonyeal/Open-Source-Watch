@@ -207,7 +207,8 @@ fn context_collection_reaches_recorded_view() {
         "observation_date,DCOILWTICO\n2026-10-19,90\n2026-10-20,91\n",
     );
     assert_eq!(run.status, "ok");
-    let d = context::view(regions::get("south-asia").unwrap(), T());
+    // Health as of a time counts only runs started by then: view after the run.
+    let d = context::view(regions::get("south-asia").unwrap(), collect::now());
     let S = d["series"].as_array().unwrap();
     assert_eq!(S.len(), 1);
     assert_eq!(num(&S[0]["latest"]["value"]), 91.0);

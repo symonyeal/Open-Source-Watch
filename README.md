@@ -83,6 +83,9 @@ fails is reported as a gap: a failed
 feed makes its indicator *no data*, not *inactive*. Competing explanations are ranked by
 how much evidence contradicts each one (analysis of competing hypotheses), and each
 region gets a written daily summary (INTSUM) and six-hourly situation report (SITREP).
+Where reports are placed to oblasts (Russia/Ukraine), the INTSUM tables each oblast's
+events, and each oblast an indicator flags has an INTSUM of its own, opened from the
+header strip.
 
 ## Validation
 

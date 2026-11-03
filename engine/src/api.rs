@@ -4,7 +4,7 @@
 //!                  (src/lib/fetcher.ts forwards here when ENGINE_URL is set)
 //! /api/telegram    upstream's TelegramData shape (src/lib/types/api.ts), from the store
 //! /api/indicators  PIR and indicator status of a region
-//! /api/products    latest INTSUM or SITREP of a region
+//! /api/products    latest INTSUM or SITREP of a region; with area, one written for it
 //! /api/context, /api/signals   recorded energy/trade context; GNSS, outages, MND, UCDP
 //! /regions, /observations, /events, /tracks, /sources, /api/sources, /stream
 //!                  engine-native views
@@ -23,6 +23,7 @@ use crate::collect::{now, stored};
 use crate::context;
 use crate::cycle;
 use crate::fmt::{Time, iso};
+use crate::produce;
 use crate::regions::{self, Region};
 use crate::schema::{Event, Obs, Product, Raw, Track};
 use crate::signals;
@@ -282,8 +283,18 @@ fn route(path: &str, q: &HashMap<String, String>) -> Result<Res, Res> {
         "/api/indicators" => js(&cycle::board(region_of(q)?, now())),
         "/api/products" => {
             let (r, kind) = (region_of(q)?, if q.get("kind").map(String::as_str) == Some("sitrep") { "sitrep" } else { "intsum" });
-            let P = store::view::<Product>();
-            js(&P.iter().filter(|p| p.region == r.id && p.kind == kind).max_by_key(|p| p.t))
+            match q.get("area").filter(|a| !a.is_empty()) {
+                // An area product is written on request: areas change with the events.
+                Some(a) => {
+                    let t = now();
+                    let (B, S) = (cycle::board(r, t), cycle::source_table(r, t));
+                    js(&produce::product(r, kind, produce::report(r, &B, &S, kind, t, Some(a)), t))
+                }
+                None => {
+                    let P = store::view::<Product>();
+                    js(&P.iter().filter(|p| p.region == r.id && p.kind == kind).max_by_key(|p| p.t))
+                }
+            }
         }
         "/api/sources" | "/sources" => js(&cycle::source_table(region_of(q)?, now())),
         "/api/context" => js(&context::view(region_of(q)?, now())),

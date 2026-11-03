@@ -150,7 +150,7 @@ fn intsum_reports_each_pir_and_cites_its_standards() {
         last_status: None,
         last_run: None,
     }];
-    let text = produce::report(r, &B, &S, "intsum", t);
+    let text = produce::report(r, &B, &S, "intsum", t, None);
     for p in &r.pir {
         assert!(text.contains(&format!("**{}**", p.id)), "{}", p.id);
     }
@@ -181,6 +181,7 @@ fn strike(k: usize, t: Time, a: &str, x: Option<&str>) -> osw::schema::Event {
         kind: "explosions_remote_violence".into(),
         credibility: 4,
         admin1: Some(a.into()),
+        observation_ids: vec![format!("o{k}")],
         target: x.map(String::from),
         ..Default::default()
     }
@@ -271,4 +272,58 @@ fn unusual_oblasts_against_their_trailing_days() {
     assert_eq!(B["RU-2c"]["status"], "triggered");
     // Fewer than seven covered days: no baseline.
     assert_eq!(ru_board(t, 5, E)["RU-5a"]["status"], "no data");
+}
+
+/// The region INTSUM lists its areas; an area INTSUM keeps the area's events and the
+/// indicators counted by area, at the area's count (Samara: three energy strikes).
+#[test]
+fn area_intsum() {
+    let _g = fresh("analysis_area");
+    let t = at(2026, 10, 30, 12, 0, 0);
+    let mut E: Vec<_> = (0..3)
+        .map(|k| {
+            strike(
+                k,
+                t - Duration::hours(k as i64 + 1),
+                "Samara Oblast",
+                Some("energy"),
+            )
+        })
+        .collect();
+    E.push(strike(9, t - Duration::hours(2), "Kharkiv", None));
+    ru_board(t, 10, E);
+    let r = regions::get("russia-ukraine").unwrap();
+    let mut h = analyze::Health::new();
+    h.insert("telegram:uniannet".into(), "ok");
+    let B = analyze::board(r, &h, t);
+    let all = produce::report(r, &B, &[], "intsum", t, None);
+    assert!(all.contains("## Areas"), "{all}");
+    assert!(
+        all.contains("| Samara Oblast | 3 | 3 | 0 | 3 | 0 | 0 | RU-2a, RU-2c, RU-5a |"),
+        "{all}"
+    );
+    assert!(
+        all.contains("| Kharkiv | 1 | 1 | 0 | 0 | 0 | 0 |  |"),
+        "{all}"
+    );
+    let A = produce::of_area(&B, "Kharkiv");
+    let ids: Vec<&str> = A
+        .iter()
+        .flat_map(|p| p["indicators"].as_array().unwrap())
+        .map(|i| i["id"].as_str().unwrap())
+        .collect();
+    assert_eq!(ids, ["RU-2a", "RU-2c", "RU-5a", "RU-5b"]);
+    let n: Vec<i64> = A
+        .iter()
+        .flat_map(|p| p["indicators"].as_array().unwrap())
+        .map(|i| i["count"].as_i64().unwrap())
+        .collect();
+    assert_eq!(n, [0, 0, 0, 0]);
+    let one = produce::report(r, &B, &[], "intsum", t, Some("Samara Oblast"));
+    assert!(
+        one.starts_with("# INTSUM: Russia / Ukraine, Samara Oblast"),
+        "{one}"
+    );
+    assert!(one.contains("RU-2a Strikes on energy targets in one oblast | 3 in 24 h: Samara Oblast 3 | 1 / 3 | triggered"), "{one}");
+    assert!(!one.contains("## Areas") && !one.contains("RU-2b"), "{one}");
 }

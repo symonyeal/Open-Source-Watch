@@ -3,8 +3,10 @@
 // Open-Source-Watch: indications and warnings. One chip per PIR, coloured by its
 // worst indicator; the tooltip gives the question, each indicator's value against
 // its thresholds, and the competing hypotheses ranked by inconsistent evidence.
-// INTSUM / SITREP open the engine's written product. Hidden without an engine.
+// INTSUM / SITREP open the engine's written product; each flagged area opens the
+// INTSUM of that area. Hidden without an engine.
 import { useState } from 'react';
+import { flaggedAreas } from '@/lib/areas';
 import { useConflict } from '@/lib/conflicts/context';
 import { useConflictFeed } from '@/lib/hooks';
 import { apiUrl } from '@/lib/snapshot';
@@ -39,10 +41,11 @@ export default function IndicatorStrip() {
   const [product, setProduct] = useState<string | null>(null);
   if (!data?.length) return null;
 
-  const open = async (kind: 'intsum' | 'sitrep') => {
+  const open = async (kind: 'intsum' | 'sitrep', area?: string) => {
     setProduct('Writing…');
+    const a = area ? `&area=${encodeURIComponent(area)}` : '';
     try {
-      const res = await fetch(apiUrl(`/api/products?conflict=${key}&kind=${kind}`), { cache: 'no-store' });
+      const res = await fetch(apiUrl(`/api/products?conflict=${key}&kind=${kind}${a}`), { cache: 'no-store' });
       const json = await res.json();
       setProduct(json?.text ?? 'No product: the engine did not answer.');
     } catch {
@@ -70,6 +73,12 @@ export default function IndicatorStrip() {
           </span>
         );
       })}
+      {flaggedAreas(data).map(a => (
+        <button key={a} onClick={() => open('intsum', a)} title={`INTSUM of ${a}`}
+          className="px-1 whitespace-nowrap border border-[var(--border-color)] rounded text-[var(--text-primary)]">
+          {a}
+        </button>
+      ))}
       <span className="ml-auto flex gap-2">
         {(['intsum', 'sitrep'] as const).map(k => (
           <button key={k} onClick={() => open(k)} className="px-2 border border-[var(--border-color)] rounded text-[var(--cyan)]">

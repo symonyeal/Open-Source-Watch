@@ -159,6 +159,27 @@ fn product_confidence_uses_the_indicator_window() {
     assert!(text.contains("(RS-1a); high confidence"), "{text}");
 }
 
+/// Alert counts need the alert sensor: healthy news alone does not make "no alert".
+#[test]
+fn an_alert_indicator_without_its_sensor_is_no_data() {
+    let _g = fresh("regress_sensor");
+    let r = regions::get("russia-ukraine").unwrap();
+    let status = |h: &[(&str, &'static str)]| {
+        let board = analyze::board(r, &health(h), now());
+        let i = board
+            .iter()
+            .flat_map(|p| p["indicators"].as_array().unwrap().clone())
+            .find(|i| i["id"] == "RU-1a")
+            .unwrap();
+        i["status"].as_str().unwrap().to_string()
+    };
+    assert_eq!(status(&[("rss:BBC", "ok")]), "no data");
+    assert_eq!(
+        status(&[("rss:BBC", "ok"), ("alerts:alertsua", "ok")]),
+        "inactive"
+    );
+}
+
 #[test]
 fn south_asia_gazetteer_includes_places_beyond_curated_capitals() {
     let r = regions::get("south-asia").unwrap();

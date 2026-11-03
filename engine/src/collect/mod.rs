@@ -125,14 +125,18 @@ pub fn raw_id(region: &str, sid: &str, native: &str) -> String {
     sha(&format!("{region}\0{sid}\0{native}"), 32)
 }
 
+/// HTTP agent with the operating system's TLS and root certificates. ureq's default
+/// roots (WebPKI) passed to native-tls as the only trusted roots fail on Windows
+/// ("unable to find any user-specified roots in the final cert chain", 2026-11-03).
 fn agent(timeout: f64) -> ureq::Agent {
-    use ureq::tls::{TlsConfig, TlsProvider};
+    use ureq::tls::{RootCerts, TlsConfig, TlsProvider};
     ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs_f64(timeout)))
         .http_status_as_error(false)
         .tls_config(
             TlsConfig::builder()
                 .provider(TlsProvider::NativeTls)
+                .root_certs(RootCerts::PlatformVerifier)
                 .build(),
         )
         .build()

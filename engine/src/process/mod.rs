@@ -19,7 +19,7 @@ use std::sync::{LazyLock, Mutex};
 use serde_json::Value;
 
 use crate::classifier;
-use crate::collect::{Report, sha};
+use crate::collect::{EXCERPT, Report, excerpt, sha};
 use crate::fmt::Time;
 use crate::regions::{self, Region};
 use crate::schema::Obs;
@@ -51,16 +51,39 @@ pub fn reset() {
 }
 
 /// Google's unofficial translation endpoint, as upstream (src/lib/hebrew.ts).
+/// After this many failures in a row the endpoint is not asked again for PAUSE: a
+/// refused run would otherwise wait on every item (`osw retranslate` repairs them).
+const FAILS: usize = 20;
+const PAUSE: std::time::Duration = std::time::Duration::from_secs(600);
+static DOWN: Mutex<(usize, Option<std::time::Instant>)> = Mutex::new((0, None));
+
+/// English of s from Google's endpoint; one retry after 2 s.
 fn google(s: &str) -> Option<String> {
+    if DOWN.lock().unwrap().1.is_some_and(|t| t.elapsed() < PAUSE) {
+        return None;
+    }
     let url = format!(
         "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={}",
         crate::collect::quote_plus(s)
     );
-    let r = crate::collect::get(&url, &[("User-Agent", "Mozilla/5.0".into())], 5.0).ok()?;
-    if r.status >= 400 {
-        return None;
+    let ask = || {
+        crate::collect::get(&url, &[("User-Agent", "Mozilla/5.0".into())], 5.0)
+            .ok()
+            .filter(|r| r.status < 400)
+    };
+    let r = ask().or_else(|| {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        ask()
+    });
+    {
+        let mut d = DOWN.lock().unwrap();
+        *d = match r {
+            Some(_) => (0, None),
+            None if d.0 + 1 >= FAILS => (0, Some(std::time::Instant::now())),
+            None => (d.0 + 1, d.1),
+        };
     }
-    let v: Value = serde_json::from_slice(&r.body).ok()?;
+    let v: Value = serde_json::from_slice(&r?.body).ok()?;
     let t: String = v[0]
         .as_array()?
         .iter()
@@ -69,7 +92,8 @@ fn google(s: &str) -> Option<String> {
     Some(if t.is_empty() { s.to_string() } else { t })
 }
 
-/// English text of s; s itself if the endpoint fails. Cached on disk.
+/// English text of s, at most EXCERPT characters like every stored text (a 280-character
+/// original can translate longer); s itself if the endpoint fails. Cached on disk.
 pub fn translate(s: &str) -> String {
     if lang(s) == "en" {
         return s.to_string();
@@ -91,10 +115,10 @@ pub fn translate(s: &str) -> String {
             C
         });
         if let Some(t) = C.get(s) {
-            return t.clone();
+            return excerpt(t, EXCERPT);
         }
     }
-    let Some(t) = google(s) else {
+    let Some(t) = google(s).map(|t| excerpt(&t, EXCERPT)) else {
         return s.to_string();
     };
     let mut c = CACHE.lock().unwrap();

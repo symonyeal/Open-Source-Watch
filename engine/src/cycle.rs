@@ -125,7 +125,17 @@ pub fn due(S: Vec<Source>, t: Time) -> Vec<Source> {
         .collect()
 }
 
-/// ok | stale | failed | unknown (spec § Errors); runs newest first.
+/// Period of the scheduled collection (`.github/workflows/collect.yml`, 06:17 and
+/// 18:17 UTC). A runner polls a source no more often than its own period.
+const CRON: f64 = 12.0 * 3600.0;
+
+fn period(runner: &str) -> f64 {
+    if runner == "cron" { CRON } else { 0.0 }
+}
+
+/// ok | stale | failed | unknown (spec § Errors); runs newest first. The last good
+/// run is fresh within 3 × max(cadence, period of its runner): a source the cron
+/// collected 6 h ago is ok, though its local cadence is 5 minutes.
 pub fn health(runs: &[&Run], cadence: f64, t: Time) -> &'static str {
     if runs.is_empty() {
         return "unknown";
@@ -135,7 +145,8 @@ pub fn health(runs: &[&Run], cadence: f64, t: Time) -> &'static str {
     }
     match runs.iter().find(|x| good(x)) {
         Some(g)
-            if ((t - g.started_at).num_microseconds().unwrap() as f64 / 1e6) <= 3.0 * cadence =>
+            if ((t - g.started_at).num_microseconds().unwrap() as f64 / 1e6)
+                <= 3.0 * cadence.max(period(&g.runner)) =>
         {
             "ok"
         }
@@ -161,11 +172,7 @@ pub struct SourceRow {
 /// Every source serving region r, with its grade, owner and health at t.
 pub fn source_table(r: &Region, t: Time) -> Vec<SourceRow> {
     let S = sources(&[r.id.clone(), "global".into()], &[], false);
-    let horizon = S
-        .iter()
-        .map(|s| 3.0 * s.cadence)
-        .fold(None, |m: Option<f64>, c| Some(m.map_or(c, |m| m.max(c))))
-        .unwrap_or(86400.0);
+    let horizon = S.iter().map(|s| 3.0 * s.cadence).fold(3.0 * CRON, f64::max);
     let t0 = t - Duration::microseconds((horizon * 1e6) as i64);
     let R = store::rows::<Run>();
     let mut runs: HashMap<(&str, &str), Vec<&Run>> = HashMap::new();
@@ -369,8 +376,12 @@ pub fn derive(raws: &[Raw]) -> Derived {
 type Kept = (Vec<Raw>, Derived, Vec<Run>);
 
 /// A listed report is not new, and a report is marked listed only once it has
-/// derived. A feed listing one item twice yields one report.
+/// derived. A feed listing one item twice yields one report. Read only, nothing is
+/// kept or marked.
 fn keep(raw: Vec<Raw>, runs: Vec<Run>) -> Kept {
+    if READ_ONLY.load(Ordering::Relaxed) {
+        return (vec![], Derived::default(), runs);
+    }
     let new = {
         let mut g = SEEN.lock().unwrap();
         let K = seen(&mut g);
@@ -396,6 +407,11 @@ fn keep(raw: Vec<Raw>, runs: Vec<Run>) -> Kept {
     (new, D, runs)
 }
 
+/// Set by `osw serve --no-collect`: the store is read only, and the proxy forwards
+/// live responses without recording them, so every engine view reads the store as
+/// collected (the Pages snapshot).
+pub static READ_ONLY: AtomicBool = AtomicBool::new(false);
+
 fn save(out: Vec<Kept>) -> Vec<Run> {
     let (mut R, mut O, mut T, mut U) = (vec![], vec![], vec![], vec![]);
     for (r, d, u) in out {
@@ -403,6 +419,9 @@ fn save(out: Vec<Kept>) -> Vec<Run> {
         O.extend(d.obs);
         T.extend(d.tracks);
         U.extend(u);
+    }
+    if READ_ONLY.load(Ordering::Relaxed) {
+        return U;
     }
     store::append(&R);
     store::append(&O);
@@ -557,6 +576,9 @@ pub fn proxy(url: &str) -> Option<Resp> {
     } else {
         "http_error"
     };
+    if READ_ONLY.load(Ordering::Relaxed) {
+        return res;
+    }
     store::append(&[Run {
         source_id: format!("unscheduled:{h}"),
         region: "global".into(),
@@ -654,6 +676,46 @@ pub fn schedule(stop: &'static AtomicBool, runner: &'static str) {
 }
 
 /// Regenerate every derived table from raw_report (spec § Errors).
+/// Re-derive the raw reports of text observations whose text is not English (the
+/// translation endpoint failed when they were collected) and keep each observation
+/// whose text now differs; the observation table is rewritten only if one does.
+/// Returns (observations tried, observations translated).
+pub fn retranslate() -> (usize, usize) {
+    let O = store::view::<Obs>();
+    let U: HashSet<&str> = O
+        .iter()
+        .filter(|x| ["rss", "gnews", "telegram"].contains(&adapter(&x.source_id)))
+        .filter(|x| crate::process::lang(&x.text_en) != "en")
+        .map(|x| x.raw_id.as_str())
+        .collect();
+    let raws: Vec<Raw> = store::view::<Raw>()
+        .iter()
+        .filter(|x| U.contains(x.id.as_str()))
+        .cloned()
+        .collect();
+    let D = derive(&raws);
+    let new: HashMap<(&str, &str), &Obs> = D
+        .obs
+        .iter()
+        .map(|x| ((x.region.as_str(), x.id.as_str()), x))
+        .collect();
+    let mut n = 0;
+    let rows: Vec<Obs> = O
+        .iter()
+        .map(|x| match new.get(&(x.region.as_str(), x.id.as_str())) {
+            Some(y) if y.text_en != x.text_en => {
+                n += 1;
+                (*y).clone()
+            }
+            _ => x.clone(),
+        })
+        .collect();
+    if n > 0 {
+        store::replace(&rows);
+    }
+    (U.len(), n)
+}
+
 pub fn rebuild() -> usize {
     store::drop::<Obs>();
     store::drop::<Event>();

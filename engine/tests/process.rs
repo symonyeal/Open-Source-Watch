@@ -198,3 +198,22 @@ fn translation_is_cached() {
     assert_eq!(process::translate("שלום"), "Hello");
     assert_eq!(process::translate("hi"), "hi");
 }
+
+/// A stored text is at most EXCERPT characters, its translation included: a
+/// 280-character original can translate longer.
+#[test]
+fn a_translation_is_an_excerpt() {
+    let _g = fresh("process_excerpt");
+    let s = "Привет ".repeat(40);
+    let long = "hello ".repeat(100);
+    let d = osw::store::data_dir().join("cache");
+    std::fs::create_dir_all(&d).unwrap();
+    std::fs::write(
+        d.join("translate.jsonl"),
+        serde_json::json!([s, long]).to_string() + "\n",
+    )
+    .unwrap();
+    let t = process::translate(&s);
+    assert_eq!(t.chars().count(), osw::collect::EXCERPT);
+    assert!(long.starts_with(&t));
+}

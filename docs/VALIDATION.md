@@ -3,6 +3,34 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-03 Published products, incident linkage, translation, second-week sample
+
+Measured on a copy of the `data` branch at 82ad7ac3 (158,002 raw reports), rebuilt
+offline with this engine, and on the published dashboard of 2026-11-03 03:02 UTC.
+
+| Claim | Check | Result |
+| --- | --- | --- |
+| The published INTSUM assessed nothing | the dashboard's seven INTSUMs; its source table | every text PIR "Cannot be assessed: collection gap"; Russia/Ukraine sources 63 ok, 45 stale: cron runs hours old read against 5-minute cadences |
+| It does now | `osw analyse intsum sitrep`, then `osw serve --no-collect`, on the copy (last collection 00:42 UTC, read at 04:45) | Russia/Ukraine sources 104 ok, 4 failed, 6 unknown; RU-2, RU-3, RU-5 assessed; RU-1 a gap (alerts and drone tracks are collected only locally); board and INTSUM agree on every indicator |
+| The snapshot server writes nothing | `/fetch` of the BBC feed through `osw serve --no-collect`, files of the store changed; `a_read_only_poll_stores_nothing` | 200, 30,232 bytes, 0 files; the HEAD engine on a second copy wrote a run row. Test passing |
+| An alert count needs the alert feed | `an_alert_indicator_without_its_sensor_is_no_data` | passing; RU-1a was "inactive" on the published board with only news healthy |
+| Cron runs are fresh for three periods | `source_health` (10 h old: ok; 37 h: stale) | passing |
+| Duplicates resemble an earlier event of their flag; real events do not | overlap coefficient of each judged event against the earlier events of its flag, odd and even flags | at θ = 0.6, odd: 11 of 72 duplicates, 0 of 24 real; even: 29 of 76, 0 of 27. Jaccard at 0.3: 14 of 72 and 24 of 76 |
+| Incident linkage removes artefact flags | the backtest of 2026-11-02 (`--step 6 --healthy`), scored on the judged flags | flags 64 → 39; supported 13 → 11 kept; artefacts 51 → 26 kept; RU-2c 7 → 0, RU-5a 48 → 30, RU-5b 9 → 9. The two new flags (Poltava 10-31, Kyiv Oblast 11-01) judged blind: both artefacts, Poltava borderline (2 real; the reviewer named one event that would make 3). Supported share 20 % → 28 % |
+| It does not chain | event spans on the copy | Russia/Ukraine 3,864 → 3,702 events, longest 26.2 h. Without the span bound: longest 457 h, 4,995 reports (refused) |
+| Other regions are unchanged | the copy fused by HEAD and by this engine, events as sets of observation ids | six regions identical |
+| `reports_of_one_incident_link_across_a_day` | merge, other oblast, other text, alert feed, span bound | passing |
+| The classifier holds on another week | 300 text observations of 2026-10-27 to 11-02, simple random (200 all regions, 100 South Asia), labelled blind (`docs/labels/kinds-week2.jsonl`) against the stored kind | accuracy 0.70 (all) and 0.70 (South Asia), as 0.68 under cross-validation; but of 27 violent incidents (battles, strikes, violence against civilians) 13 were stored as violent, and of 24 stored violent 13 were. South Asia: 2 of 25 labelled events of any kind stored with their kind. Of the 14 violent incidents missed, 7 are untranslated texts; 13 were stored as `report` |
+| Stored texts are translated | text observations whose `text_en` is over 30 % Hebrew, Arabic or Cyrillic | 12.1 % of 41,299 on the `data` branch (5b4d3cd7), the same on the copy; by day 0 % on most days, 25 % (10-25), 41 % (10-28), 26 % (11-01), 45 % (11-02), 35 % (11-03) |
+| `osw retranslate` repairs them | run on a copy | not measured: Google's endpoint returned its block page to this machine; 5,060 reports tried, 0 translated, 68 s (the pause after 20 failures bounds the run) |
+| Translations are excerpts | longest `text_en` on the copy; `a_translation_is_an_excerpt` | 533 characters before; test passing. The `data` branch keeps the long rows until it is rebuilt |
+| A local engine collects on Windows | `osw collect --adapter context --region south-asia` | before: 11 http_error (native-tls: no user-specified root in the chain); after: 7 ok, 4 http_error (PortWatch timeouts at 10 s) |
+| Gates | `cargo fmt --check`, `cargo clippy --release --all-targets -D warnings`, `cargo test --release`, tsc, ESLint, `npm test`, `npm run build` | clean; clean; 131 passed, twice; clean; 0 errors, 17 warnings as before; 28 passed; built |
+
+Not measured: the Pages job on this engine (the next run is the check), the Docker job
+in CI, the Telegram route's memoisation (it serves only when `ENGINE_URL` is unset),
+and `regions/sites.tsv` (Overpass did not answer).
+
 ## 2026-11-02 Flagged oblast-days judged; area INTSUM; `data` rebuilt
 
 The 64 oblast-days flagged in the backtest below (rebuilt store at 5b4d3cd7, every

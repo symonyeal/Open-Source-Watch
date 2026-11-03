@@ -13,10 +13,10 @@ timezone = "Asia/Aden"  # local time of reports (engine/src/process/when.rs)
 line = [[12.70, 43.47], [12.47, 43.32]]
 
 [reliability]
-"gpsjam:gpsjam.org" = "F"
+"gpsjam:gpsjam.org" = "B"
 "integrity:adsb.lol" = "B"
-"ioda:IODA" = "F"
-"ucdp:UCDP Candidate" = "F"
+"ioda:IODA" = "B"
+"ucdp:UCDP Candidate" = "B"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"

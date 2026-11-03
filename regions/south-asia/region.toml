@@ -26,10 +26,10 @@ ports = [
 # F means reliability cannot yet be judged. No source-specific assessment
 # supports assigning new publishers a better grade in this theater.
 [reliability]
-"gpsjam:gpsjam.org" = "F"
+"gpsjam:gpsjam.org" = "B"
 "integrity:adsb.lol" = "B"
-"ioda:IODA" = "F"
-"ucdp:UCDP Candidate" = "F"
+"ioda:IODA" = "B"
+"ucdp:UCDP Candidate" = "B"
 "context:FRED" = "F"
 "context:PortWatch" = "F"
 "context:World Bank" = "F"

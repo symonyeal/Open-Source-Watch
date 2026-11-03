@@ -314,6 +314,13 @@ fn source_health() {
         ]),
         "failed"
     );
+    // A cron run is fresh for 3 cron periods, whatever the source's local cadence.
+    let cron = |m: i64| Run {
+        runner: "cron".into(),
+        ..r("ok", m)
+    };
+    assert_eq!(h(&[cron(10 * 60)]), "ok");
+    assert_eq!(h(&[cron(37 * 60)]), "stale");
 }
 
 #[test]

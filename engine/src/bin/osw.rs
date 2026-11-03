@@ -1,6 +1,6 @@
 //! osw collect [--region R ...] [--adapter A ...] [--runner local|cron] [--due]
-//! osw serve [--port 8790] [--no-collect]
-//! osw rebuild | compact | fuse | regions | validate
+//! osw serve [--port 8790] [--no-collect]   # --no-collect: read-only store, proxy not recorded
+//! osw rebuild | retranslate | compact | fuse | regions | validate
 //! osw analyse [intsum] [sitrep]   # indicator snapshot and products, after fuse
 //! osw gazetteer <GeoNames dir>
 //! osw backtest <region> <from YYYY-MM-DD> [to] [--step hours] [--healthy]   # boards over history
@@ -51,9 +51,15 @@ fn main() {
                 .first()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(8790);
-            osw::api::serve(port, !a.iter().any(|x| x == "--no-collect"));
+            let collect = !a.iter().any(|x| x == "--no-collect");
+            cycle::READ_ONLY.store(!collect, std::sync::atomic::Ordering::Relaxed);
+            osw::api::serve(port, collect);
         }
         "rebuild" => println!("{} raw reports reprocessed", cycle::rebuild()),
+        "retranslate" => {
+            let (n, k) = cycle::retranslate();
+            println!("{k} of {n} untranslated text reports translated");
+        }
         "compact" => println!("{} files merged", store::compact(None)),
         "fuse" => println!("{} events", fuse::fuse()),
         "analyse" => {

@@ -10,7 +10,8 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [x] 2026-10-24 South Asia plus recorded EIA/FRED spot, IMF PortWatch and World Bank country context; [methods and limits](docs/DATA-CONTEXT.md).
 - [x] 2026-10-24 Engine debugging audit: duplicate storage of still-listed items, failure isolation, event-time crash, stream gaps, deterministic deduplication, Windows table swap, Rust fusion kernel; [validation](docs/VALIDATION.md).
 - [x] 2026-10-25 Removed the duplicate rows on the `data` branch (8da148da): 36,857 raw and 44,806 observation copies; the deduplicated views are unchanged.
-- [ ] Validate South Asia classifier and event thresholds against a locally reviewed sample.
+- [x] 2026-11-03 South Asia classifier against a random reviewed sample (100): kinds 0.70 right, but 2 of 25 events stored with their kind; event thresholds stay uncalibrated ([validation](docs/VALIDATION.md)).
+- [ ] Improve event recall on live text: of 27 violent incidents in a random week 13 were stored as violent (7 of the 14 misses untranslated); retrain on a larger, random-plus-stratified sample once translation holds.
 - [x] 2026-10-24 South Asia reporting counts have no alert cutoffs; shipping smoothing follows the published World Bank centered seven-day method. Supplied satellite datasets and iMoonLab methods assessed in [Maritime methods](docs/MARITIME-METHODS.md).
 - [ ] Compare PortWatch changes with independent port-authority reports before assigning disruption causes.
 - [x] 2026-10-29 Signals: gpsjam.org GNSS cells and own ADS-B integrity snapshots (Rust H3 kernel), IODA outages (`internet_outage`), Taiwan MND daily reports (TW-1c), UCDP Candidate reference and `engine validate`; SIGNALS view and map GNSS layer; [method](docs/SIGNALS.md).
@@ -18,18 +19,22 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 - [x] 2026-11-01 One Rust engine (`engine/`, binary `osw`) replaces the Python engine and the PyO3 kernel; 54 of 54 tables and views identical on the `data` branch copy, classifier solved to optimality, pytest suite ported to `engine/tests` ([validation](docs/VALIDATION.md)).
 - [x] 2026-11-02 Russia/Ukraine places: every UA/RU village, oblast and raion; `admin1`/`admin2` on observations and events; 89 of 100 reviewed placements right ([decision](docs/DECISIONS.md), [validation](docs/VALIDATION.md)).
 - [x] 2026-11-02 Russia/Ukraine sites: a town with a site word is a `site` location (`site` on observations and events); 2.7 % of classified reports, 90 of 100 reviewed right ([decision](docs/DECISIONS.md), [validation](docs/VALIDATION.md)).
-- [ ] Measure the OpenStreetMap sites (`regions/sites.tsv`) once the Sites workflow has written it.
+- [ ] Measure the OpenStreetMap sites (`regions/sites.tsv`) once the Sites workflow has written it. 2026-11-03: Overpass timed out or refused (runs of 11-02 failed, the third hit 180 min); the script now resumes per tile, the job may run 350 min and reruns when the script changes.
 - [x] 2026-11-02 Russia/Ukraine incident detail by rules: statement filter, sub-event, weapon, missile, target class, casualties, actors; [validation](docs/VALIDATION.md).
 - [x] 2026-11-02 Per-oblast unusual indicator, RU-2 energy strikes by oblast, RU-5, `osw backtest`;
   64 flagged oblast-days judged, 13 supported; `data` rebuilt for the phase 2 fields ([validation](docs/VALIDATION.md)).
 - [x] 2026-11-02 Area INTSUM and dashboard drill-down: Areas table, one INTSUM per flagged oblast ([decision](docs/DECISIONS.md)).
-- [ ] Link reports of one incident across a day (same place, same kind) and re-score `docs/labels/unusual-flags.jsonl`;
-  most false flags are one incident counted as several events.
+- [x] 2026-11-03 Incident linkage across a day (same oblast, word overlap ≥ 0.6, span ≤ 24 h, text reports only): flags 64 → 39, 11 of 13 supported kept, supported share 20 → 28 % ([validation](docs/VALIDATION.md)).
 - [ ] Re-measure the unusual indicators after 28 days at full volume (2026-11-17).
-- [ ] Check the first scheduled Collect and Pages runs on the Rust engine (Linux build, live polls).
+- [x] 2026-11-03 First scheduled Collect and Pages runs on the Rust engine succeeded (11-02 14:57 and 11-03 00:39 UTC).
+- [x] 2026-11-03 Published products: cron-aware source freshness, a read-only snapshot server, alert and drone counts need their own feed; the INTSUM assessed nothing before ([validation](docs/VALIDATION.md)).
+- [ ] Check the next Pages run: INTSUM bottom lines assessed, board and INTSUM agree, news panels filled.
+- [ ] Rebuild `data` after a Collect run lands (not during one): stored translations up to 533 characters predate the excerpt cut; also cut the long lines of `cache/translate.jsonl`.
+- [ ] Check the first weekly `osw retranslate` (Mondays 03:43 UTC): 12 % of stored texts are untranslated; not measured here because Google refused this machine.
+- [ ] Translation provider: the unofficial Google endpoint refuses at times (block page 2026-11-03); assess a keyless or free-key alternative.
 - [ ] After the UCDP October 2026 Candidate release (the September file appeared 2026-10-20), run `osw validate` on the `data` branch and record the recall grid in Validation.
-- [ ] Run a local engine for whole days, then compare its integrity cells with gpsjam.org's (agreement in the SIGNALS view).
-- [ ] Assess gpsjam.org, IODA, Taiwan MND and UCDP reliability (graded F pending).
+- [ ] Run a local engine for whole days, then compare its integrity cells with gpsjam.org's (agreement in the SIGNALS view). Possible on Windows since 2026-11-03 (TLS roots fixed).
+- [x] 2026-11-03 gpsjam.org, IODA, Taiwan MND and UCDP graded B ([decision](docs/DECISIONS.md)).
 
 Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items below are kept as found.
 
@@ -40,7 +45,7 @@ Design: `docs/specs/2026-10-20-open-source-watch-design.md`. Upstream items belo
 - [x] 2026-10-21 P3: TOML region registry (generated.ts); indicator history; INTSUM/SITREP; ACH; classifier (0.68 vs 0.54); event times and contradiction.
 - [x] 2026-10-21 P4: chokepoint regions; AIS adapter (needs key); transit indicator; thermal baseline; Supply-Chain-Cuts links.
 - [ ] Set `AISSTREAM_KEY` locally and confirm a live PositionReport; transit PIRs need 7 days of coverage.
-- [ ] Label a second sample from another week to check the classifier does not overfit one news cycle (the detail samples cover two weeks of Russia/Ukraine, not the kind classifier).
+- [x] 2026-11-03 Second-week kind sample (`docs/labels/kinds-week2.jsonl`, 200 random): 0.70 right against 0.68 cross-validated; event recall is the weakness (above).
 
 ## Audit findings (2026-10-02)
 
@@ -50,13 +55,13 @@ Fleet audit follow-up. Fixed items landed on main 2026-10-02 (local only - this 
 - [x] 2026-10-02 high - README Docker quickstart failed on COPY of nonexistent `public/` (`Dockerfile:34`) - added `public/.gitkeep`; `docker build` verified.
 - [x] 2026-10-02 low - `isConflictKey` accepted prototype keys (`src/lib/conflicts/index.ts:20`) - now `Object.hasOwn`.
 - [x] 2026-10-02 low - Unbounded in-memory caches (`src/app/api/telegram/route.ts:28`, `src/app/api/drones/route.ts:45`) - capped at 5000 / 2000 entries, oldest evicted.
-- [ ] medium - Telegram scraper sends ~20 t.me requests per channel per poll and caches no misses (`src/app/api/telegram/route.ts:80-94`) - memoize the whole response ~45s, cache negative probes briefly, lookahead ~5 with catch-up (effort M).
-- [ ] low - Add CI: typecheck, `npm test`, `next build` and `docker build` on every push, so the README quickstart stays proven.
+- [x] 2026-11-03 medium - Telegram scraper: whole response memoised 45 s per theater, missed probes cached 60 s, lookahead 5 with catch-up to 20 (`src/app/api/telegram/route.ts`); not measured live (serves only without `ENGINE_URL`).
+- [x] 2026-11-03 low - CI runs lint, `npm test`, `next build` (typecheck) and now `docker build` on every push.
 
 ## Dependencies (2026-10-04)
 
 - [x] 2026-10-04 Dependabot alerts 3 critical / 29 high / 14 medium / 2 low -> 0 open (`npm audit fix`, non-force, lockfile only: next 16.2.9 -> 16.3.8, sharp 0.35.5, postcss 8.5.23, xmldom, js-yaml, nanoid, ...). Build, tsc, `npm test`, `docker build` all pass. Pushed c22cbd4.
-- [ ] 2026-10-28 triage the 2 new Dependabot alerts on main (1 high, 1 moderate; reported by the 2026-10-15 push): group by package; if the patch is already in range it is a relock (`npm update <pkg>`), else note the hold here with a recheck date.
+- [x] 2026-11-03 triage: `npm audit --omit=dev` 0; full audit 16 moderate, all the ESLint chain through minimatch (dev only); `npm audit fix` resolves none of them and moves 30 packages, so it is held. Recheck 2026-12-01 or with the Tailwind 4 / ESLint work.
 - [x] 2026-10-11 check that Dependabot auto-closed its superseded PRs (#28, #30, #34-#40); close any that remain only if their bump is already in the lockfile. ✅ 2026-10-15: none had auto-closed; all 9 closed by hand after checking main's `package-lock.json` holds each target or newer (next 16.3.8, postcss 8.5.23, sharp 0.35.5, nanoid 3.3.19, browserslist 4.29.3, baseline-browser-mapping 2.11.27, js-yaml 4.3.2, xmldom 0.8.15, humanfs 0.16.8, postcss-selector-parser 6.1.4). Non-Dependabot PRs #1, #2, #20, #32, #41, #42 untouched.
 - [ ] low - `npm audit` still shows 7 high, all build-time: braces <=3.0.3 (GHSA-vfj7-8cjw-p6xm, no patched release) via tailwindcss 3 + eslint-config-next. GitHub auto-dismissed it as dev-only. Only fix is tailwindcss 4 (major, styling pipeline change) - do it with the lint/flat-config work below.
 
@@ -77,5 +82,5 @@ _None tracked yet - add items as `- [ ] task`, grouped by priority or theme. Mar
 
 ## Relock loop (Dependabot alerts the loop cannot relock)
 
-- [ ] 2026-10-20 relock (loop): source-map-js 1.2.1 -> 1.2.2 is IN RANGE but not relocked - no scripts/check-ci-local.mjs to verify it; by hand: cd . && npm update source-map-js --package-lock-only (Dependabot #64, high, runtime). <!-- relock:#64 -->
-- [ ] 2026-10-20 relock (loop): postcss-selector-parser 6.1.4 -> 7.1.6 needs a RANGE CHANGE in ./package.json - postcss-nested wants ^6.1.1; tailwindcss wants ^6.1.2 (Dependabot #63, medium, development). <!-- relock:#63 -->
+- [x] 2026-11-03 source-map-js is 1.2.2 in the lockfile already (Dependabot #64). <!-- relock:#64 -->
+- [ ] 2026-10-20 relock (loop): postcss-selector-parser 6.1.4 -> 7.1.6 needs a RANGE CHANGE in ./package.json - postcss-nested wants ^6.1.1; tailwindcss wants ^6.1.2 (Dependabot #63, medium, development). Held for Tailwind 4 (2026-11-03). <!-- relock:#63 -->

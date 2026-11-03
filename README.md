@@ -70,7 +70,11 @@ improbable.
 
 Reports of the same kind of event within two hours and 25 km of each other are merged
 into one event, using ACLED's conflict taxonomy. Country-level locations do not link
-otherwise unrelated incidents. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
+otherwise unrelated incidents. For Russia/Ukraine, news and Telegram reports that name
+the same oblast and share most of their words are also one incident, if it spans at
+most a day: reports of one night's strike run on into the next day. On the judged
+history this cut the unusual-activity flags from 64 to 39 and kept 11 of the 13 real
+ones. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
 against 0.54 for the NumPy implementation, and 0.58 against 4.8 at nine times the history.
 Tests compare the result against a brute-force check of every pair.
 
@@ -80,7 +84,9 @@ Each region's configuration lists sources, grades and questions, such as whether
 missile or drone exchange between Iran and Israel is under way. Each question has
 indicators with time windows and thresholds, shown in the header strip. A source that
 fails is reported as a gap: a failed
-feed makes its indicator *no data*, not *inactive*. Competing explanations are ranked by
+feed makes its indicator *no data*, not *inactive*. An alert or drone-track count
+needs its warning feed itself: news reporting no alert does not show that none sounded.
+A source collected by the twice-daily job counts as current for three of its periods. Competing explanations are ranked by
 how much evidence contradicts each one (analysis of competing hypotheses), and each
 region gets a written daily summary (INTSUM) and six-hourly situation report (SITREP).
 Where reports are placed to oblasts (Russia/Ukraine), the INTSUM tables each oblast's
@@ -91,7 +97,10 @@ header strip.
 
 - The starting keyword rules were scored on 200 labelled
   observations: 54 % correct. A trained text classifier reached 68 % under
-  cross-validation and replaced them; rare event types remain weak for both.
+  cross-validation and replaced them; rare event types remain weak for both. On a
+  random sample of a later week, 70 % of stored kinds were right, but only 13 of 27
+  violent incidents were found as violent. 12 % of stored texts were never translated,
+  because the free endpoint refused them; they are retried weekly.
 - 1,206 of 1,435 satellite fire detections in one day over
   Iran/Israel were gas flares and other permanent heat sources. A detection now counts
   only if its 0.1° cell was active on fewer than 3 of the 7 previous days, which cut one strike
@@ -144,10 +153,13 @@ region ([method and limits](docs/SIGNALS.md)):
 
 ## Published snapshot
 
-A scheduled GitHub job collects the slower feeds twice a day into the `data` branch.
+A scheduled GitHub job collects the slower feeds twice a day into the `data` branch,
+and once a week translates the reports the free translation endpoint refused.
 A second job then serves the stored data through the engine and dashboard once, saves
 every view of every region (140 files), and publishes them as the static
-dashboard. Files are grouped by month, so each row is rewritten at most twice.
+dashboard. The engine's views (indicators, INTSUM, SITREP, signals) read only the
+stored data; the upstream panels (news, prices) are fetched once while the snapshot is
+taken and are not stored. Files are grouped by month, so each row is rewritten at most twice.
 The storage-layout benchmark in [Validation](docs/VALIDATION.md) recorded dashboard
 requests taking 2.4 to 4 times less time.
 

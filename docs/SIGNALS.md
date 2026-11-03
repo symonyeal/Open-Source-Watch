@@ -70,6 +70,7 @@ lethal organized violence.
 
 ## Grades
 
-gpsjam.org, IODA, Taiwan MND and UCDP are graded F (cannot be judged) until
-assessed, as earlier new sources were. The integrity snapshots carry adsb.lol's B.
-IODA outages therefore have credibility 6 and make no truth claim.
+Since 2026-11-03 gpsjam.org, IODA, Taiwan MND and UCDP are graded B (usually
+reliable); the reasons are in [Decisions](DECISIONS.md). The integrity snapshots carry
+adsb.lol's B. An IODA outage from one source therefore has credibility 3 (possibly
+true); the other three families are series or reference events, not observations.

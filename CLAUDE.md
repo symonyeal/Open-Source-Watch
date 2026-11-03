@@ -78,8 +78,10 @@ exception.
 
 ```text
 osw serve                    # API on :8790, collects every source by cadence
+osw serve --no-collect       # read-only store; the proxy forwards without recording
 osw collect [--region R]     # one poll of every source
 osw fuse                     # recompute events and entities
+osw retranslate              # translate reports the endpoint refused (rewrites observations)
 osw analyse intsum sitrep    # indicator snapshot and products
 osw regions                  # after editing any region.toml
 osw validate                 # recall of violent events against UCDP Candidate

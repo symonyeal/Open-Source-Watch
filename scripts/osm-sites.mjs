@@ -97,12 +97,19 @@ const dir = process.argv[2];
 if (!dir) throw new Error('usage: node scripts/osm-sites.mjs <cache dir>');
 mkdirSync(dir, { recursive: true });
 const rows = new Map();
+// Tiles Overpass did not answer: the others are still asked and cached, and no file
+// is written, so the next run resumes with only these.
+const missing = [];
 // The elements of one kind over all tiles, each tile asked once and cached.
 async function elements(kind, F) {
   const E = [];
   for (const [i, b] of TILES.entries()) {
     const p = `${dir}/${kind}-${i}.json`;
-    if (!existsSync(p)) writeFileSync(p, JSON.stringify(await ask(query(F, b.join(',')))));
+    if (!existsSync(p)) {
+      const j = await ask(query(F, b.join(','))).catch(() => null);
+      if (!j) { missing.push(`${kind}-${i}`); continue; }
+      writeFileSync(p, JSON.stringify(j));
+    }
     E.push(...JSON.parse(readFileSync(p, 'utf8')).elements);
   }
   return E;
@@ -121,6 +128,10 @@ for (const [kind, F] of Object.entries(KINDS)) {
     const key = `${k}\t${name}\t${g.lat.toFixed(2)}\t${g.lon.toFixed(2)}`;
     if (!rows.has(key)) rows.set(key, [name, g.lat.toFixed(5), g.lon.toFixed(5), k, `${e.type[0]}${e.id}`]);
   }
+}
+if (missing.length) {
+  console.error(`Overpass did not answer ${missing.length} tiles: ${missing.join(' ')}`);
+  process.exit(1);
 }
 const body = [...rows.values()].sort((a, b) => (a[3] + a[0] + a[4]).localeCompare(b[3] + b[0] + b[4]));
 writeFileSync('regions/sites.tsv', ['name\tlat\tlon\tkind\tosm', ...body.map((r) => r.join('\t'))].join('\n') + '\n');

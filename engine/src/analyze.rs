@@ -24,8 +24,12 @@
 //! report a measured or claimed value without a threshold; no data if no healthy
 //! source produces it, its latest value is dated before RECENT, or the value is not
 //! stated (count null).
+//! An event indicator is no data if no healthy source can produce its kind
+//! (`producers`), or, for a kind with a warning sensor (`sensor`: alerts, drone
+//! tracks), if that sensor is not healthy: thresholds on alert counts were set for the
+//! sensor, and news reporting no alert does not show that none sounded.
 //! A PIR is answered if one indicator is triggered; a collection gap if, for some
-//! indicator, no healthy source can produce its evidence (PRODUCERS); otherwise open.
+//! indicator, no healthy source can produce its evidence; otherwise open.
 //! A kind that did not occur is not a gap.
 //! ACH (Heuer 1999, ch. 8): evidence = indicators, present iff watch or triggered,
 //! absent iff inactive; a hypothesis's score is the number of items whose state
@@ -140,6 +144,15 @@ fn producers(kind: &str) -> Vec<&'static str> {
         "air_raid_alert" => [&["alerts"][..], &TEXT].concat(),
         "internet_outage" => vec!["ioda"],
         _ => TEXT.to_vec(),
+    }
+}
+
+/// The warning sensor an indicator of this kind is counted against, if any.
+fn sensor(kind: &str) -> Option<&'static [&'static str]> {
+    match kind {
+        "air_raid_alert" => Some(&["alerts"]),
+        "airspace_activity" => Some(&["drones"]),
+        _ => None,
     }
 }
 
@@ -410,7 +423,7 @@ pub fn board(r: &Region, h: &Health, t: Time) -> Vec<Value> {
                     .collect::<BTreeSet<_>>()
                     .into_iter()
                     .collect();
-                let missing = gap(&producers(kind), h);
+                let missing = gap(&producers(kind), h) || sensor(kind).is_some_and(|A| gap(A, h));
                 miss |= missing;
                 let descriptive = metric == "event_count";
                 let state = if descriptive {

@@ -2,5 +2,6 @@
   "drawn": "2026-11-02",
   "from": "every oblast-day flagged by RU-2c, RU-5a or RU-5b in `osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6 --healthy` on the data branch at 5b4d3cd7 rebuilt with the phase 2 engine: the first triggered step of each (indicator, oblast, UTC day), with every event it counted and up to three report texts per event",
   "labels": "per event: real (an incident of the kind, in the oblast), duplicate (an earlier event of the flag reported again), misplaced (another oblast), not_event (statement, warning, alert without impact, other kind); per flag: supported iff at least 3 real",
-  "labeller": "one independent reviewer, blind to the rule, judging text only; flags 4 and 24 checked by hand (agree)"
+  "labeller": "one independent reviewer, blind to the rule, judging text only; flags 4 and 24 checked by hand (agree)",
+  "added": "2026-11-03: n 65-66, the two oblast-days flagged only after incident linkage (same backtest on the data branch at 82ad7ac3 rebuilt), judged the same way by a second reviewer blind to the rule; each carries verdict and reason"
 }

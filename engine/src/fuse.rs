@@ -4,6 +4,13 @@
 //!     kind(o) = kind(o') ≠ report,   |t − t'| ≤ τ,   and
 //!     d(o, o') ≤ δ  if both are located to city precision or finer (site, point),
 //!     lat/lon equal (the same administrative unit) if neither is country-level.
+//! In a region with a gazetteer (oblasts and raions, `[gazetteer]` in region.toml), two
+//! text reports (news, Telegram) are also linked as one incident (`incidents`) when
+//! both name the same oblast (admin1), their English texts overlap,
+//!     |W ∩ W'| / min(|W|, |W'|) ≥ θ   (Szymkiewicz–Simpson overlap coefficient),
+//! W the lower-cased words of three letters or more less English function words, and
+//! the merged incident spans at most τ_I: reports of one night's strike run for a day,
+//! past τ (Validation 2026-11-03). The span bound stops a daily story chaining days.
 //! Events are the connected components of this graph (single linkage, geo::components),
 //! so the partition does not depend on input order. A country-level observation links
 //! to nothing (a single-observation event); an unlocated one forms no event.
@@ -15,7 +22,7 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use crate::collect::{Report, rss, sha, stored};
+use crate::collect::{Report, adapter, rss, sha, stored};
 use crate::fmt::Time;
 use crate::geo::{Point, components, km};
 use crate::np;
@@ -27,6 +34,74 @@ use crate::store;
 /// s, km (spec § Fusion).
 pub const TAU: f64 = 7200.0;
 pub const DELTA: f64 = 25.0;
+/// s, and overlap of words (`incidents`), chosen on half the judged flags.
+pub const TAU_I: f64 = 86400.0;
+pub const THETA: f64 = 0.6;
+const STOP: [&str; 21] = [
+    "the", "and", "for", "with", "after", "from", "that", "this", "have", "has", "was", "were",
+    "are", "into", "over", "near", "its", "their", "his", "her", "not",
+];
+
+/// W of a text (module doc).
+fn wordset(s: &str) -> BTreeSet<String> {
+    crate::process::words(s)
+        .into_iter()
+        .map(str::to_lowercase)
+        .filter(|w| w.chars().count() >= 3 && !STOP.contains(&w.as_str()))
+        .collect()
+}
+
+/// Labels lab of the observations Y (sorted by t) with the incident links added: the
+/// smallest index of each merged component.
+fn incidents(Y: &[&Obs], mut lab: Vec<usize>) -> Vec<usize> {
+    let text = |x: &Obs| ["rss", "gnews", "telegram"].contains(&adapter(&x.source_id));
+    let W: Vec<BTreeSet<String>> = Y
+        .iter()
+        .map(|x| {
+            if text(x) {
+                wordset(&x.text_en)
+            } else {
+                BTreeSet::new()
+            }
+        })
+        .collect();
+    // Span [t0, t1] of each component, held at its root.
+    let mut T: Vec<(f64, f64)> = Y.iter().map(|x| (secs(&x.t), secs(&x.t))).collect();
+    for i in 0..Y.len() {
+        let r = lab[i];
+        T[r] = (T[r].0.min(T[i].0), T[r].1.max(T[i].1));
+    }
+    let root = |lab: &mut Vec<usize>, mut i: usize| {
+        while lab[i] != i {
+            i = lab[i];
+        }
+        i
+    };
+    let mut hi = 0;
+    for i in 0..Y.len() {
+        while hi < Y.len() && secs(&Y[hi].t) <= secs(&Y[i].t) + TAU_I {
+            hi += 1;
+        }
+        let Some(a) = &Y[i].admin1 else { continue };
+        for j in i + 1..hi {
+            let m = W[i].len().min(W[j].len());
+            if Y[j].admin1.as_ref() != Some(a)
+                || m == 0
+                || (W[i].intersection(&W[j]).count() as f64) < THETA * m as f64
+            {
+                continue;
+            }
+            let (p, q) = (root(&mut lab, i), root(&mut lab, j));
+            let s = (T[p].0.min(T[q].0), T[p].1.max(T[q].1));
+            if p != q && s.1 - s.0 <= TAU_I {
+                let (u, v) = (p.min(q), p.max(q));
+                lab[v] = u;
+                T[u] = s;
+            }
+        }
+    }
+    (0..Y.len()).map(|i| root(&mut lab, i)).collect()
+}
 
 fn ab(g: &str) -> bool {
     g == "A" || g == "B"
@@ -134,6 +209,11 @@ pub fn events(
             })
             .collect();
         let lab = components(&P, TAU, DELTA);
+        let lab = if r.gazetteer.countries.is_empty() {
+            lab
+        } else {
+            incidents(&Y, lab)
+        };
         let mut o: Vec<usize> = (0..Y.len()).collect();
         o.sort_by_key(|&i| lab[i]); // stable: components in label order, members in index order
         for I in o.chunk_by(|a, b| lab[*a] == lab[*b]) {

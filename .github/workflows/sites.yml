@@ -8,6 +8,10 @@ name: Sites
 on:
   schedule:
     - cron: '0 3 1 * *'
+  # A change to the query or the workflow runs it again.
+  push:
+    branches: [main]
+    paths: [scripts/osm-sites.mjs, .github/workflows/sites.yml]
   workflow_dispatch:
 
 concurrency:
@@ -20,7 +24,7 @@ permissions:
 jobs:
   sites:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7

@@ -48,3 +48,6 @@ records. Status is **inspected** (read for this project) or **cited** (not yet r
 | Georgia Tech IODA API v2, `outages/events` (entityType, entityCode, from, until) | `engine/src/collect/ioda.rs` | inspected 2026-10-29 (live responses; `overall=true` HTTP 500) |
 | UCDP, *UCDP Candidate Events Dataset Codebook* v1.5: `date_prec`, `where_prec`, `id` persistence, event definition | `engine/src/collect/ucdp.rs`, `engine/src/validate.rs` | inspected 2026-10-29 |
 | UCDP downloads page and monthly Candidate CSV `GEDEvent_v26_0_9.csv`; API `ucdpapi.pcr.uu.se` answers 401 without a token | `engine/src/collect/ucdp.rs` | inspected 2026-10-29 (live responses) |
+| Simpson, G. G., "Notes on the measurement of faunal resemblance", *American Journal of Science* 258-A, 1960 (the Szymkiewicz–Simpson overlap coefficient \|X ∩ Y\| / min(\|X\|, \|Y\|)) | incident linkage of text reports (`engine/src/fuse.rs`) | cited |
+| GitHub Docs, *Events that trigger workflows*, `schedule`: runs can be delayed under load, highest at the start of each hour | Collect at minute 17 (`.github/workflows/collect.yml`) | cited |
+| ureq 3.5.0 source, `tls::RootCerts` (`PlatformVerifier`: native-tls's own roots; `WebPki`: Mozilla's roots as the only trusted roots) | HTTP agent of `engine/src/collect/mod.rs` | inspected 2026-11-03 |

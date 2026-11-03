@@ -4,6 +4,65 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Incident linkage across a day** (2026-11-03). In a region with a `[gazetteer]`, two
+  news or Telegram reports of one kind are one incident when they name the same oblast,
+  their word sets overlap by at least θ = 0.6 (overlap coefficient
+  |W ∩ W'| / min(|W|, |W'|), English function words removed), and the merged incident
+  spans at most τ_I = 24 h (`engine/src/fuse.rs`, `incidents`). Fusion's τ = 2 h split
+  one night's strike into several events as its reports ran on for a day; those
+  duplicates were the main error of the unusual indicators (Validation 2026-11-02).
+  - θ was chosen on the odd half of the 64 judged flags (0.6: 11 of 72 duplicates
+    merged, 0 of 24 real) and held on the even half (29 of 76, 0 of 27).
+  - Alternatives considered: one event per place and window (raions, then gazetteer
+    points; refused 2026-11-02, it merged real separate strikes); Jaccard similarity
+    (merged 4 to 14 of 72 duplicates at 0.3 to 0.4); single linkage without a span
+    bound (refused: one event ran 457 h with 4,995 reports, a daily story chaining);
+    linking alert and drone-track messages (refused: templated texts are identical).
+  - Scoped to gazetteer regions because it was judged only on Russia/Ukraine; the other
+    six regions' events are unchanged.
+- **Freshness of cron-collected sources** (2026-11-03). A source's last good run is fresh
+  within 3 × max(cadence, period of its runner), the cron's period being 12 h
+  (`cycle::health`). Before, a source the cron collected an hour earlier was stale
+  against its 5-minute local cadence, so every text PIR of every published INTSUM read
+  "collection gap", and the backtest's health-as-of mode read stale throughout.
+- **Read-only snapshot server** (2026-11-03). `osw serve --no-collect` stores nothing: the
+  recording proxy forwards the upstream panels' requests live but neither records them
+  nor marks them seen (`cycle::READ_ONLY`). Before, the Pages job's proxy polls wrote
+  runs and reports into the store mid-snapshot, so the board read a later state than the
+  INTSUM written just before it (RU-2a triggered on the board, no data in the INTSUM).
+  The switch is set by the command, not by `api::serve`, because the tests serve the API
+  without the scheduler.
+- **Warning-sensor indicators** (2026-11-03). An indicator of `air_raid_alert` or
+  `airspace_activity` is no data unless its warning sensor (alerts, drone tracks) is
+  healthy (`analyze::sensor`). Text sources can report alerts, so the earlier rule (no
+  healthy producer of the kind) left RU-1a "inactive, 0 in 3 h" on the published board,
+  which only a local engine can collect.
+- **Grades of the signal sources** (2026-11-03). gpsjam.org, IODA, Taiwan MND and UCDP
+  Candidate: B, usually reliable. IODA is an academic measurement platform with a
+  published method; gpsjam.org's published formula was reproduced here cell for cell
+  (47,482 of 47,482), on ADS-B data like adsb.lol's B; Taiwan MND is a party's official
+  source, graded as the Ukrainian General Staff and the US DoD are; UCDP Candidate is
+  human-coded and provisional, revised in the final GED. Only IODA outages become
+  observations, so their single-source credibility moves from 6 to 3.
+- **Translation failures are retried** (2026-11-03). The free endpoint refused 12 % of
+  stored texts, on some days 45 % (Validation), and a refused text stayed untranslated,
+  so the classifier and the gazetteer could not read it. `google` retries once and stops
+  asking for 10 minutes after 20 failures in a row; `osw retranslate` re-derives the
+  reports whose text is not English and rewrites the observation table only if one now
+  translates. The Collect workflow runs it weekly, because the rewrite is 16 MB.
+  - Alternatives considered: `osw rebuild` on every run (a 16 MB rewrite twice a day);
+    another provider (none keyless and official; open).
+- **Translations are excerpts too** (2026-11-03). A 280-character original translated to
+  up to 533 characters in the store; translations are now cut to `EXCERPT`.
+- **Operating-system TLS roots** (2026-11-03). ureq's default roots (WebPKI), handed to
+  native-tls as the only trusted roots, failed every request on Windows ("unable to
+  find any user-specified roots in the final cert chain"): no local engine on this
+  machine could collect. The agent uses native-tls's own roots
+  (`RootCerts::PlatformVerifier`).
+- **Collect off the hour** (2026-11-03). The schedule moved from 06:00/18:00 to 06:17/18:17
+  UTC: GitHub delays scheduled runs most at the start of the hour, and these started up
+  to 9 h late.
+
 - **Area INTSUM** (2026-11-02). A region whose events carry `admin1` gets an "Areas"
   table in its INTSUM (events, strikes, fighting, energy targets, killed, injured and
   the indicators that flag each oblast), and each oblast has an INTSUM of its own: the
@@ -364,7 +423,12 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   2026) ends before collection began (2026-10-21). The October release should overlap.
 - The per-aircraft GNSS rule and the agreement of 10-minute snapshots with gpsjam.org
   are unmeasured until a local engine has run for whole days.
-- gpsjam.org, IODA, Taiwan MND and UCDP are graded F pending assessment.
+- Translation uses Google's unofficial endpoint, which refuses requests at times (it
+  served this machine its block page on 2026-11-03). No keyless official alternative is
+  in use; `osw retranslate` repairs what it refused once it answers.
+- `regions/sites.tsv` has not been written: the public Overpass instances timed out or
+  refused on 2026-11-02 and 11-03. The script now keeps every answered tile and
+  resumes.
 
 - Thermal indicators II-3 and RU-2b still count events against fixed thresholds after
   the baseline (II-3a 42 in 12 h on 2026-10-21). Whether that reflects real strikes is

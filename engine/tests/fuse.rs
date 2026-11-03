@@ -334,3 +334,55 @@ fn indicator_board() {
     assert_eq!(analyze::status(0, 1, 3), "inactive");
     assert_eq!(analyze::status(1, 1, 3), "watch");
 }
+
+/// Reports of one incident hours apart are one event when they name the same oblast and
+/// share most words; a templated alert feed is not linked by text, and an incident
+/// spans at most τ_I, so a daily story does not chain days.
+#[test]
+fn reports_of_one_incident_link_across_a_day() {
+    let r = regions::get("russia-ukraine").unwrap();
+    let x = |k: usize, h: i64, src: &str, oblast: &str, text: &str| Obs {
+        region: r.id.clone(),
+        admin1: Some(oblast.into()),
+        text_en: text.into(),
+        ..explosion(k, h * 60, 49.07 + k as f64, 33.42, src, "city")
+    };
+    let night = "Drone attack sets Kremenchuk refinery on fire overnight";
+    let X = [
+        x(0, 0, "rss:Ukrinform", "Poltava", night),
+        x(
+            1,
+            5,
+            "telegram:kpszsu",
+            "Poltava",
+            "Kremenchuk refinery on fire after drone attack",
+        ),
+        x(2, 6, "rss:Ukrinform", "Kharkiv", night),
+        x(
+            3,
+            8,
+            "rss:Ukrinform",
+            "Poltava",
+            "Shelling damages school in Poltava",
+        ),
+        x(4, 23, "alerts:alertsua", "Poltava", night),
+        x(5, 30, "rss:Ukrinform", "Poltava", night),
+    ];
+    let E = fuse::events(r, &X.iter().collect::<Vec<_>>(), &HashMap::new(), &[]);
+    let want: BTreeSet<BTreeSet<String>> = [
+        vec!["o0", "o1"],
+        vec!["o2"],
+        vec!["o3"],
+        vec!["o4"],
+        vec!["o5"],
+    ]
+    .into_iter()
+    .map(|v| v.into_iter().map(String::from).collect())
+    .collect();
+    assert_eq!(sets(&E), want);
+    let max = fuse::TAU_I / 3600.0;
+    assert!(
+        E.iter()
+            .all(|e| ((e.t_end - e.t_start).num_seconds() as f64) / 3600.0 <= max)
+    );
+}

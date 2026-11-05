@@ -301,9 +301,12 @@ pub fn all_events() -> Vec<Event> {
 
 /// Recompute the event and entity tables from the store (a pure function of it).
 pub fn fuse() -> usize {
-    let E = all_events();
-    store::replace(&E);
-    let raws: Vec<Report> = stored(&["adsb", "drones", "ais"], &[], None);
-    store::replace::<Entity>(&entities(&raws));
-    E.len()
+    store::transaction(|| {
+        let E = all_events();
+        store::replace(&E);
+        let raws: Vec<Report> = stored(&["adsb", "drones", "ais"], &[], None);
+        store::replace::<Entity>(&entities(&raws));
+        store::inputs();
+        E.len()
+    })
 }

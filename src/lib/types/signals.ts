@@ -43,6 +43,7 @@ export interface SignalsResponse {
   };
   official: {
     reports: MndReport[]; latest: MndReport | null; n_prior: number; unit: string; source: string;
+    n_by_field: Record<string, number>; baseline_start: string | null; baseline_end: string | null;
     median: Record<'aircraft' | 'ships' | 'official' | 'balloons' | 'adiz' | 'median_line', number | null>;
   } | null;
   outages: { countries: Record<string, string>; events: Outage[] };

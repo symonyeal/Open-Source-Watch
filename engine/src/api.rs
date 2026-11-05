@@ -11,7 +11,8 @@
 
 use std::collections::HashMap;
 use std::io::Read;
-use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration as StdDuration, Instant};
 
 use chrono::Duration;
@@ -31,6 +32,28 @@ use crate::store;
 
 /// Longer than a poll takes from fetch to write.
 const STREAM_LAG: i64 = 15;
+const MAX_REQUESTS: usize = 32;
+const MAX_STREAMS: usize = 4;
+const STREAM_LIFETIME: StdDuration = StdDuration::from_secs(300);
+
+/// An admitted worker owns its slot until the response (including streaming) ends.
+struct Permit(Arc<AtomicUsize>);
+
+impl Permit {
+    fn acquire(n: &Arc<AtomicUsize>, limit: usize) -> Option<Self> {
+        n.fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+            (n < limit).then_some(n + 1)
+        })
+        .ok()
+        .map(|_| Self(n.clone()))
+    }
+}
+
+impl Drop for Permit {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
+}
 
 type Res = Response<Box<dyn Read + Send>>;
 
@@ -198,40 +221,46 @@ struct Stream {
     sent: HashMap<String, Time>,
     buf: Vec<u8>,
     next: Instant,
+    deadline: Instant,
 }
 
 impl Read for Stream {
     fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
+        if Instant::now() >= self.deadline || out.is_empty() {
+            return Ok(0);
+        }
         while self.buf.is_empty() {
             std::thread::sleep(self.next.saturating_duration_since(Instant::now()));
             self.next = Instant::now() + StdDuration::from_secs(5);
             let lag = now() - Duration::minutes(STREAM_LAG);
             let after = self.t.max(lag);
-            let R = store::view::<Raw>();
-            let fetched: HashMap<&str, Time> = R
-                .iter()
-                .filter(|x| x.fetched_at > after)
-                .map(|x| (x.id.as_str(), x.fetched_at))
-                .collect();
-            let O = store::view::<Obs>();
-            let mut X: Vec<(&Obs, Time)> = O
-                .iter()
-                .filter(|x| x.region == self.r.id)
-                .filter_map(|x| fetched.get(x.raw_id.as_str()).map(|f| (x, *f)))
-                .collect();
-            X.sort_by_key(|x| x.0.t);
-            for (x, f) in X {
-                if !self.sent.contains_key(&x.id) {
-                    self.sent.insert(x.id.clone(), f);
-                    self.buf.extend(
-                        format!(
-                            "event: observation\ndata: {}\n\n",
-                            serde_json::to_string(x).unwrap()
-                        )
-                        .bytes(),
-                    );
+            store::snapshot(|| {
+                let R = store::view::<Raw>();
+                let fetched: HashMap<&str, Time> = R
+                    .iter()
+                    .filter(|x| x.fetched_at > after)
+                    .map(|x| (x.id.as_str(), x.fetched_at))
+                    .collect();
+                let O = store::view::<Obs>();
+                let mut X: Vec<(&Obs, Time)> = O
+                    .iter()
+                    .filter(|x| x.region == self.r.id)
+                    .filter_map(|x| fetched.get(x.raw_id.as_str()).map(|f| (x, *f)))
+                    .collect();
+                X.sort_by_key(|x| x.0.t);
+                for (x, f) in X {
+                    if !self.sent.contains_key(&x.id) {
+                        self.sent.insert(x.id.clone(), f);
+                        self.buf.extend(
+                            format!(
+                                "event: observation\ndata: {}\n\n",
+                                serde_json::to_string(x).unwrap()
+                            )
+                            .bytes(),
+                        );
+                    }
                 }
-            }
+            });
             self.sent.retain(|_, v| *v > lag);
             if self.buf.is_empty() {
                 self.buf.extend(b": keep-alive\n\n");
@@ -302,9 +331,21 @@ fn route(path: &str, q: &HashMap<String, String>) -> Result<Res, Res> {
             let r = region_of(q)?;
             js(&signals::view(r, &cycle::source_table(r, now()), now()))
         }
+        "/api/news" => {
+            let (r, t, n) = (region_of(q)?, since(q, 24 * 7)?, limit(q)?);
+            let R = store::view::<Raw>();
+            let raw: HashMap<&str, &Raw> = R.iter().filter(|x| x.region == r.id).map(|x| (x.id.as_str(), x)).collect();
+            let O = store::view::<Obs>();
+            let mut rows: Vec<&Obs> = O.iter().filter(|x| x.region == r.id && x.t > t && ["rss", "gnews"].contains(&crate::collect::adapter(&x.source_id))).collect();
+            rows.sort_by_key(|x| std::cmp::Reverse(x.t));
+            js(&rows.into_iter().take(n).filter_map(|x| raw.get(x.raw_id.as_str()).map(|r| json!({
+                "title": x.text_en, "link": r.url, "source": x.source_id.split_once(':').map_or(x.source_id.as_str(), |p| p.1),
+                "pubDate": "", "report_time": iso(&x.t), "fetched_at": iso(&r.fetched_at), "raw_id": r.id, "source_id": r.source_id
+            }))).collect::<Vec<_>>())
+        }
         "/api/telegram" => js(&telegram_data(region_of(q)?, since(q, 24 * 7)?)),
         "/stream" => {
-            let s = Stream { r: region_of(q)?, t: now(), sent: HashMap::new(), buf: vec![], next: Instant::now() };
+            let s = Stream { r: region_of(q)?, t: now(), sent: HashMap::new(), buf: vec![], next: Instant::now(), deadline: Instant::now() + STREAM_LIFETIME };
             Response::new(200.into(), vec![header("Content-Type", "text/event-stream"),
                                            header("Cache-Control", "no-cache, no-store, must-revalidate")],
                           Box::new(s) as Box<dyn Read + Send>, None, None)
@@ -317,8 +358,18 @@ fn handle(rq: Request) {
     let url = rq.url().to_string();
     let path = url.split('?').next().unwrap_or("").to_string();
     let q = query(&url);
-    let res = std::panic::catch_unwind(|| route(&path, &q).unwrap_or_else(|e| e))
-        .unwrap_or_else(|_| reply(500, "text/plain", b"Internal Server Error".to_vec()));
+    let res = std::panic::catch_unwind(|| {
+        if path == "/fetch" || path == "/stream" {
+            return route(&path, &q).unwrap_or_else(|e| e);
+        }
+        store::snapshot(|| {
+            let mut res = route(&path, &q).unwrap_or_else(|e| e);
+            res.add_header(header("X-OSW-Generation", &store::generation()));
+            res.add_header(header("X-OSW-Mode", "recorded"));
+            res
+        })
+    })
+    .unwrap_or_else(|_| reply(500, "text/plain", b"Internal Server Error".to_vec()));
     let _ = rq.respond(res);
 }
 
@@ -330,8 +381,49 @@ pub fn serve(port: u16, collect: bool) {
         std::thread::spawn(|| cycle::schedule(&STOP, "local"));
     }
     let server = Server::http(("127.0.0.1", port)).unwrap();
+    let requests = Arc::new(AtomicUsize::new(0));
+    let streams = Arc::new(AtomicUsize::new(0));
     eprintln!("engine on http://127.0.0.1:{port}");
     for rq in server.incoming_requests() {
-        std::thread::spawn(move || handle(rq));
+        let Some(request) = Permit::acquire(&requests, MAX_REQUESTS) else {
+            let _ = rq.respond(reply(
+                503,
+                "text/plain",
+                b"Request capacity reached".to_vec(),
+            ));
+            continue;
+        };
+        let stream = if rq.url().split('?').next() == Some("/stream") {
+            let Some(p) = Permit::acquire(&streams, MAX_STREAMS) else {
+                let _ = rq.respond(reply(
+                    503,
+                    "text/plain",
+                    b"Stream capacity reached".to_vec(),
+                ));
+                continue;
+            };
+            Some(p)
+        } else {
+            None
+        };
+        std::thread::spawn(move || {
+            let (_request, _stream) = (request, stream);
+            handle(rq);
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn admission_rejects_excess_and_releases_on_drop() {
+        let n = Arc::new(AtomicUsize::new(0));
+        let a = Permit::acquire(&n, 1).unwrap();
+        assert!(Permit::acquire(&n, 1).is_none());
+        drop(a);
+        assert!(Permit::acquire(&n, 1).is_some());
+        assert_eq!(n.load(Ordering::Acquire), 0);
     }
 }

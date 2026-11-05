@@ -4,6 +4,20 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Fewer views, deeper evidence** (2026-11-05). Default to energy/trade, with
+  disruption signals and supporting reports as separate views. Retain EIA/FRED,
+  IMF PortWatch and World Bank WDI because their measures fit those questions;
+  an additional price proxy or unvalidated satellite detector adds no defensible
+  inference. Complete weekly windows, a rolling four-week reference and release
+  revisions expose what changed and what was known. No predictive alert is implied.
+- **One dataset commit** (2026-11-05). Immutable files plus a generation manifest
+  replace destructive table swaps. OS writer leases, pinned readers and retained
+  inputs provide failure isolation and recovery. This supersedes earlier process
+  query-lock and bounded physical-file-count claims. Retention grows until a
+  reviewed archive policy exists. Pages rebuilds offline with current resources
+  and accepts only coherent, recorded, validated snapshots. See
+  [integrity and recovery](ENGINE-INTEGRITY.md).
+
 - **Incident linkage across a day** (2026-11-03). In a region with a `[gazetteer]`, two
   news or Telegram reports of one kind are one incident when they name the same oblast,
   their word sets overlap by at least θ = 0.6 (overlap coefficient

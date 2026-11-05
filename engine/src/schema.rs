@@ -4,8 +4,9 @@
 //!
 //! `source` is not stored: it is the region registry (crate::regions). Every other
 //! table is a Parquet dataset; rows carry their parent ids, so any observation on
-//! the map traces back to the raw report that produced it. Columns are nullable,
-//! and a column missing from an older file reads as null.
+//! the map traces back to the raw report that produced it. Required scalar columns
+//! reject absence and nulls. Optional annotations read as None; historical list
+//! annotations (including weapon, added later) read as empty when absent.
 
 use std::cmp::Ordering;
 use std::sync::Arc;
@@ -26,6 +27,8 @@ use crate::fmt::ser::{py, py_opt};
 
 /// A column type: its Arrow type, and conversion to and from an Arrow array.
 pub trait Col: Sized {
+    const NULLABLE: bool = true;
+    fn validate(&self, _name: &str) {}
     fn dtype() -> DataType;
     fn build(v: Vec<&Self>) -> ArrayRef;
     /// Values of a column (cast to `dtype`), or nulls where the file lacks it.
@@ -45,6 +48,11 @@ fn utc() -> DataType {
 macro_rules! opt_col {
     ($T:ty, $dt:expr, $arr:ty, $prim:ty, $ord:expr) => {
         impl Col for Option<$T> {
+            fn validate(&self, name: &str) {
+                if let Some(x) = self {
+                    x.validate(name);
+                }
+            }
             fn dtype() -> DataType {
                 $dt
             }
@@ -62,6 +70,17 @@ macro_rules! opt_col {
             }
         }
         impl Col for $T {
+            const NULLABLE: bool = false;
+            fn validate(&self, name: &str) {
+                let x = f64::from(*self);
+                assert!(x.is_finite(), "{name}: non-finite measurement");
+                if name == "lat" {
+                    assert!((-90.0..=90.0).contains(&x), "lat: outside -90..90");
+                }
+                if name == "lon" {
+                    assert!((-180.0..=180.0).contains(&x), "lon: outside -180..180");
+                }
+            }
             fn dtype() -> DataType {
                 $dt
             }
@@ -77,7 +96,7 @@ macro_rules! opt_col {
             fn column(a: Option<&ArrayRef>, n: usize) -> Vec<Self> {
                 <Option<$T> as Col>::column(a, n)
                     .into_iter()
-                    .map(|x| x.unwrap_or_default())
+                    .map(|x| x.expect("required numeric column is absent or null"))
                     .collect()
             }
             fn cmp(a: &Self, b: &Self) -> Ordering {
@@ -147,6 +166,7 @@ impl Col for Option<Time> {
 }
 
 impl Col for Time {
+    const NULLABLE: bool = false;
     fn dtype() -> DataType {
         utc()
     }
@@ -157,7 +177,7 @@ impl Col for Time {
     fn column(a: Option<&ArrayRef>, n: usize) -> Vec<Self> {
         <Option<Time> as Col>::column(a, n)
             .into_iter()
-            .map(|t| t.unwrap_or_default())
+            .map(|t| t.expect("required timestamp column is absent or null"))
             .collect()
     }
     fn cmp(a: &Self, b: &Self) -> Ordering {
@@ -188,6 +208,7 @@ impl Col for Option<String> {
 }
 
 impl Col for String {
+    const NULLABLE: bool = false;
     fn dtype() -> DataType {
         DataType::Utf8
     }
@@ -201,7 +222,7 @@ impl Col for String {
     fn column(a: Option<&ArrayRef>, n: usize) -> Vec<Self> {
         <Option<String> as Col>::column(a, n)
             .into_iter()
-            .map(|s| s.unwrap_or_default())
+            .map(|s| s.expect("required string column is absent or null"))
             .collect()
     }
     fn cmp(a: &Self, b: &Self) -> Ordering {
@@ -236,7 +257,7 @@ impl Col for Vec<String> {
                     x.map_or(vec![], |x| {
                         x.as_string::<i32>()
                             .iter()
-                            .map(|s| s.unwrap_or_default().to_string())
+                            .map(|s| s.expect("list element is null").to_string())
                             .collect()
                     })
                 })
@@ -255,6 +276,7 @@ pub trait Table: Sized + Clone + Send + Sync + 'static {
     fn schema() -> SchemaRef;
     fn batch(R: &[Self]) -> RecordBatch;
     fn rows(b: &RecordBatch) -> Vec<Self>;
+    fn validate(&self);
     /// Order of whole rows, column by column.
     fn content(&self, o: &Self) -> Ordering;
     /// Region a row is filed under; "global" for none.
@@ -277,17 +299,32 @@ macro_rules! table {
             const NAME: &'static str = $name;
             fn schema() -> SchemaRef {
                 Arc::new(Schema::new(vec![$(Field::new(
-                    stringify!($f).trim_start_matches("r#"), <$T as Col>::dtype(), true)),*]))
+                    stringify!($f).trim_start_matches("r#"), <$T as Col>::dtype(),
+                    <$T as Col>::NULLABLE && stringify!($f) != "observation_ids")),*]))
             }
             fn batch(R: &[Self]) -> RecordBatch {
+                for r in R { r.validate(); }
                 RecordBatch::try_new(Self::schema(), vec![$(<$T as Col>::build(
                     R.iter().map(|r| &r.$f).collect())),*]).unwrap()
             }
             fn rows(b: &RecordBatch) -> Vec<Self> {
                 let n = b.num_rows();
+                $(if !<$T as Col>::NULLABLE || stringify!($f) == "observation_ids" {
+                    let name = stringify!($f).trim_start_matches("r#");
+                    let a = b.column_by_name(name)
+                        .unwrap_or_else(|| panic!("{}: required column {name} is absent", Self::NAME));
+                    assert_eq!(a.null_count(), 0, "{}: required column {name} contains nulls", Self::NAME);
+                })*
                 $(let mut $f = <$T as Col>::column(
                     b.column_by_name(stringify!($f).trim_start_matches("r#")), n).into_iter();)*
-                (0..n).map(|_| $S { $($f: $f.next().unwrap()),* }).collect()
+                (0..n).map(|_| {
+                    let r = $S { $($f: $f.next().unwrap()),* };
+                    r.validate();
+                    r
+                }).collect()
+            }
+            fn validate(&self) {
+                $(<$T as Col>::validate(&self.$f, stringify!($f));)*
             }
             fn content(&self, o: &Self) -> Ordering {
                 Ordering::Equal $(.then_with(|| <$T as Col>::cmp(&self.$f, &o.$f)))*

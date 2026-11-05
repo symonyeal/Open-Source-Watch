@@ -49,7 +49,18 @@ pub fn official(r: &Region, n: usize) -> Value {
             )
         })
         .collect();
+    let n: Map<String, Value> = mnd::FIELDS
+        .iter()
+        .map(|k| {
+            (
+                k.to_string(),
+                json!(prior.iter().filter(|p| p[*k].as_i64().is_some()).count()),
+            )
+        })
+        .collect();
     json!({"reports": S, "latest": S.last(), "median": med, "n_prior": prior.len(),
+           "n_by_field": n, "baseline_start": prior.first().map(|p| &p["day"]),
+           "baseline_end": prior.last().map(|p| &p["day"]),
            "unit": "per 06:00-06:00 (UTC+8) report", "source": "Taiwan Ministry of National Defense"})
 }
 
@@ -64,7 +75,7 @@ pub fn measure(i: &Indicator, r: &Region, since: NaiveDate) -> Value {
         .as_object()
         .filter(|p| p["day"].as_str().unwrap_or("") >= since.to_string().as_str());
     json!({"field": f, "count": p.map_or(Value::Null, |p| p[&f].clone()), "date": p.map_or(Value::Null, |p| p["day"].clone()),
-           "median": o["median"][&f], "n_prior": o["n_prior"]})
+           "median": o["median"][&f], "n_prior": o["n_by_field"][&f]})
 }
 
 /// IODA events of the region's countries starting in the last `days`, each at its

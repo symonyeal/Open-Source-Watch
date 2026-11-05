@@ -10,7 +10,7 @@ use std::collections::BTreeSet;
 use chrono::{Duration, Utc};
 use common::*;
 use osw::collect::{self, Resp, Source, now, rss};
-use osw::schema::{Entity, Event, Obs, Product, Raw, Run, Track};
+use osw::schema::{Entity, Event, Obs, Product, Raw, Run, Status, Track};
 use osw::{cycle, fuse, store};
 
 const FILES: [(&str, &str); 8] = [
@@ -43,6 +43,155 @@ fn feed() -> Vec<Source> {
 
 fn n<T: osw::schema::Table>() -> usize {
     store::rows::<T>().len()
+}
+
+fn tables() -> Vec<serde_json::Value> {
+    macro_rules! rows {
+        ($t:ty) => {
+            serde_json::to_value(store::rows::<$t>().as_ref()).unwrap()
+        };
+    }
+    vec![
+        rows!(Raw),
+        rows!(Run),
+        rows!(Obs),
+        rows!(Track),
+        rows!(Event),
+        rows!(Entity),
+        rows!(Status),
+        rows!(Product),
+    ]
+}
+
+/// Real process exit bypasses unwinding, leaving staged files but no commit.
+#[test]
+#[ignore]
+fn crash_writer_child() {
+    let root = std::env::var_os("OSW_CRASH_ROOT").expect("child root");
+    store::set_root(Some(root.into()));
+    let fail: usize = std::env::var("OSW_CRASH_STAGE").unwrap().parse().unwrap();
+    offline();
+    store::transaction(|| {
+        let mut stage = 0;
+        macro_rules! write {
+            ($t:ty) => {{
+                let rows = store::rows::<$t>();
+                assert!(!rows.is_empty());
+                store::replace(rows.as_ref());
+                stage += 1;
+                if stage == fail {
+                    std::process::exit(19);
+                }
+            }};
+        }
+        write!(Raw);
+        write!(Run);
+        write!(Obs);
+        write!(Track);
+        write!(Event);
+        write!(Entity);
+        write!(Status);
+        write!(Product);
+    });
+}
+
+#[test]
+fn process_exit_at_each_table_preserves_the_committed_generation() {
+    let _g = fresh("store_crash");
+    feed();
+    fuse::fuse();
+    cycle::analyse(&["intsum", "sitrep"], now());
+    let before = tables();
+    let root = store::data_dir();
+    let manifest = std::fs::read(root.join("CURRENT.json")).unwrap();
+    for stage in 1..=8 {
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--ignored", "--exact", "crash_writer_child"])
+            .env("OSW_CRASH_ROOT", &root)
+            .env("OSW_CRASH_STAGE", stage.to_string())
+            .output()
+            .unwrap();
+        assert_eq!(
+            child.status.code(),
+            Some(19),
+            "{}",
+            String::from_utf8_lossy(&child.stderr)
+        );
+        assert_eq!(std::fs::read(root.join("CURRENT.json")).unwrap(), manifest);
+        assert_eq!(tables(), before, "stage {stage}");
+    }
+    store::append(&[run("retry", "iran-israel", now(), "ok")]);
+    assert_eq!(n::<Run>(), before[1].as_array().unwrap().len() + 1);
+}
+
+#[test]
+fn pinned_reader_keeps_its_generation_across_a_commit() {
+    let _g = fresh("store_reader");
+    store::append(&[run("old", "iran-israel", now(), "ok")]);
+    store::snapshot(|| {
+        let old = store::generation();
+        std::thread::spawn(|| {
+            store::transaction(|| {
+                store::append(&[run("new", "iran-israel", now(), "ok")]);
+                store::append(&[Product {
+                    id: "p".into(),
+                    region: "iran-israel".into(),
+                    kind: "intsum".into(),
+                    t: now(),
+                    period_h: 24,
+                    text: "New generation".into(),
+                }]);
+            })
+        })
+        .join()
+        .unwrap();
+        assert_eq!(store::generation(), old);
+        assert_eq!(n::<Run>(), 1);
+        assert_eq!(n::<Product>(), 0);
+    });
+    assert_eq!(n::<Run>(), 2);
+    assert_eq!(n::<Product>(), 1);
+}
+
+#[test]
+fn independent_process_cannot_enter_an_active_writer() {
+    let _g = fresh("store_writer");
+    store::append(&[run("old", "iran-israel", now(), "ok")]);
+    store::transaction(|| {
+        let child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--ignored", "--exact", "crash_writer_child"])
+            .env("OSW_CRASH_ROOT", store::data_dir())
+            .env("OSW_CRASH_STAGE", "1")
+            .output()
+            .unwrap();
+        assert!(!child.status.success());
+        assert!(
+            String::from_utf8_lossy(&child.stdout).contains("data root already has a writer")
+                || String::from_utf8_lossy(&child.stderr)
+                    .contains("data root already has a writer")
+        );
+        assert_eq!(n::<Run>(), 1);
+    });
+}
+
+#[test]
+fn recorded_news_has_source_lineage_and_no_invented_publication_time() {
+    let _g = fresh("store_news");
+    feed();
+    let data = api_json("/api/news?conflict=iran-israel&since=2000-01-01T00:00:00Z");
+    let rows = data.as_array().unwrap();
+    assert!(!rows.is_empty());
+    for row in rows {
+        assert!(!row["title"].as_str().unwrap().is_empty());
+        assert_eq!(row["pubDate"], "");
+        assert!(
+            store::view::<Raw>()
+                .iter()
+                .any(|r| r.id == row["raw_id"].as_str().unwrap()
+                    && r.source_id == row["source_id"].as_str().unwrap()
+                    && r.url.as_deref() == row["link"].as_str())
+        );
+    }
 }
 
 #[test]
@@ -161,28 +310,42 @@ fn past_months_roll_up_to_one_file() {
     store::append(std::slice::from_ref(&row));
     store::append(std::slice::from_ref(&row));
     let r = store::data_dir().join("collection_run").join("iran-israel");
-    let dirs = || -> Vec<std::path::PathBuf> {
-        std::fs::read_dir(&r)
-            .unwrap()
-            .map(|e| e.unwrap().path())
-            .collect()
-    };
-    std::fs::rename(&dirs()[0], r.join("2026-09-30")).unwrap();
-    store::append(&[row]);
-    let other = dirs()
-        .into_iter()
-        .find(|d| d.file_name().unwrap() != "2026-09-30")
-        .unwrap();
-    std::fs::rename(other, r.join("2026-09-01")).unwrap();
+    let files: Vec<_> = std::fs::read_dir(&r)
+        .unwrap()
+        .flat_map(|d| {
+            std::fs::read_dir(d.unwrap().path())
+                .unwrap()
+                .map(|e| e.unwrap().path())
+        })
+        .collect();
+    let legacy = store::data_dir().join("legacy-store");
+    let root = legacy.join("collection_run/iran-israel");
+    for (i, day) in ["2026-09-30", "2026-09-30", "2026-09-01"]
+        .iter()
+        .enumerate()
+    {
+        let d = root.join(day);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::copy(&files[i % files.len()], d.join(format!("{i}.parquet"))).unwrap();
+    }
+    store::set_root(Some(legacy.clone()));
     assert_eq!(store::compact(Some("2026-10-02")), 3);
     assert_eq!(n::<Run>(), 3);
-    let names: Vec<String> = dirs()
-        .iter()
-        .map(|d| d.file_name().unwrap().to_string_lossy().into())
-        .collect();
-    assert_eq!(names, ["2026-09"]);
-    let files = std::fs::read_dir(r.join("2026-09")).unwrap().count();
-    assert_eq!(files, 1);
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(legacy.join("CURRENT.json")).unwrap()).unwrap();
+    let visible = manifest["tables"]["collection_run"].as_array().unwrap();
+    assert_eq!(visible.len(), 1);
+    assert!(
+        visible[0]
+            .as_str()
+            .unwrap()
+            .replace('\\', "/")
+            .contains("/2026-09/")
+    );
+    assert!(
+        root.join("2026-09-30/0.parquet").exists(),
+        "old generation retained"
+    );
 }
 
 /// A writer's unfinished file (written aside, renamed when complete) is not read.

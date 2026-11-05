@@ -48,7 +48,7 @@ jobs:
           fi
 
       - name: Collect slow feeds
-        run: engine/target/release/osw collect --adapter rss gnews firms markets telegram context gpsjam mnd ioda ucdp --runner cron --due
+        run: engine/target/release/osw collect --adapter rss gnews firms telegram context gpsjam mnd ioda ucdp --runner cron --due
 
       - name: Translate refused reports (weekly)
         if: github.event.schedule == '43 3 * * 1' || github.event_name == 'workflow_dispatch'
@@ -60,7 +60,7 @@ jobs:
       - name: Commit and push
         working-directory: data
         run: |
-          git add -A
+          git add -A -- . ':!.writer.lock'
           git diff --cached --quiet && exit 0
           git commit -q -m "collect $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q origin data

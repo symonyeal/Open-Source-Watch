@@ -5,6 +5,7 @@ records. Status is **inspected** (read for this project) or **cited** (not yet r
 
 | Source | Used for | Status |
 | --- | --- | --- |
+| [NIST Engineering Statistics Handbook: measures of location](https://www.itl.nist.gov/div898/handbook/eda/section3/eda351.htm) | Median definition for the four preceding weekly shipping means; the rolling reference period is this project's descriptive choice | inspected 2026-11-05 |
 | [World Bank chokepoints notebook](https://worldbank.github.io/alternative-data-for-crisis/notebooks/disruptions-business-trade/chokepoints-monitor.html), data smoothing section | centered seven-day PortWatch mean; full-window restriction here | inspected 2026-10-24 |
 | [Ship dataset catalog](https://github.com/jasonmanesis/Satellite-Imagery-Datasets-Containing-Ships), [HRSID](https://github.com/chaozhong2010/HRSID), [xView3 reference](https://github.com/DIUx-xView/xview3-reference), [iMoonLab](https://github.com/orgs/iMoonLab/repositories) | satellite method assessment; [scope and limits](MARITIME-METHODS.md) | inspected 2026-10-24; no detector installed |
 | [EIA Brent / FRED](https://fred.stlouisfed.org/series/DCOILBRENTEU), [WTI](https://fred.stlouisfed.org/series/DCOILWTICO), graph CSV exports | Daily spot prices, USD/barrel; separate from futures | inspected and live responses 2026-10-24 |

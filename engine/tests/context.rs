@@ -179,7 +179,22 @@ fn context_api_selects_latest_release_and_aligns_spread_dates() {
             store::append(&[x]);
         }
     }
-    let d = context::view(regions::get("south-asia").unwrap(), T());
+    let region = regions::get("south-asia").unwrap();
+    let original = context::view(region, T());
+    assert!(
+        original["series"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|s| s["releases_known"] == 1)
+    );
+    assert_eq!(num(&original["spread"]["value"]), 10.0);
+    let d = context::view(region, T() + Duration::seconds(2));
+    for s in d["series"].as_array().unwrap() {
+        assert_eq!(s["revision"]["compared_points"], 2);
+        assert_eq!(s["revision"]["changed_measures"], 1);
+        assert_eq!(s["releases_known"], 2);
+    }
     assert_eq!(d["spread"]["date"], "2026-10-19");
     assert_eq!(num(&d["spread"]["value"]), 10.0);
     assert_eq!(d["spread"]["unit"], "USD/bbl");
@@ -193,6 +208,50 @@ fn context_api_selects_latest_release_and_aligns_spread_dates() {
     assert_eq!(num(&wti["latest"]["value"]), 91.0);
     let res = api_json("/api/context?region=south-asia");
     assert_eq!(res["countries"].as_array().unwrap().len(), 8);
+}
+
+#[test]
+fn provider_acceptance_rejects_ambiguous_keys_and_invalid_counts() {
+    let src = source("DCOILWTICO");
+    assert!(
+        feeds::parse(
+            b"observation_date,DCOILWTICO\n2026-10-19,1\n2026-10-19,2\n",
+            &src
+        )
+        .is_err()
+    );
+    for (n, k) in [(8.0, 9.0), (-1.0, 0.0), (8.5, 1.0)] {
+        let page = json!({"features": [{"attributes": {"date": "2026-10-18", "portid": "port241",
+            "portcalls": n, "portcalls_tanker": k}}]});
+        assert!(feeds::parse(page.to_string().as_bytes(), &source("port241")).is_err());
+    }
+}
+
+#[test]
+fn shipping_comparison_adapts_only_to_complete_prior_weeks() {
+    let mut points: Vec<Value> = (1..=35)
+        .map(|k| {
+            json!({
+        "date": (T().date_naive() - Duration::days(k)).to_string(),
+        "value": if k <= 7 { 15 } else { 10 }})
+        })
+        .collect();
+    let c = context::comparison(&points, "value");
+    assert_eq!(c["n_baseline"], 4);
+    assert_eq!(c["baseline_median"], 10.0);
+    assert_eq!(c["change_pct"], 50.0);
+    assert_eq!(c["current"]["window_end"], "2026-10-23");
+    points[34]["value"] = Value::Null;
+    let c = context::comparison(&points, "value");
+    assert_eq!(c["n_baseline"], 3);
+    assert!(c["baseline_median"].is_null() && c["change_pct"].is_null());
+    assert_eq!(c["status"], "insufficient_history");
+    for p in &mut points {
+        p["value"] = json!(0);
+    }
+    let c = context::comparison(&points, "value");
+    assert_eq!(c["status"], "complete");
+    assert!(c["change_pct"].is_null());
 }
 
 #[test]

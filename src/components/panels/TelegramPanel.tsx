@@ -4,7 +4,7 @@ import { useConflictFeed, timeAgo } from '@/lib/hooks';
 import type { TelegramData } from '@/lib/types/api';
 
 export default function TelegramPanel() {
-  const { data, loading, lastUpdated } = useConflictFeed<TelegramData>('/api/telegram', 60000);
+  const { data, loading, error } = useConflictFeed<TelegramData>('/api/telegram', 60000);
 
   return (
     <div className="panel h-full flex flex-col">
@@ -12,7 +12,7 @@ export default function TelegramPanel() {
         <span className="status-dot" style={{ background: 'var(--cyan)' }} />
         TELEGRAM OSINT (UNVERIFIED)
         <span className="ml-auto text-[9px] text-[var(--text-secondary)] font-normal normal-case tracking-normal">
-          {data?.posts.length || 0} posts // {data?.channels.length || 0} channels{lastUpdated ? ` // ${new Date(lastUpdated).toLocaleTimeString()}` : ''}
+          {data?.posts.length || 0} posts · {data?.channels.length || 0} channels
         </span>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -22,7 +22,7 @@ export default function TelegramPanel() {
               <div key={i} className="loading-shimmer h-16 rounded" />
             ))}
           </div>
-        ) : data?.posts.length === 0 ? (
+        ) : error ? <p className="p-3 text-sm" role="status">Telegram reports unavailable: {error}</p> : !data?.posts.length ? (
           <div className="p-4 text-center text-[var(--text-secondary)] text-xs">
             No recent Telegram posts
           </div>
@@ -46,11 +46,11 @@ export default function TelegramPanel() {
                 >
                   {post.channelLabel}
                 </span>
-                <span className="text-[9px] text-[var(--text-secondary)] ml-auto shrink-0">
+                <span title={post.date} className="text-xs text-[var(--text-secondary)] ml-auto shrink-0">
                   {timeAgo(post.date)}
                 </span>
               </div>
-              <p className="text-[11px] leading-snug text-[var(--text-primary)] line-clamp-3">
+              <p className="text-sm leading-snug text-[var(--text-primary)]">
                 {post.text}
               </p>
             </a>

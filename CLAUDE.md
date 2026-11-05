@@ -4,7 +4,7 @@ Read before changing anything. [README](README.md) states what the platform is;
 [Design](docs/specs/2026-10-20-open-source-watch-design.md) states how it is built;
 [Decisions](docs/DECISIONS.md) states why; [Validation](docs/VALIDATION.md) states what
 must be, and has been, checked. This file states the rules a change must not break.
-Codex reads the same file through [AGENTS.md](AGENTS.md).
+Codex reads this same file through its project documentation fallback.
 
 Open-Source-Watch is a fork of [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT)
 (MIT, Nobler Works). The Next.js front end is upstream's, in upstream's layout; the
@@ -32,7 +32,8 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
 - The table schemas live in `engine/src/schema.rs`, the event taxonomy in `KINDS` there.
 - Upstream's shaping code is the only copy: the engine serves upstream responses
   (`/fetch`), and every engine source URL is built exactly as the upstream route builds
-  it (tests check this against Node). `/api/telegram` is the one engine-shaped route.
+  it (tests check this against Node). The focused dashboard uses recorded engine
+  routes for news, Telegram, context, signals, sources, indicators and products.
 - The gazetteer is `regions/geonames.tsv`, rebuilt by `osw gazetteer <GeoNames dir>`
   (cities15000.zip, admin1CodesASCII.txt, admin2Codes.txt and `<CC>.zip` for each
   country a region lists under `[gazetteer]`); never edit it by hand. Places, their
@@ -57,14 +58,16 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
   `docs/labels/detail-*.jsonl` (guide `detail-guide.md`), and `tests/what.rs` pins the
   filter's measured rates: change a rule, re-measure, and update both.
 - Kind labels for the classifier live in `docs/labels/`; the classifier is retrained
-  from them at start-up, so derived tables depend on raw reports and labels only.
+  from them at start-up. Derivation also depends on configuration, geography,
+  translation outcomes and code; preserve these inputs with the generation.
 - A payload's format belongs to its adapter: `engine/src/collect/<adapter>.rs` writes it
   and its processor in `engine/src/process` reads it. Every other module reads raw reports
   through `collect::stored` or the adapter's reader (`mnd::reports`,
   `ioda::events`, `ucdp::events`, `context::releases`, `rss::outlets`), never by
   parsing `payload` elsewhere.
-- Raw reports are the only state that cannot be recomputed. `osw rebuild`
-  regenerates every derived table from them.
+- `osw rebuild` regenerates derived tables using current resources, preserving
+  their bytes in the generation. Prior interpretations require the earlier
+  generation and its inputs; raw reports alone are insufficient.
 
 ## Code
 

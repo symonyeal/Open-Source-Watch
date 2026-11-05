@@ -19,6 +19,8 @@ export async function fromEngine(req: Request): Promise<NextResponse | null> {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'X-Served-By': 'engine',
+        'X-OSW-Generation': res.headers.get('X-OSW-Generation') ?? 'unknown',
+        'X-OSW-Mode': res.headers.get('X-OSW-Mode') ?? 'recorded',
       },
     });
   } catch {

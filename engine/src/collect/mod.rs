@@ -15,7 +15,7 @@
 //! processor (crate::process) and its readers read it. Other modules decode no
 //! payload: they read raw reports through `stored`, or through the adapter's reader
 //! where its rule picks among the stored reports (mnd::reports, ioda::events,
-//! ucdp::events, context::releases, rss::outlets).
+//! ucdp::events, context::history, rss::outlets).
 
 pub mod adsb;
 pub mod ais;

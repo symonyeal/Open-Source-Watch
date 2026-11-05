@@ -5,6 +5,7 @@
 // the selected region, from the engine's /api/signals. Descriptive only.
 import { GNSS_COLOR } from '@/components/map/gnssLayer';
 import { useConflictFeed } from '@/lib/hooks';
+import { SNAPSHOT } from '@/lib/snapshot';
 import type { GnssDay, MndReport, SignalSource, SignalsResponse } from '@/lib/types/signals';
 
 const SECTION = 'rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] p-4';
@@ -29,7 +30,7 @@ export default function SignalsBoard() {
         <span className="status-dot" style={{ background: 'var(--amber)' }} aria-hidden="true" />
         <h2 id="signals-title" className="text-inherit">NAVIGATION, CONNECTIVITY & REFERENCE SIGNALS</h2>
         <span className="ml-auto text-xs font-normal normal-case tracking-normal text-[var(--text-secondary)]">
-          Refreshes every 5 min
+          {SNAPSHOT ? 'Recorded snapshot' : 'Reads stored evidence every 5 min'}
         </span>
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
@@ -131,7 +132,7 @@ function Official({ o }: { o: NonNullable<SignalsResponse['official']> }) {
       <h3 id="mnd-title" className={TITLE}>PLA activity reported by Taiwan&apos;s Ministry of National Defense</h3>
       <p className={NOTE}>
         Daily counts {o.unit}, as the ministry states them: a party&apos;s own claims, not independent observation.
-        Median over the {o.n_prior} reports before the latest.
+        Baseline: {o.n_prior} preceding reports{o.baseline_start ? `, ${o.baseline_start} to ${o.baseline_end}` : ''}. Each median excludes unstated counts and shows its sample size.
       </p>
       {!latest ? <p className="text-sm text-[var(--text-secondary)]">No reports stored yet.</p> : (
         <>
@@ -140,7 +141,7 @@ function Official({ o }: { o: NonNullable<SignalsResponse['official']> }) {
               <div key={k} className="rounded border border-[rgba(30,58,95,0.55)] px-3 py-2">
                 <div className="text-xs text-[var(--text-secondary)]">{label}</div>
                 <div className="text-lg font-bold tabular-nums text-[var(--text-primary)]">{latest[k] ?? '—'}</div>
-                <div className="text-[10px] text-[var(--text-secondary)]">median {o.median[k] ?? '—'}</div>
+                <div className="text-xs text-[var(--text-secondary)]">median {o.median[k] ?? '—'} · n={o.n_by_field[k] ?? 0}</div>
               </div>
             ))}
           </div>

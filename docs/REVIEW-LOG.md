@@ -1,5 +1,20 @@
 # Source and correctness review
 
+## 2026-11-05: dated releases and recent shipping reference
+
+| Identification or reading | Basis | Status |
+| --- | --- | --- |
+| Existing public sources cover the retained energy/shipping requirement | Re-read [EIA Brent](https://fred.stlouisfed.org/series/DCOILBRENTEU), [WTI](https://fred.stlouisfed.org/series/DCOILWTICO), WDI [energy](https://data.worldbank.org/indicator/EG.IMP.CONS.ZS) and [fuel](https://data.worldbank.org/indicator/TM.VAL.FUEL.ZS.UN) pages; their units, origin and time bases agree with the existing source selection | Inspected; no new provider added |
+| The published shipping smoothing method uses a crisis-specific historical reference | [World Bank notebook](https://worldbank.github.io/alternative-data-for-crisis/notebooks/disruptions-business-trade/chokepoints-monitor.html), smoothing and reference-period sections | Inspected; our rolling four-week median is explicitly a project descriptive reference, with no seasonal, causal or predictive interpretation |
+| A series' changed observations can be distinguished from its advancing retrieval window | Context now compares shared country/date keys in successive recorded releases, preserving raw identities and number/null changes; later acquisition is excluded from earlier as-of views | Implemented; validation recorded with the integrating change |
+| Missing MND measurements can reduce a field's actual baseline sample below the report count | `signals::official` now includes field-specific sample sizes and reporting-day bounds; `measure` returns its field's sample size | Implemented; validation recorded with the integrating change |
+| Median definition and data reuse terms | [NIST](https://www.itl.nist.gov/div898/handbook/eda/section3/eda351.htm); [IMF statistical-data terms](https://www.imf.org/en/About/copyright-and-terms) | Inspected |
+| Current endpoint availability is not established | PortWatch homepage returned no readable text; bounded ArcGIS query inaccessible through this research client; IMF working-paper XML 403 and old PDF URL 404 | Access limits; no new claim depends on these contents |
+| Current metadata independently rechecked | [FRED Brent](https://fred.stlouisfed.org/series/DCOILBRENTEU), [World Bank API](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581-api-basic-call-structures), [PortWatch layer](https://services9.arcgis.com/weJ1QsnbMYJlCHdG/arcgis/rest/services/Daily_Chokepoints_Data/FeatureServer/0?f=pjson) | FRED confirms EIA-origin daily USD/barrel and revisability; World Bank country API documentation and ArcGIS layer metadata readable. This establishes metadata access, not current data-query completeness |
+| Bounded endpoint checks distinguish access from usable data | Direct requests on 2026-11-05: two FRED CSV timeouts; WDI 200/6 country-year rows; gpsjam manifest/daily CSV 200; MND list/report 200; IODA 200/empty events; UCDP Candidate header 206 | Request results only. PortWatch chokepoint queries returned API error 400 inside HTTP 200 across date/encoding variants; a one-row port query succeeded. Official ArcGIS item still identifies the same IMF-owned service. Retain these primary sources and expose failed collection and observation age; no unverified mirror substituted |
+
+## Earlier review
+
 Readings and checks from 2026-10-24. “Python” means executed evidence from the
 collector; “Cited” means read from the linked source. A live response establishes
 that request's result, not continued availability or complete coverage.

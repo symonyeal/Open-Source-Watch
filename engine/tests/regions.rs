@@ -3,12 +3,9 @@
 
 mod common;
 
-use std::collections::HashSet;
-
 use common::*;
-use osw::collect::{mnd, rss};
+use osw::collect::rss;
 use osw::regions::{self, Region};
-use osw::schema::KINDS;
 
 const GRADES: &str = "ABCDEF";
 
@@ -84,79 +81,7 @@ fn region_geometry_and_rules() {
 
 #[test]
 fn pir_indicators() {
-    each(|r| {
-        let I: Vec<_> = r.pir.iter().flat_map(|p| &p.indicator).collect();
-        let metric = |i: &&regions::Indicator| i.metric.clone();
-        let of = |m: &str| -> Vec<_> {
-            I.iter()
-                .filter(|i| metric(i).as_deref() == Some(m))
-                .collect()
-        };
-        let E: Vec<_> = I
-            .iter()
-            .filter(|i| matches!(metric(i).as_deref(), None | Some("event_count" | "unusual")))
-            .collect();
-        let (T, G, O) = (of("transit"), of("gnss"), of("official"));
-        assert!(
-            !I.is_empty() && E.len() + T.len() + G.len() + O.len() == I.len(),
-            "{}",
-            r.id
-        );
-        assert!(
-            G.iter()
-                .all(|i| matches!(i.band.as_deref(), Some("medium" | "high")))
-        );
-        assert!(
-            O.iter()
-                .all(|i| mnd::FIELDS.contains(&i.field.as_deref().unwrap_or("")))
-        );
-        for i in &E {
-            assert!(KINDS.contains(&i.kind.as_deref().unwrap_or("")), "{}", i.id);
-            if i.metric.is_none() {
-                let (w, t) = (i.watch.unwrap(), i.trigger.unwrap());
-                assert!(1 <= w && w <= t, "{}", i.id);
-            }
-            if i.metric.as_deref() == Some("unusual") {
-                assert!(
-                    i.window_h.unwrap() > 0 && i.window_days.unwrap() >= 7,
-                    "{}",
-                    i.id
-                );
-            }
-            // The target classes of process::what.
-            assert!(
-                i.target.as_deref().is_none_or(|x| {
-                    ["energy", "military", "infrastructure", "civilian"].contains(&x)
-                }),
-                "{}",
-                i.id
-            );
-            assert!(matches!(i.by.as_deref(), None | Some("admin1")), "{}", i.id);
-        }
-        for i in &T {
-            assert!(
-                r.gate.contains_key(i.gate.as_deref().unwrap_or("")),
-                "{}",
-                i.id
-            );
-            let (t, w) = (i.trigger_z.unwrap(), i.watch_z.unwrap());
-            assert!(t <= w && w < 0.0, "{}", i.id);
-        }
-        let ids: HashSet<&str> = I.iter().map(|i| i.id.as_str()).collect();
-        assert_eq!(ids.len(), I.len(), "{}", r.id);
-        for h in r.pir.iter().flat_map(|p| &p.hypothesis) {
-            assert!(
-                h.expect.keys().all(|k| ids.contains(k.as_str())),
-                "{}",
-                h.id
-            );
-            assert!(
-                h.expect
-                    .values()
-                    .all(|v| matches!(v.as_str(), Some("present" | "absent")))
-            );
-        }
-    });
+    each(|r| assert!(r.validate().is_ok(), "{}", r.id));
 }
 
 /// src/lib/conflicts/generated.ts equals `osw regions` output.
@@ -166,4 +91,35 @@ fn generated_typescript_is_fresh() {
         .unwrap()
         .replace("\r\n", "\n");
     assert!(on_disk == regions::build_ts());
+}
+
+#[test]
+fn production_validation_rejects_malformed_regions() {
+    each(|r| assert!(r.validate().is_ok()));
+    let base = regions::get("iran-israel").unwrap();
+    let mut r = base.clone();
+    r.pir[0].indicator[0].metric = Some("event_cout".into());
+    assert!(r.validate().unwrap_err().contains("unknown metric"));
+    let mut r = base.clone();
+    r.pir[0].indicator[0].window_h = Some(0);
+    assert!(r.validate().unwrap_err().contains("window_h"));
+    let mut r = base.clone();
+    r.pir[0].indicator[0].watch = Some(1000);
+    assert!(r.validate().unwrap_err().contains("watch <= trigger"));
+    let mut r = base.clone();
+    r.reliability.insert("rss:bad".into(), "reliable".into());
+    assert!(r.validate().unwrap_err().contains("grade A-F"));
+    let mut r = base.clone();
+    r.bbox[0] = f64::NAN;
+    assert!(r.validate().unwrap_err().contains("bbox"));
+    let mut r = base.clone();
+    r.pir[0].indicator[0].band = Some("high".into());
+    assert!(
+        r.validate()
+            .unwrap_err()
+            .contains("incompatible measurement fields")
+    );
+    let mut r = regions::get("hormuz").unwrap().clone();
+    r.gate.clear();
+    assert!(r.validate().unwrap_err().contains("unknown gate"));
 }

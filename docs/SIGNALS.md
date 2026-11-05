@@ -48,6 +48,12 @@ last three days, and is "no data" when there is none, when no source of it is
 healthy, or when the latest report does not state the count (an unstated count is
 not zero). One rule in `engine/src/analyze.rs` decides this for both.
 
+MND medians use up to 30 reports preceding the latest report. Each field carries
+its own `n_by_field` count of stated measurements and the baseline's first and
+last reporting days. Indicator `n_prior` counts the measurements used for its
+particular field. A report that omits a balloon count therefore contributes
+neither a zero nor an observation to the balloon baseline.
+
 Each IODA event becomes an `internet_outage` observation placed at the seat of
 government. IODA measures a country as one unit, so its observations carry
 administrative precision and outages of one country within two hours link into one

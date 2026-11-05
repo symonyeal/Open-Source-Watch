@@ -10,7 +10,7 @@
 //! A source id is "<adapter>:<name>" or "<adapter>:<name>#<k>" when several feeds
 //! share a name; grades and owners are keyed by the part before '#'.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{LazyLock, Mutex, OnceLock};
@@ -35,7 +35,7 @@ pub fn ts_path() -> PathBuf {
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Indicator {
     pub id: String,
     pub name: String,
@@ -152,6 +152,191 @@ pub struct Region {
 }
 
 impl Region {
+    /// Validate configured geometry, evidence grades and metric-specific inputs.
+    /// Loading calls this before a region can serve collection or analysis.
+    pub fn validate(&self) -> Result<(), String> {
+        let check = |ok: bool, where_: &str, rule: &str| {
+            if ok {
+                Ok(())
+            } else {
+                Err(format!("{}: {where_}: {rule}", self.id))
+            }
+        };
+        check(
+            !self.id.is_empty() && !self.name.is_empty(),
+            "region",
+            "id and name are required",
+        )?;
+        let [a, b, c, d] = self.bbox;
+        check(
+            -90.0 <= a && a < b && b <= 90.0 && -180.0 <= c && c < d && d <= 180.0,
+            "bbox",
+            "expected ordered finite latitude/longitude bounds",
+        )?;
+        check(
+            self.timezone.parse::<chrono_tz::Tz>().is_ok(),
+            "timezone",
+            "unknown timezone",
+        )?;
+        check(
+            self.reliability
+                .values()
+                .all(|g| g.len() == 1 && "ABCDEF".contains(g.as_str())),
+            "reliability",
+            "expected Admiralty grade A-F",
+        )?;
+        check(
+            self.owner.keys().all(|k| self.reliability.contains_key(k)),
+            "owner",
+            "source has no grade",
+        )?;
+        for k in ["newsFeeds", "telegramChannels"] {
+            let prefix = if k == "newsFeeds" { "rss" } else { "telegram" };
+            for s in self.c(k).as_array().into_iter().flatten() {
+                let name = s["name"].as_str().unwrap_or("");
+                check(
+                    !name.is_empty() && self.reliability.contains_key(&format!("{prefix}:{name}")),
+                    k,
+                    "source requires name and grade",
+                )?;
+            }
+        }
+        for (id, g) in &self.gate {
+            check(
+                g.line.iter().all(|[lat, lon]| {
+                    (-90.0..=90.0).contains(lat) && (-180.0..=180.0).contains(lon)
+                }) && g.line[0] != g.line[1],
+                id,
+                "gate requires two distinct finite coordinates",
+            )?;
+        }
+        let mut ids = HashSet::new();
+        let mut pirs = HashSet::new();
+        for p in &self.pir {
+            check(
+                !p.id.is_empty() && pirs.insert(p.id.as_str()) && !p.question.is_empty(),
+                "pir",
+                "unique id and question required",
+            )?;
+            check(
+                !p.indicator.is_empty(),
+                &p.id,
+                "at least one indicator required",
+            )?;
+            for i in &p.indicator {
+                check(
+                    !i.id.is_empty() && ids.insert(i.id.as_str()) && !i.name.is_empty(),
+                    &p.id,
+                    "indicator requires unique id and name",
+                )?;
+                check(
+                    i.max_credibility.is_none_or(|n| (1..=6).contains(&n)),
+                    &i.id,
+                    "max_credibility must be 1..6",
+                )?;
+                let metric = i.metric.as_deref();
+                check(
+                    matches!(
+                        metric,
+                        None | Some("event_count" | "unusual" | "transit" | "gnss" | "official")
+                    ),
+                    &i.id,
+                    "unknown metric",
+                )?;
+                let event = matches!(metric, None | Some("event_count" | "unusual"));
+                check(
+                    (metric.is_none() || (i.watch.is_none() && i.trigger.is_none()))
+                        && (matches!(metric, Some("unusual" | "transit"))
+                            || i.window_days.is_none())
+                        && (metric == Some("transit")
+                            || (i.watch_z.is_none() && i.trigger_z.is_none() && i.gate.is_none()))
+                        && (metric == Some("gnss") || i.band.is_none())
+                        && (metric == Some("official") || i.field.is_none())
+                        && (event || (i.window_h.is_none() && i.max_credibility.is_none())),
+                    &i.id,
+                    "metric has incompatible measurement fields",
+                )?;
+                if event {
+                    check(
+                        crate::schema::KINDS.contains(&i.kind.as_deref().unwrap_or("")),
+                        &i.id,
+                        "unknown event kind",
+                    )?;
+                    check(
+                        i.window_h.is_some_and(|n| n > 0),
+                        &i.id,
+                        "window_h must be positive",
+                    )?;
+                    check(
+                        i.target.as_deref().is_none_or(|x| {
+                            ["energy", "military", "infrastructure", "civilian"].contains(&x)
+                        }),
+                        &i.id,
+                        "unknown target",
+                    )?;
+                    check(
+                        matches!(i.by.as_deref(), None | Some("admin1")),
+                        &i.id,
+                        "unknown grouping",
+                    )?;
+                } else {
+                    check(
+                        i.kind.is_none() && i.target.is_none() && i.by.is_none(),
+                        &i.id,
+                        "measurement has incompatible event fields",
+                    )?;
+                }
+                match metric {
+                    None => check(
+                        matches!((i.watch, i.trigger), (Some(w), Some(t)) if 1 <= w && w <= t),
+                        &i.id,
+                        "require 1 <= watch <= trigger",
+                    )?,
+                    Some("unusual" | "transit") => {
+                        check(
+                            i.window_days.is_some_and(|n| n >= 7),
+                            &i.id,
+                            "window_days must be at least 7",
+                        )?;
+                        if metric == Some("transit") {
+                            check(
+                                i.gate.as_ref().is_some_and(|g| self.gate.contains_key(g)),
+                                &i.id,
+                                "unknown gate",
+                            )?;
+                            check(
+                                matches!((i.trigger_z, i.watch_z), (Some(t), Some(w)) if t.is_finite() && w.is_finite() && t <= w && w < 0.0),
+                                &i.id,
+                                "require finite trigger_z <= watch_z < 0",
+                            )?;
+                        }
+                    }
+                    Some("gnss") => check(
+                        matches!(i.band.as_deref(), Some("medium" | "high")),
+                        &i.id,
+                        "unknown GNSS band",
+                    )?,
+                    Some("official") => check(
+                        crate::collect::mnd::FIELDS.contains(&i.field.as_deref().unwrap_or("")),
+                        &i.id,
+                        "unknown official count field",
+                    )?,
+                    _ => {}
+                }
+            }
+        }
+        for h in self.pir.iter().flat_map(|p| &p.hypothesis) {
+            check(
+                h.expect.iter().all(|(k, v)| {
+                    ids.contains(k.as_str()) && matches!(v.as_str(), Some("present" | "absent"))
+                }),
+                &h.id,
+                "hypothesis requires known indicators and present/absent expectations",
+            )?;
+        }
+        Ok(())
+    }
+
     /// A key of the conflict config.
     pub fn c(&self, k: &str) -> &Value {
         &self.conflict[k]
@@ -286,6 +471,8 @@ fn load() -> Vec<Region> {
                 )
                 .unwrap();
             }
+            r.validate()
+                .unwrap_or_else(|e| panic!("{}: {e}", p.display()));
             r
         })
         .collect()

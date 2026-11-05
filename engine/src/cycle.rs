@@ -25,36 +25,84 @@ use crate::fuse;
 use crate::process::{feeds, news};
 use crate::produce;
 use crate::regions::{self, Region};
-use crate::schema::{Entity, Event, Obs, Raw, Run, Track};
+use crate::schema::{Obs, Raw, Run, Track};
 use crate::store;
 
-/// Every source, in adapter order: of sources sharing a URL, the first is the one
-/// the proxy always polls.
+/// One registration owns each adapter's source enumeration, parser, optional
+/// request assembler and derivation. Payload interpretation stays in its module.
+struct Adapter {
+    names: &'static [&'static str],
+    sources: fn(&[Region]) -> Vec<Source>,
+    parse: collect::Parse,
+    fetch: Option<fn(&Source) -> Result<Resp, Fail>>,
+    derive: fn(&[Report], &mut Derived),
+}
+
+fn adapters() -> &'static [Adapter] {
+    use collect::*;
+    macro_rules! entry {
+        ($names:expr, $module:ident, $fetch:expr, $derive:expr) => {
+            Adapter {
+                names: $names,
+                sources: $module::sources,
+                parse: $module::parse,
+                fetch: $fetch,
+                derive: $derive,
+            }
+        };
+    }
+    static A: &[Adapter] = &[
+        entry!(&["rss", "gnews"], rss, None, |X, D| D
+            .obs
+            .extend(news::derive(X))),
+        entry!(&["telegram"], telegram, None, |X, D| D
+            .obs
+            .extend(feeds::telegram(X))),
+        entry!(&["firms"], firms, None, |X, D| D
+            .obs
+            .extend(feeds::firms(X))),
+        entry!(&["adsb"], adsb, None, |X, D| D
+            .tracks
+            .extend(feeds::adsb(X))),
+        entry!(&["alerts"], alerts, None, |X, D| D
+            .obs
+            .extend(feeds::alerts(X))),
+        entry!(&["drones"], neptun, None, |X, D| {
+            let (t, o) = feeds::neptun(X);
+            D.tracks.extend(t);
+            D.obs.extend(o);
+        }),
+        entry!(&["markets"], markets, None, |_, _| {}),
+        entry!(&["ais"], ais, None, |X, D| D.tracks.extend(feeds::ais(X))),
+        entry!(&["context"], context, None, |_, _| {}),
+        entry!(&["gpsjam"], gpsjam, Some(gpsjam::fetch), |_, _| {}),
+        entry!(&["integrity"], integrity, None, |_, _| {}),
+        entry!(&["mnd"], mnd, Some(mnd::fetch), |_, _| {}),
+        entry!(&["ioda"], ioda, Some(ioda::fetch), |X, D| D
+            .obs
+            .extend(feeds::ioda(X))),
+        entry!(&["ucdp"], ucdp, Some(ucdp::fetch), |_, _| {}),
+    ];
+    A
+}
+
+fn descriptor(a: &str) -> &'static Adapter {
+    adapters()
+        .iter()
+        .find(|d| d.names.contains(&a))
+        .unwrap_or_else(|| panic!("unregistered adapter {a}"))
+}
+
+/// Every source in registration order; the first sharing a URL is the proxy poll.
 pub fn all_sources() -> &'static [Source] {
     static S: OnceLock<Vec<Source>> = OnceLock::new();
     S.get_or_init(|| {
-        let R = regions::all();
-        use collect::*;
-        [
-            rss::sources(R),
-            telegram::sources(R),
-            firms::sources(R),
-            adsb::sources(R),
-            alerts::sources(R),
-            neptun::sources(R),
-            markets::sources(R),
-            ais::sources(R),
-            context::sources(R),
-            gpsjam::sources(R),
-            integrity::sources(R),
-            mnd::sources(R),
-            ioda::sources(R),
-            ucdp::sources(R),
-        ]
-        .concat()
+        adapters()
+            .iter()
+            .flat_map(|a| (a.sources)(regions::all()))
+            .collect()
     })
 }
-
 /// Sources of the given regions and adapters (every one if empty); polled drops
 /// stream sources.
 pub fn sources(R: &[String], A: &[String], polled: bool) -> Vec<Source> {
@@ -68,37 +116,12 @@ pub fn sources(R: &[String], A: &[String], polled: bool) -> Vec<Source> {
 }
 
 fn parse_of(a: &str) -> collect::Parse {
-    use collect::*;
-    match a {
-        "rss" | "gnews" => rss::parse,
-        "telegram" => telegram::parse,
-        "firms" => firms::parse,
-        "adsb" => adsb::parse,
-        "alerts" => alerts::parse,
-        "drones" => neptun::parse,
-        "markets" => markets::parse,
-        "ais" => ais::parse,
-        "context" => context::parse,
-        "gpsjam" => gpsjam::parse,
-        "integrity" => integrity::parse,
-        "mnd" => mnd::parse,
-        "ioda" => ioda::parse,
-        "ucdp" => ucdp::parse,
-        _ => |_: &[u8], _: &Source| -> Result<Vec<Item>, String> { Err("no adapter".into()) },
-    }
+    descriptor(a).parse
 }
 
 fn fetch_of(a: &str) -> Option<fn(&Source) -> Result<Resp, Fail>> {
-    use collect::*;
-    match a {
-        "gpsjam" => Some(gpsjam::fetch),
-        "mnd" => Some(mnd::fetch),
-        "ioda" => Some(ioda::fetch),
-        "ucdp" => Some(ucdp::fetch),
-        _ => None,
-    }
+    descriptor(a).fetch
 }
-
 fn good(x: &Run) -> bool {
     x.status == "ok" || x.status == "empty"
 }
@@ -266,19 +289,22 @@ pub fn backtest(r: &Region, t0: Time, t1: Time, step: Duration, healthy: bool) -
 
 /// After fusion: append each region's indicator snapshot and the given products.
 pub fn analyse(kinds: &[&str], t: Time) {
-    let (mut S, mut P) = (vec![], vec![]);
-    for r in regions::all() {
-        let T = source_table(r, t);
-        let B = analyze::board(r, &health_of(&T), t);
-        S.extend(analyze::snapshot(r, &B, t));
-        P.extend(
-            kinds
-                .iter()
-                .map(|k| produce::product(r, k, produce::report(r, &B, &T, k, t, None), t)),
-        );
-    }
-    store::append(&S);
-    store::append(&P);
+    store::transaction(|| {
+        let (mut S, mut P) = (vec![], vec![]);
+        for r in regions::all() {
+            let T = source_table(r, t);
+            let B = analyze::board(r, &health_of(&T), t);
+            S.extend(analyze::snapshot(r, &B, t));
+            P.extend(
+                kinds
+                    .iter()
+                    .map(|k| produce::product(r, k, produce::report(r, &B, &T, k, t, None), t)),
+            );
+        }
+        store::append(&S);
+        store::append(&P);
+        store::inputs();
+    });
 }
 
 fn by_url() -> &'static HashMap<String, Vec<Source>> {
@@ -318,7 +344,7 @@ fn seen(g: &mut Option<HashMap<String, Time>>) -> &mut HashMap<String, Time> {
         let t = now() - Duration::days(SEEN_DAYS);
         let mut K: HashMap<String, Time> = HashMap::new();
         for x in store::rows::<Raw>().iter().filter(|x| x.fetched_at > t) {
-            let e = K.entry(x.id.clone()).or_insert(x.fetched_at);
+            let e = K.entry(raw_key(x)).or_insert(x.fetched_at);
             *e = (*e).max(x.fetched_at);
         }
         K
@@ -352,59 +378,18 @@ pub fn derive(raws: &[Raw]) -> Derived {
     A.sort();
     for a in A {
         let X = &by[*a];
-        match *a {
-            "rss" | "gnews" => D.obs.extend(news::derive(X)),
-            "telegram" => D.obs.extend(feeds::telegram(X)),
-            "firms" => D.obs.extend(feeds::firms(X)),
-            "adsb" => D.tracks.extend(feeds::adsb(X)),
-            "alerts" => D.obs.extend(feeds::alerts(X)),
-            "drones" => {
-                let (t, o) = feeds::neptun(X);
-                D.tracks.extend(t);
-                D.obs.extend(o);
-            }
-            "ais" => D.tracks.extend(feeds::ais(X)),
-            "ioda" => D.obs.extend(feeds::ioda(X)),
-            _ => {}
-        }
+        (descriptor(a).derive)(X, &mut D);
     }
     crate::process::units(&mut D.obs);
     D
 }
 
-/// (new raw reports, what they derive, run rows) of one poll.
-type Kept = (Vec<Raw>, Derived, Vec<Run>);
+/// Raw reports and run rows of one poll; derivation occurs inside the transaction.
+type Kept = (Vec<Raw>, Vec<Run>);
 
-/// A listed report is not new, and a report is marked listed only once it has
-/// derived. A feed listing one item twice yields one report. Read only, nothing is
-/// kept or marked.
+/// Collected rows, not acknowledged until save publishes them.
 fn keep(raw: Vec<Raw>, runs: Vec<Run>) -> Kept {
-    if READ_ONLY.load(Ordering::Relaxed) {
-        return (vec![], Derived::default(), runs);
-    }
-    let new = {
-        let mut g = SEEN.lock().unwrap();
-        let K = seen(&mut g);
-        let (mut order, mut val): (Vec<String>, HashMap<String, Raw>) = (vec![], HashMap::new());
-        for x in raw.iter().rev().filter(|x| !K.contains_key(&x.id)) {
-            if !val.contains_key(&x.id) {
-                order.push(x.id.clone());
-            }
-            val.insert(x.id.clone(), x.clone());
-        }
-        order.reverse();
-        order
-            .into_iter()
-            .map(|k| val.remove(&k).unwrap())
-            .collect::<Vec<_>>()
-    };
-    let D = derive(&new);
-    let mut g = SEEN.lock().unwrap();
-    let K = seen(&mut g);
-    for x in &raw {
-        K.insert(x.id.clone(), x.fetched_at);
-    }
-    (new, D, runs)
+    (raw, runs)
 }
 
 /// Set by `osw serve --no-collect`: the store is read only, and the proxy forwards
@@ -413,21 +398,40 @@ fn keep(raw: Vec<Raw>, runs: Vec<Run>) -> Kept {
 pub static READ_ONLY: AtomicBool = AtomicBool::new(false);
 
 fn save(out: Vec<Kept>) -> Vec<Run> {
-    let (mut R, mut O, mut T, mut U) = (vec![], vec![], vec![], vec![]);
-    for (r, d, u) in out {
+    let (mut R, mut U) = (vec![], vec![]);
+    for (r, u) in out {
         R.extend(r);
-        O.extend(d.obs);
-        T.extend(d.tracks);
         U.extend(u);
     }
     if READ_ONLY.load(Ordering::Relaxed) {
         return U;
     }
-    store::append(&R);
-    store::append(&O);
-    store::append(&T);
-    store::append(&U);
+    store::transaction(|| {
+        let mut keys = HashSet::new();
+        {
+            let mut g = SEEN.lock().unwrap_or_else(|e| e.into_inner());
+            *g = None; // Reconcile with committed rows after concurrent polls.
+            let K = seen(&mut g);
+            R.retain(|x| !K.contains_key(&raw_key(x)) && keys.insert(raw_key(x)));
+        }
+        let D = derive(&R);
+        store::append(&R);
+        store::append(&D.obs);
+        store::append(&D.tracks);
+        store::append(&U);
+        store::inputs();
+    });
+    // Acknowledgement follows publication; aborted transactions remain retryable.
+    let mut g = SEEN.lock().unwrap_or_else(|e| e.into_inner());
+    let K = seen(&mut g);
+    for x in &R {
+        K.insert(raw_key(x), x.fetched_at);
+    }
     U
+}
+
+fn raw_key(x: &Raw) -> String {
+    format!("{}\0{}", x.region, x.id)
 }
 
 /// One poll of the sources of one URL, stored nowhere yet.
@@ -446,11 +450,7 @@ fn one(group: &[Source], runner: &str) -> Kept {
             .unwrap()
             .insert(group[0].url.clone(), (Instant::now(), r));
     }
-    // A URL whose processing fails stores nothing, so its reports stay new.
-    catch_unwind(AssertUnwindSafe(|| keep(raw, runs))).unwrap_or_else(|_| {
-        eprintln!("processing {} failed", group[0].url);
-        (vec![], Derived::default(), vec![])
-    })
+    keep(raw, runs)
 }
 
 /// Poll every URL of sources S once, in parallel; store new raw reports, what they
@@ -499,7 +499,6 @@ pub fn ingest(src: &Source, messages: &[String], runner: &str) -> Vec<Run> {
     if collect::ais::key().is_none() {
         return save(vec![(
             vec![],
-            Derived::default(),
             vec![Run {
                 source_id: src.id.clone(),
                 region: src.region.clone(),
@@ -652,13 +651,15 @@ pub fn schedule(stop: &'static AtomicBool, runner: &'static str) {
         if since(fused) > fusion {
             fused = Instant::now();
             step("products", || {
-                fuse::fuse();
                 let P: Vec<&str> = produce::PERIOD
                     .iter()
                     .filter(|(k, h)| since(made[k]) > 3600.0 * *h as f64)
                     .map(|p| p.0)
                     .collect();
-                analyse(&P, now());
+                store::transaction(|| {
+                    fuse::fuse();
+                    analyse(&P, now());
+                });
                 for k in P {
                     made.insert(k, Instant::now());
                 }
@@ -681,51 +682,58 @@ pub fn schedule(stop: &'static AtomicBool, runner: &'static str) {
 /// whose text now differs; the observation table is rewritten only if one does.
 /// Returns (observations tried, observations translated).
 pub fn retranslate() -> (usize, usize) {
-    let O = store::view::<Obs>();
-    let U: HashSet<&str> = O
-        .iter()
-        .filter(|x| ["rss", "gnews", "telegram"].contains(&adapter(&x.source_id)))
-        .filter(|x| crate::process::lang(&x.text_en) != "en")
-        .map(|x| x.raw_id.as_str())
-        .collect();
-    let raws: Vec<Raw> = store::view::<Raw>()
-        .iter()
-        .filter(|x| U.contains(x.id.as_str()))
-        .cloned()
-        .collect();
-    let D = derive(&raws);
-    let new: HashMap<(&str, &str), &Obs> = D
-        .obs
-        .iter()
-        .map(|x| ((x.region.as_str(), x.id.as_str()), x))
-        .collect();
-    let mut n = 0;
-    let rows: Vec<Obs> = O
-        .iter()
-        .map(|x| match new.get(&(x.region.as_str(), x.id.as_str())) {
-            Some(y) if y.text_en != x.text_en => {
-                n += 1;
-                (*y).clone()
-            }
-            _ => x.clone(),
-        })
-        .collect();
-    if n > 0 {
-        store::replace(&rows);
-    }
-    (U.len(), n)
+    store::transaction(|| {
+        let O = store::view::<Obs>();
+        let U: HashSet<&str> = O
+            .iter()
+            .filter(|x| ["rss", "gnews", "telegram"].contains(&adapter(&x.source_id)))
+            .filter(|x| crate::process::lang(&x.text_en) != "en")
+            .map(|x| x.raw_id.as_str())
+            .collect();
+        let raws: Vec<Raw> = store::view::<Raw>()
+            .iter()
+            .filter(|x| U.contains(x.id.as_str()))
+            .cloned()
+            .collect();
+        let D = derive(&raws);
+        let new: HashMap<(&str, &str), &Obs> = D
+            .obs
+            .iter()
+            .map(|x| ((x.region.as_str(), x.id.as_str()), x))
+            .collect();
+        let mut n = 0;
+        let rows: Vec<Obs> = O
+            .iter()
+            .map(|x| match new.get(&(x.region.as_str(), x.id.as_str())) {
+                Some(y) if y.text_en != x.text_en => {
+                    n += 1;
+                    (*y).clone()
+                }
+                _ => x.clone(),
+            })
+            .collect();
+        if n > 0 {
+            store::replace(&rows);
+            fuse::fuse();
+            analyse(&["intsum", "sitrep"], now());
+        }
+        (U.len(), n)
+    })
 }
 
+/// Recompute using current resources; the manifest preserves their exact bytes.
 pub fn rebuild() -> usize {
-    store::drop::<Obs>();
-    store::drop::<Event>();
-    store::drop::<Entity>();
-    store::drop::<Track>();
-    let mut raws: Vec<Raw> = store::view::<Raw>().iter().cloned().collect();
-    raws.sort_by_key(|x| x.fetched_at);
-    let D = derive(&raws);
-    store::append(&D.obs);
-    store::append(&D.tracks);
-    fuse::fuse();
-    raws.len()
+    store::transaction(|| {
+        let mut raws: Vec<Raw> = store::view::<Raw>().iter().cloned().collect();
+        raws.sort_by_key(|x| x.fetched_at);
+        let D = derive(&raws);
+        store::replace(&D.obs);
+        store::replace(&D.tracks);
+        fuse::fuse();
+        store::drop::<crate::schema::Status>();
+        store::drop::<crate::schema::Product>();
+        analyse(&["intsum", "sitrep"], now());
+        store::inputs();
+        raws.len()
+    })
 }

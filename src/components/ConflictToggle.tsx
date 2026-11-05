@@ -10,13 +10,12 @@ export default function ConflictToggle() {
 
   return (
     <div className="flex items-center gap-1">
-      <span className="text-[8px] text-[var(--text-secondary)] tracking-[2px] hidden md:inline">
-        THEATER
-      </span>
+      <label htmlFor="region" className="text-xs text-[var(--text-secondary)]">Region</label>
       <select
+        id="region"
         value={key}
         onChange={e => setConflict(e.target.value)}
-        className="text-[9px] font-bold tracking-[1px] px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--cyan)]"
+        className="min-h-11 text-sm px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--cyan)]"
         title="Switch the dashboard to another region"
       >
         {CONFLICT_KEYS.map(k => (

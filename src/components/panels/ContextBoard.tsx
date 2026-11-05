@@ -1,6 +1,7 @@
 'use client';
 
 import { useConflictFeed } from '@/lib/hooks';
+import { SNAPSHOT } from '@/lib/snapshot';
 
 type ContextPoint = {
   date: string;
@@ -18,6 +19,23 @@ type ContextMean = {
   window_end: string;
 };
 
+type ContextComparison = {
+  current: ContextMean;
+  baseline_weeks: (ContextMean | null)[];
+  n_baseline: number;
+  baseline_median: number | null;
+  change_pct: number | null;
+  status: 'complete' | 'insufficient_history';
+};
+
+type ContextRevision = {
+  previous_raw_id: string;
+  previous_fetched_at: string;
+  compared_points: number;
+  changed_measures: number;
+  changes: { country: string | null; date: string; field: string; previous: number | null; current: number | null }[];
+};
+
 type ContextSeries = {
   code: string;
   name: string;
@@ -32,6 +50,11 @@ type ContextSeries = {
   change_pct?: number | null;
   mean7?: ContextMean | null;
   tanker_mean7?: ContextMean | null;
+  comparison?: ContextComparison | null;
+  tanker_comparison?: ContextComparison | null;
+  raw_id?: string;
+  releases_known?: number;
+  revision?: ContextRevision | null;
   countries?: Record<string, ContextPoint>;
 };
 
@@ -90,7 +113,7 @@ export default function ContextBoard() {
         <span className="status-dot" style={{ background: 'var(--blue)' }} aria-hidden="true" />
         <h2 id="context-board-title" className="text-inherit">ENERGY, SHIPPING & COUNTRY CONTEXT</h2>
         <span className="ml-auto text-xs font-normal normal-case tracking-normal text-[var(--text-secondary)]">
-          Refreshes every 5 min
+          {SNAPSHOT ? 'Recorded snapshot' : 'Reads stored evidence every 5 min'}
         </span>
       </header>
 
@@ -178,12 +201,17 @@ export default function ContextBoard() {
                     </tbody>
                   </table>
                 </div>
+                {netEnergy && <SourceDetails item={netEnergy} label="Net energy imports: source and release changes" />}
+                {fuelImports && <SourceDetails item={fuelImports} label="Fuel imports: source and release changes" />}
               </section>
               </div>
               <section className={SECTION} aria-labelledby="context-shipping-title">
                 <h3 id="context-shipping-title" className={SECTION_TITLE}>Shipping activity</h3>
                 <p className={`${LABEL} mb-3`}>
                   IMF PortWatch daily vessel calls and transits. Centered seven-day smoothing follows the World Bank chokepoints methodology, requiring full windows here.
+                </p>
+                <p className={`${LABEL} mb-3`}>
+                  Compare the latest week with the median of its four preceding weeks. The reference moves with activity; a change alone does not establish a disruption or its cause.
                 </p>
                 {portWatch.length === 0 ? (
                   <p className="rounded border border-[var(--border-color)] px-3 py-4 text-sm text-[var(--text-secondary)]">
@@ -244,11 +272,7 @@ function PriceCard({ label, item }: { label: string; item?: ContextSeries }) {
       <div className="mt-1 text-xs text-[var(--text-secondary)]">
         {item?.latest ? observationLabel(item.latest.date, item.age_days) : 'Observation unavailable'}
       </div>
-      {item?.source_url && (
-        <a className="mt-2 inline-block text-xs text-[var(--cyan)] underline underline-offset-2" href={item.source_url} target="_blank" rel="noreferrer">
-          Source details
-        </a>
-      )}
+      {item && <SourceDetails item={item} />}
     </div>
   );
 }
@@ -278,14 +302,15 @@ function ShippingCard({ item }: { item: ContextSeries }) {
         </span>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <MeanReadout label="Total · centered 7-day mean" value={mean} />
-        <MeanReadout label="Tanker · centered 7-day mean" value={tankerMean} />
+        <MeanReadout label="Total · centered 7-day mean" value={mean} comparison={item.comparison} />
+        <MeanReadout label="Tanker · centered 7-day mean" value={tankerMean} comparison={item.tanker_comparison} />
       </div>
+      <SourceDetails item={item} />
     </article>
   );
 }
 
-function MeanReadout({ label, value }: { label: string; value?: ContextMean | null }) {
+function MeanReadout({ label, value, comparison }: { label: string; value?: ContextMean | null; comparison?: ContextComparison | null }) {
   return (
     <div className="rounded bg-[var(--bg-primary)] px-2.5 py-2">
       <div className="text-xs text-[var(--text-secondary)]">{label}</div>
@@ -295,11 +320,64 @@ function MeanReadout({ label, value }: { label: string; value?: ContextMean | nu
           <div className="mt-1 text-[var(--text-secondary)]">
             {value.window_start} to {value.window_end} · {value.n} days
           </div>
+          {comparison && (
+            <div className="mt-2 border-t border-[var(--border-color)] pt-2">
+              {comparison.status !== 'complete' ? (
+                <p>Comparison unavailable: {comparison.n_baseline}/4 preceding weeks complete. Requires 35 complete calendar days.</p>
+              ) : (
+                <>
+                  <p>Prior four-week median: {formatNumber(comparison.baseline_median!)} per day</p>
+                  <p className="mt-1 font-medium">
+                    {comparison.change_pct == null
+                      ? 'Percentage change unavailable: baseline is zero.'
+                      : `${comparison.change_pct > 0 ? '+' : ''}${formatNumber(comparison.change_pct)}% from that reference`}
+                  </p>
+                </>
+              )}
+              <details className="mt-2 text-[var(--text-secondary)]">
+                <summary className="cursor-pointer">Baseline windows</summary>
+                <ul className="mt-1 space-y-1">
+                  {comparison.baseline_weeks.map((week, k) => (
+                    <li key={k}>{week ? `${week.window_start} to ${week.window_end}: ${formatNumber(week.mean)} per day` : `Prior week ${k + 1}: incomplete`}</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          )}
         </div>
       ) : (
         <div className="mt-1 text-xs text-[var(--text-secondary)]">Seven complete days unavailable</div>
       )}
     </div>
+  );
+}
+
+function SourceDetails({ item, label = 'Source and release changes' }: { item: ContextSeries; label?: string }) {
+  const revision = item.revision;
+  return (
+    <details className="mt-3 text-xs text-[var(--text-secondary)]">
+      <summary className="cursor-pointer">{label}{revision ? ` (${revision.changed_measures})` : ''}</summary>
+      <div className="mt-2 space-y-2 break-words">
+        <a className="text-[var(--cyan)] underline underline-offset-2" href={item.source_url} target="_blank" rel="noreferrer">{item.source}</a>
+        <p>Collected {item.fetched_at}. Collection status: {item.health}.</p>
+        {item.raw_id && <p className="break-all">Release: {item.raw_id}</p>}
+        {revision ? (
+          <>
+            <p>{revision.changed_measures} measurements changed across {revision.compared_points} shared date/country keys since {revision.previous_fetched_at}. New and expired dates are excluded.</p>
+            <p className="break-all">Previous release: {revision.previous_raw_id}</p>
+            {revision.changes.length > 0 && (
+              <ul className="max-h-40 space-y-1 overflow-y-auto">
+                {revision.changes.map(change => (
+                  <li key={`${change.country}:${change.date}:${change.field}`}>
+                    {change.country ? `${change.country} · ` : ''}{change.date} · {change.field === 'tanker' ? 'Tanker' : 'Value'}: {change.previous == null ? 'missing' : formatNumber(change.previous)} → {change.current == null ? 'missing' : formatNumber(change.current)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : <p>No preceding recorded release is available for comparison.</p>}
+      </div>
+    </details>
   );
 }
 

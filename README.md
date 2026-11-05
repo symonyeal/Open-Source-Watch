@@ -1,8 +1,9 @@
 # Open-Source-Watch
 
-Open-source intelligence dashboard for seven conflict and shipping regions. A Rust
-engine stores public reports, grades sources, merges related reports
-and produces regional indicators and summaries. The front end is based on
+Public-source monitor for seven conflict and shipping regions. Three views connect
+energy and trade measurements, disruption signals and supporting reports. A Rust
+engine retains releases, compares complete shipping weeks against recent history,
+records provider revisions and produces regional indicators. The front end is based on
 [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works.
 
 [Dashboard](https://symonyeal.github.io/Open-Source-Watch/). The published site is a
@@ -25,14 +26,22 @@ detection is stored as an immutable raw report with its source and fetch time.
 The 2026-10-25 audit used 49,782 raw reports, 42,502 observations and 6,898 merged events.
 Processing translates each report, finds the place and time it describes, and
 classifies what kind of event it reports, producing an *observation*. Because raw
-reports are never changed, everything downstream can be rebuilt from them, and a test
-checks that a rebuild reproduces the same tables.
+reports are never changed, they can be reprocessed with the current method.
+Derivation also depends on configuration, geography, labels, code and translation
+outcomes; raw reports alone do not reproduce an earlier interpretation.
 
-The engine serves IRONSIGHT's 18 data routes through a recording proxy: when the
-dashboard asks a news site or tracking service for data, the engine returns its stored
-response. In the
+The published dashboard accepts seven recorded route families. Required responses
+must pass their shape contract, name the same engine generation and reconcile with
+the published file hashes. A failed extraction stops publication. Optional upstream
+panels remain available in the source but are no longer mounted or snapshotted.
+The earlier broad recording proxy remains for local upstream compatibility. In the
 2026-10-21 route test, the engine handled all 106 requests: 103 returned HTTP 200 and
 three returned HTTP 502 from failed upstream feeds.
+
+Storage uses immutable Parquet files and one generation manifest. Related writes
+publish together, requests pin their reads, and an OS lock rejects a second writer.
+Previous generations and transformation inputs are retained. See
+[integrity and recovery](docs/ENGINE-INTEGRITY.md) for the guarantees and limits.
 
 ### Place
 
@@ -129,12 +138,12 @@ ship-detection research was assessed but is not used as observation
 
 ## Navigation and connectivity
 
-The SIGNALS view and GNSS map layer display four signal families for each
+The Disruption signals view displays four signal families for each
 region ([method and limits](docs/SIGNALS.md)):
 
 - Aircraft report how far their GPS position can be trusted.
   gpsjam.org counts, for each hexagonal cell and day, the aircraft that reported low
-  accuracy; cells where more than 2 % or 10 % did are drawn on the map, by gpsjam.org's
+  accuracy; cells where more than 2 % or 10 % did are counted using gpsjam.org's
   own formula. On 2026-10-22 to 28 Iran/Israel had 95 to 141 such cells over 10 % a
   day and the Taiwan Strait none. Jamming is one cause, not the only one, so the
   dashboard says "low accuracy", not "jamming". A local engine also computes the cells
@@ -145,7 +154,8 @@ region ([method and limits](docs/SIGNALS.md)):
   board.
 - Taiwan's defence ministry reports PLA aircraft sorties, ships, ADIZ entries and
   median-line crossings. The view shows about 90 days, beside each
-  count's median over the previous 30 reports. It is a party's claim and is shown as one.
+  count's median over up to 30 preceding reports, with the actual field-specific
+  sample size and date bounds. It is a party's claim and is shown as one.
 - UCDP, the Uppsala conflict dataset, codes each
   lethal incident with its date and location precision. `engine validate` measures
   how many of them the engine found. Not measured yet: UCDP's newest monthly release
@@ -155,13 +165,14 @@ region ([method and limits](docs/SIGNALS.md)):
 
 A scheduled GitHub job collects the slower feeds twice a day into the `data` branch,
 and once a week translates the reports the free translation endpoint refused.
-A second job then serves the stored data through the engine and dashboard once, saves
-every view of every region (140 files), and publishes them as the static
-dashboard. The engine's views (indicators, INTSUM, SITREP, signals) read only the
-stored data; the upstream panels (news, prices) are fetched once while the snapshot is
-taken and are not stored. Files are grouped by month, so each row is rewritten at most twice.
-The storage-layout benchmark in [Validation](docs/VALIDATION.md) recorded dashboard
-requests taking 2.4 to 4 times less time.
+A second job rebuilds derived tables offline with current resources, then serves
+the recorded data through the engine and dashboard. It accepts 56 required
+region/route responses plus any generated area products before publishing the
+static dashboard. News and Telegram use stored reports. All accepted responses
+name the same generation; unavailable required routes stop publication.
+Compaction groups past partitions while preserving older generations for recovery.
+Earlier storage benchmarks in [Validation](docs/VALIDATION.md) predate this commit
+protocol; its performance has not been measured.
 
 ## Limits
 
@@ -215,7 +226,9 @@ follow; the region files list every source this project adds, with its grade.
 
 ## Data sources
 
-The upstream feeds below use publicly accessible endpoints without API keys. The optional
+The compatibility collectors below remain in the source; market, crypto,
+prediction-market and tracking panels are outside the focused dashboard.
+The upstream feeds use publicly accessible endpoints without API keys. The optional
 AISSTREAM collection described above requires a key. Data belongs to its providers;
 see [Credits & Attribution](#credits--attribution).
 

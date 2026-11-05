@@ -6,6 +6,9 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 
 ## Open-Source-Watch phases
 
+- [x] 2026-11-05 Focused energy/trade, disruptions and supporting reports; complete-window comparisons, provider revisions and MND sample counts. Dataset generations, writer leases, required-data validation, runtime roots, bounded HTTP admission and strict snapshot acceptance; [scope and limits](docs/ENGINE-INTEGRITY.md), [checks](docs/VALIDATION.md).
+- [ ] Define a reviewed archival policy for retained generations and input blobs; compaction deliberately retains recovery files.
+
 - [x] 2026-10-24 Collection/indicator audit: region-scoped cadence, missing-evidence status, daily-source health, finite AIS JSON, summary confidence windows, feed request lifecycle and honest oil errors.
 - [x] 2026-10-24 South Asia plus recorded EIA/FRED spot, IMF PortWatch and World Bank country context; [methods and limits](docs/DATA-CONTEXT.md).
 - [x] 2026-10-24 Engine debugging audit: duplicate storage of still-listed items, failure isolation, event-time crash, stream gaps, deterministic deduplication, Windows table swap, Rust fusion kernel; [validation](docs/VALIDATION.md).

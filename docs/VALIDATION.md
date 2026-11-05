@@ -3,6 +3,45 @@
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 
+## 2026-11-05 Generations, source admission and focused views
+
+Local Windows checks: `cargo fmt --check` and release Clippy with warnings denied
+passed. The full release suite passed 146 tests. After the final change to stage
+preserved input blobs before renaming them, the storage/API suite passed all 17
+parent tests again. Its ignored child helper is invoked by the parent, including
+eight forced process exits and an independent writer-lock attempt. The process
+exits leave the previous manifest bytes and all eight tables unchanged; a retry
+then commits. A pinned reader retains its old tables after a concurrent commit.
+
+Schema tests reject absent/null required columns, missing event membership,
+nonfinite values and invalid coordinates. Runtime region validation is tested
+with malformed metrics, geometry, thresholds and source declarations. Source
+fixtures check duplicate dates, invalid ship counts, complete-week requirements,
+zero baselines, missing MND fields, revisions and acquisition-time cutoffs.
+
+`npm test` passed 33 tests, including nonzero exit after total HTTP 503 failure,
+rejection of partial snapshots, malformed payloads, engine fallback, missing
+provenance and mixed generations. Accepted fixture snapshots reconcile dynamic
+area products and hashes. Production build/type checking passed; lint has zero
+errors and 17 existing warnings in upstream files.
+
+Bounded public endpoint checks are recorded in [Review log](REVIEW-LOG.md).
+Metadata access does not establish data-query success: PortWatch chokepoint
+queries returned provider errors, while a port query succeeded; FRED CSV requests
+timed out here. These results neither justify an unverified replacement nor
+establish a global outage. Recorded releases, their ages and collection status
+remain visible. Predictive calibration, sudden power loss, sustained load and
+cross-platform exact computational replay were not measured.
+
+The public `data` revision `8e446f1d` was copied and rebuilt offline: 169,680 raw
+reports reprocessed into one generation. All 126 baseline files remained present;
+all 65 preserved input blobs matched their SHA-256 names. A binary copied outside
+the repository ran with packaged regions/labels via `OSW_ROOT`. Against that
+server, the production Next.js app accepted 58 snapshot responses (56 required
+plus two area products) from one generation, including nonempty country context
+and news. This checks migration, resource relocation and extraction on this
+machine; it is not a browser interaction or load test.
+
 ## 2026-11-03 Published products, incident linkage, translation, second-week sample
 
 Measured on a copy of the `data` branch at 82ad7ac3 (158,002 raw reports), rebuilt

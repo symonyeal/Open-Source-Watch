@@ -9,7 +9,8 @@ use std::collections::HashMap;
 use chrono::{Datelike, Duration, NaiveDate};
 use serde_json::{Map, Value, json};
 
-use crate::collect::context::releases;
+use crate::collect::Report;
+use crate::collect::context::history;
 use crate::cycle;
 use crate::fmt::{Time, iso, round};
 use crate::regions::Region;
@@ -19,7 +20,7 @@ fn date(s: &Value) -> Option<NaiveDate> {
 }
 
 pub fn mean7(points: &[Value], field: &str) -> Value {
-    let Some(end) = points.last().and_then(|p| date(&p["date"])) else {
+    let Some(end) = points.iter().filter_map(|p| date(&p["date"])).max() else {
         return Value::Null;
     };
     let values: HashMap<&str, &Value> = points
@@ -37,6 +38,82 @@ pub fn mean7(points: &[Value], field: &str) -> Value {
     json!({"mean": round(x.iter().fold(0.0, |s, v| s + v) / 7.0, 2), "n": 7,
            "center_date": (end - Duration::days(3)).to_string(), "window_start": (end - Duration::days(6)).to_string(),
            "window_end": end.to_string()})
+}
+
+/// Current complete week versus the four preceding complete, nonoverlapping weeks.
+/// A moving descriptive baseline, not a seasonal forecast or a disruption threshold.
+pub fn comparison(points: &[Value], field: &str) -> Value {
+    let current = mean7(points, field);
+    let Some(end) = date(&current["window_end"]) else {
+        return Value::Null;
+    };
+    let weeks: Vec<Value> = (1..=4)
+        .map(|k| {
+            let stop = end - Duration::days(7 * k);
+            let p: Vec<Value> = points
+                .iter()
+                .filter(|p| date(&p["date"]).is_some_and(|d| d <= stop))
+                .cloned()
+                .collect();
+            let m = mean7(&p, field);
+            if date(&m["window_end"]) == Some(stop) {
+                m
+            } else {
+                Value::Null
+            }
+        })
+        .collect();
+    let mut means: Vec<f64> = weeks.iter().filter_map(|w| w["mean"].as_f64()).collect();
+    means.sort_by(f64::total_cmp);
+    let median = (means.len() == 4).then(|| (means[1] + means[2]) / 2.0);
+    let change = median
+        .filter(|m| *m > 0.0)
+        .map(|m| round(100.0 * (current["mean"].as_f64().unwrap() / m - 1.0), 2));
+    json!({"current": current, "baseline_weeks": weeks, "n_baseline": means.len(),
+        "baseline_median": median, "change_pct": change,
+        "status": if median.is_some() { "complete" } else { "insufficient_history" },
+        "method": "complete-week-vs-prior-four-week-median"})
+}
+
+/// Compare overlapping observation keys; additions/expirations are not revisions.
+/// Withdrawn values (number -> null) and restored values (null -> number) count.
+fn revision(previous: &Report, current: &Report) -> Value {
+    let key = |p: &Value| {
+        (
+            p["country"].as_str().unwrap_or("").to_string(),
+            p["date"].as_str().unwrap_or("").to_string(),
+        )
+    };
+    let old: HashMap<_, _> = previous.payload["points"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|p| (key(p), p))
+        .collect();
+    let fields: &[&str] = if ["port", "chokepoint"]
+        .iter()
+        .any(|k| current.payload["kind"] == *k)
+    {
+        &["value", "tanker"]
+    } else {
+        &["value"]
+    };
+    let mut compared = 0;
+    let mut changed = vec![];
+    for p in current.payload["points"].as_array().into_iter().flatten() {
+        if let Some(q) = old.get(&key(p)) {
+            compared += 1;
+            for field in fields {
+                if p[*field] != q[*field] {
+                    changed.push(json!({"country": p["country"], "date": p["date"],
+                        "field": field, "previous": q[*field], "current": p[*field]}));
+                }
+            }
+        }
+    }
+    json!({"previous_raw_id": previous.id, "previous_fetched_at": iso(&previous.fetched_at),
+        "current_raw_id": current.id, "compared_points": compared,
+        "changed_measures": changed.len(), "changes": changed})
 }
 
 pub fn series(payload: &Value, fetched: Time, health: &str, t: Time) -> Value {
@@ -91,6 +168,8 @@ pub fn series(payload: &Value, fetched: Time, health: &str, t: Time) -> Value {
         out.insert("change_pct".into(), json!(change));
     } else {
         let (m, k) = (mean7(&points, "value"), mean7(&points, "tanker"));
+        out.insert("comparison".into(), comparison(&points, "value"));
+        out.insert("tanker_comparison".into(), comparison(&points, "tanker"));
         out.insert("points".into(), json!(points));
         out.insert("mean7".into(), m);
         out.insert("tanker_mean7".into(), k);
@@ -107,17 +186,26 @@ pub fn view(r: &Region, t: Time) -> Value {
         .iter()
         .map(|s| ((s.region.as_str(), s.id.as_str()), s.health))
         .collect();
-    let mut data: Vec<Value> = releases(r)
+    let mut data: Vec<Value> = history(r, t)
         .iter()
-        .map(|x| {
-            series(
+        .map(|releases| {
+            let x = releases.last().unwrap();
+            let mut s = series(
                 &x.payload,
                 x.fetched_at,
                 health
                     .get(&(x.region.as_str(), x.source_id.as_str()))
                     .unwrap_or(&"unknown"),
                 t,
-            )
+            );
+            s["raw_id"] = json!(x.id);
+            s["releases_known"] = json!(releases.len());
+            s["revision"] = releases
+                .iter()
+                .rev()
+                .nth(1)
+                .map_or(Value::Null, |p| revision(p, x));
+            s
         })
         .collect();
     let price = |code: &str| {

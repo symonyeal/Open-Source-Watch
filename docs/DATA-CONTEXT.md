@@ -45,6 +45,30 @@ do not establish that their claims are true.
 - Every observation shows its date and age. Collection health is separate from
   observation age; an old published observation does not prove a failed collector.
 
+### Recent shipping baseline and release changes
+
+Each shipping series compares its latest complete seven-day mean with the median
+of the four immediately preceding, nonoverlapping seven-day means. All 35 calendar
+days must have the measure. The response includes each window and its mean, the
+number of complete baseline weeks, the baseline median and the percentage change.
+A missing week makes the comparison unavailable; a zero baseline makes its percentage
+change unavailable. Total and tanker counts are calculated separately.
+
+This project's rolling four-week reference adapts to recent activity. It is a
+descriptive extension of the seven-day smoothing above. The World Bank study used
+a fixed historical reference for its particular crisis; this rolling reference
+does not estimate seasonal normality, predict a disruption, identify its cause or
+set an alert threshold. Sustained disruption will eventually enter the reference.
+
+Each series also identifies its raw release and compares the current release with
+the preceding fetched release. `revision.changes` lists changed values for country/date
+keys appearing in both, including withdrawn and restored values. New dates and dates
+that leave the 90-day retrieval window are excluded from revision counts. A revision
+count describes provider changes, not estimation error. Historical views select only
+releases fetched by the requested time, so a later correction cannot alter an
+earlier as-of answer. With no previous recorded release, revision information is
+unavailable.
+
 The [maritime methods review](MARITIME-METHODS.md) covers the supplied satellite
 dataset catalog, iMoonLab repositories, established SAR processing references
 and evaluation requirements. No SAR ship detector is installed or represented
@@ -58,9 +82,15 @@ release of each series. This keeps corrections and reversions in their retrieval
 order. A truncated provider response or an API error is a collection failure.
 No new dependencies are needed.
 
-Poll files become visible to readers only after a completed Parquet write.
-Compaction and derived-table replacement share the process's query lock. Run
-one engine writer process per data root; cross-process compaction is not coordinated.
+Parser acceptance rejects duplicate country/date keys, invalid dates, unknown context
+types, negative or fractional ship counts, and tanker counts above total counts.
+Negative prices and net-energy-export shares remain valid. Provider nulls remain
+missing. A successful parse does not validate the provider's underlying AIS coverage.
+
+Polls stage immutable Parquet files and publish their related tables with one
+generation manifest. Requests pin that manifest; compaction retains older files.
+An OS file lock rejects independent writers to the same root. See
+[integrity and recovery](ENGINE-INTEGRITY.md) for migration and retention limits.
 
 `GET /api/context?region=south-asia` on the engine returns the stored
 series, aligned spread, country scope and source health. Next.js forwards this

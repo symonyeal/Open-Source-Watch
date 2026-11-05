@@ -394,6 +394,10 @@ fn official_series_median_and_indicator() {
     assert_eq!(o["median"]["aircraft"].as_f64(), Some(2.5));
     assert!(o["median"]["official"].is_null());
     assert_eq!(o["n_prior"], 4);
+    assert_eq!(o["n_by_field"]["aircraft"], 4);
+    assert_eq!(o["n_by_field"]["official"], 0);
+    assert_eq!(o["baseline_start"], "2026-10-25");
+    assert_eq!(o["baseline_end"], "2026-10-28");
     let B = board(r, &[(&src.id, "ok")], t);
     let ok = &B["TW-1c"];
     assert_eq!(

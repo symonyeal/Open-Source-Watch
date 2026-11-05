@@ -4,6 +4,10 @@ export interface NewsItem {
   source: string;
   pubDate: string;
   category?: string;
+  report_time?: string;
+  fetched_at?: string;
+  raw_id?: string;
+  source_id?: string;
 }
 
 export interface OilPrice {

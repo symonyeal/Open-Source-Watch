@@ -4,6 +4,8 @@
 //! revisions; the context view selects the latest fetched snapshot, not a union of
 //! incompatible releases. These measurements never enter the event classifier.
 
+use std::collections::HashSet;
+
 use chrono::{Datelike, Duration, Utc};
 use serde_json::{Value, json};
 
@@ -141,6 +143,9 @@ fn day(x: &Value) -> Result<String, String> {
 
 pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
     let kind = src.kind.as_str();
+    if !["fred", "wdi", "port", "chokepoint"].contains(&kind) {
+        return Err(format!("Unknown context kind: {kind}"));
+    }
     let mut points: Vec<Value> = vec![];
     let (unit, credit, url) = match kind {
         "fred" => {
@@ -176,6 +181,10 @@ pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
             for row in d[1].as_array().into_iter().flatten() {
                 let c = row["countryiso3code"].as_str().unwrap_or("");
                 if src.countries.iter().any(|x| x == c) {
+                    let year = row["date"].as_str().ok_or("no WDI year")?;
+                    if year.len() != 4 || year.parse::<i32>().is_err() {
+                        return Err("bad WDI year".into());
+                    }
                     points.push(json!({"country": c, "name": row["country"]["value"],
                                        "date": super::pystr(&row["date"]), "value": number(&row["value"])?}));
                 }
@@ -205,6 +214,22 @@ pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
                     json!({"date": day(&row["date"])?, "value": number(&row[total])?,
                                    "tanker": number(&row[tanker])?}),
                 );
+                let p = points.last().unwrap();
+                for field in ["value", "tanker"] {
+                    if p[field]
+                        .as_f64()
+                        .is_some_and(|x| x < 0.0 || x.fract() != 0.0)
+                    {
+                        return Err("PortWatch counts must be nonnegative integers".into());
+                    }
+                }
+                if p["value"]
+                    .as_f64()
+                    .zip(p["tanker"].as_f64())
+                    .is_some_and(|(n, k)| k > n)
+                {
+                    return Err("PortWatch tanker count exceeds total".into());
+                }
             }
             (
                 if kind == "port" {
@@ -227,6 +252,10 @@ pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
         )
     };
     points.sort_by_key(k);
+    let mut keys = HashSet::new();
+    if points.iter().any(|p| !keys.insert(k(p))) {
+        return Err("Duplicate context observation key".into());
+    }
     let t = points
         .iter()
         .map(|p| p["date"].as_str().unwrap().to_string())
@@ -250,24 +279,23 @@ pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
     }])
 }
 
-/// The latest fetched snapshot of each series serving region r, decoded.
-pub fn releases(r: &Region) -> Vec<Report> {
-    let V = store::view::<Raw>();
-    let mut last: Vec<&Raw> = vec![];
-    for x in V.iter().filter(|x| {
-        (x.region == r.id || x.region == "global") && x.source_id.starts_with("context:")
+/// Each series' releases known by t, ordered by fetch time and stable report ID.
+/// Date filtering is by acquisition, so historical views cannot learn later corrections.
+pub fn history(r: &Region, t: fmt::Time) -> Vec<Vec<Report>> {
+    let mut groups: std::collections::BTreeMap<(String, String), Vec<Report>> =
+        std::collections::BTreeMap::new();
+    for x in store::view::<Raw>().iter().filter(|x| {
+        (x.region == r.id || x.region == "global")
+            && x.source_id.starts_with("context:")
+            && x.fetched_at <= t
     }) {
-        match last
-            .iter_mut()
-            .find(|y| (&y.region, &y.source_id) == (&x.region, &x.source_id))
-        {
-            Some(y) => {
-                if x.fetched_at > y.fetched_at {
-                    *y = x;
-                }
-            }
-            None => last.push(x),
-        }
+        groups
+            .entry((x.region.clone(), x.source_id.clone()))
+            .or_default()
+            .push(decode(x));
     }
-    last.into_iter().map(decode).collect()
+    for group in groups.values_mut() {
+        group.sort_by(|a, b| (a.fetched_at, &a.id).cmp(&(b.fetched_at, &b.id)));
+    }
+    groups.into_values().collect()
 }

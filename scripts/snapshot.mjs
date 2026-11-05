@@ -44,13 +44,14 @@ function validate(route, body) {
 export async function snapshot(base, out, {
   regions = dirs('regions').filter(r => existsSync(join('regions', r, 'region.toml'))),
   routes = [...recorded], fetcher = fetch, strict = false,
+  codeRevision = process.env.GITHUB_SHA ?? null, dataRevision = process.env.OSW_DATA_REV ?? null,
 } = {}) {
   if (!regions.length || !routes.length) throw new Error('snapshot requires regions and routes');
   out = resolve(out);
   if (existsSync(join(out, 'api'))) throw new Error(`snapshot output already exists: ${join(out, 'api')}`);
   mkdirSync(dirname(out), { recursive: true });
   const stage = mkdtempSync(join(dirname(out), `${basename(out)}.snapshot-`));
-  const manifest = { schema: 1, accepted: false, fetched_at: new Date().toISOString(), required: [], routes: [] };
+  const manifest = { schema: 1, accepted: false, code_revision: codeRevision, data_revision: dataRevision, fetched_at: new Date().toISOString(), required: [], routes: [] };
   const pending = routes.flatMap(route => regions.flatMap(conflict =>
     (route === 'products' ? ['intsum', 'sitrep'] : [null]).map(kind =>
       `/api/${route}?conflict=${conflict}${kind ? `&kind=${kind}` : ''}`)));

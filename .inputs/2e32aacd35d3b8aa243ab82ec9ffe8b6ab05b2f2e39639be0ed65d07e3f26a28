@@ -1,0 +1,8 @@
+{
+  "drawn": "2026-11-03",
+  "from": "text observations (rss, gnews, telegram) of 2026-10-27 to 2026-11-02 on the data branch at 82ad7ac3 rebuilt with incident linkage, distinct texts, ids in no other label file; seed 20261103",
+  "design": "simple random: rows 0-199 from all regions, rows 200-299 from South Asia",
+  "stored": "the kind the engine stored (classifier, then the statement filter in Russia/Ukraine)",
+  "labeller": "one labeller, blind to the stored kind, against ACLED event types with the conventions of kinds-sample.meta.json; strategic_developments was read broadly (trade talks, investment), so its counts are an upper bound",
+  "use": "evaluation only; the classifier trains on kinds-sample.jsonl"
+}

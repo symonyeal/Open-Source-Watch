@@ -41,11 +41,16 @@ struct Permit(Arc<AtomicUsize>);
 
 impl Permit {
     fn acquire(n: &Arc<AtomicUsize>, limit: usize) -> Option<Self> {
-        n.fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
-            (n < limit).then_some(n + 1)
-        })
-        .ok()
-        .map(|_| Self(n.clone()))
+        let mut used = n.load(Ordering::Acquire);
+        loop {
+            if used >= limit {
+                return None;
+            }
+            match n.compare_exchange_weak(used, used + 1, Ordering::AcqRel, Ordering::Acquire) {
+                Ok(_) => return Some(Self(n.clone())),
+                Err(current) => used = current,
+            }
+        }
     }
 }
 

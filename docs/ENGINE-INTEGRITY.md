@@ -80,7 +80,9 @@ a throughput or denial-of-service benchmark.
 Pages runs the quality gates before extraction. Snapshot staging requires every
 retained region/route, including generated area products, to pass its shape
 contract. Strict mode requires recorded engine provenance and one generation.
-Accepted bytes are hashed and listed in `api/snapshot-manifest.json`. Failure
+Accepted bytes are hashed and listed in `api/snapshot-manifest.json`, alongside
+the public code and input-data Git revisions. These identify the build inputs
+even when Pages' temporary generation files no longer exist. Failure
 leaves diagnostic staging and exits nonzero without exposing a partial `api`
 directory. A successful empty measurement is distinct from a failed request.
 

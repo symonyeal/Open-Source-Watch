@@ -65,6 +65,7 @@ test('accepted snapshot reconciles dynamic products, bytes, provenance and expli
   const board = [{ indicators: [{ status: 'triggered', metric: 'unusual', areas: [{ area: 'Kharkiv Oblast', count: 4 }] }] }];
   const m = await snapshot('http://fixture.invalid', out, {
     ...options, routes: ['indicators', 'products', 'alerts', 'news'],
+    codeRevision: 'fixture-code', dataRevision: 'fixture-data',
     fetcher: async url => response({
       '/api/indicators': board,
       '/api/products': { text: 'Fixture report', t: '2026-11-05T00:00:00Z' },
@@ -73,6 +74,8 @@ test('accepted snapshot reconciles dynamic products, bytes, provenance and expli
     }[url.pathname]),
   });
   assert.equal(m.accepted, true);
+  assert.equal(m.code_revision, 'fixture-code');
+  assert.equal(m.data_revision, 'fixture-data');
   assert.equal(m.routes.length, 6);
   assert.equal(m.required.length, new Set(m.required).size);
   assert.ok(m.routes.some(r => r.url.includes('area=Kharkiv%20Oblast')));

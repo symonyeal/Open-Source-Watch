@@ -66,8 +66,8 @@ jobs:
           npm run build
           npx next start -p 3000 > next.log 2>&1 &
           timeout 60 sh -c 'until curl -sf http://127.0.0.1:3000/ > /dev/null; do sleep 1; done'
-          node scripts/snapshot.mjs http://127.0.0.1:3000 public
-          node --input-type=module -e "import fs from 'node:fs'; const m=JSON.parse(fs.readFileSync('public/api/snapshot-manifest.json')); if(!m.accepted || !m.required.length || m.routes.length !== m.required.length) process.exit(1);"
+          OSW_DATA_REV=$(git -C data rev-parse HEAD) node scripts/snapshot.mjs http://127.0.0.1:3000 public
+          node --input-type=module -e "import fs from 'node:fs'; const m=JSON.parse(fs.readFileSync('public/api/snapshot-manifest.json')); if(!m.accepted || !m.code_revision || !m.data_revision || !m.required.length || m.routes.length !== m.required.length) process.exit(1);"
 
       - name: Static export
         run: |

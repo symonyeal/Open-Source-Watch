@@ -4,6 +4,22 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Restore the intelligence monitor** (2026-11-06). The owner identified the
+  energy-first screen as a regression. `beb08f3` removed the map and sensor panels
+  from `page.tsx` and their routes from snapshot publication. Restore the theater
+  map as the first panel and the monitor as the default, with alerts, reports,
+  aircraft, vessels and satellite detections alongside it. Keep energy/trade and
+  disruption analysis as secondary views. Preserve generation validation for
+  recorded engine views; upstream-shaped map/sensor responses are validated and
+  hashed without claiming a shared engine generation. Pages remains a snapshot;
+  local operation polls live feeds. This supersedes the default-view choice below.
+  The owner clarified that improvements must accumulate across iterations. Retain
+  the generation/lease/recovery work, complete shipping comparisons, provider
+  revisions, source provenance, GNSS/outage/MND analysis, report drill-down and
+  accessible navigation. The repair adds the missing monitor to that foundation;
+  it does not revert the review commit. The publication regression checks both
+  the existing recorded evidence families and the restored map/sensor families.
+
 - **Fewer views, deeper evidence** (2026-11-05). Default to energy/trade, with
   disruption signals and supporting reports as separate views. Retain EIA/FRED,
   IMF PortWatch and World Bank WDI because their measures fit those questions;

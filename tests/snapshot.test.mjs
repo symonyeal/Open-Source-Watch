@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { snapshot } from '../scripts/snapshot.mjs';
 
-const work = resolve('../agent-kit/.migration/work/osw-snapshot-tests');
+const work = resolve('../../open-source-watch-recovery/snapshot-tests');
 mkdirSync(work, { recursive: true });
 writeFileSync(join(work, 'README.md'), '# Snapshot acceptance checks\n\nRetained output from tests/snapshot.test.mjs. Each run uses a separate directory.\n');
 const output = name => join(mkdtempSync(join(work, `${name}-`)), 'public');
@@ -14,6 +14,25 @@ const response = body => new Response(JSON.stringify(body), {
   headers: { 'x-served-by': 'engine', 'x-osw-generation': 'fixture-1', 'x-osw-mode': 'recorded' },
 });
 const options = { regions: ['test'], strict: true };
+
+test('default publication preserves recorded evidence alongside map and sensor feeds', async () => {
+  const bodies = {
+    context: { series: [], sources: [] }, signals: { sources: [] },
+    indicators: [], products: { text: 'Fixture report', t: '2026-11-06T00:00:00Z' },
+    sources: [], news: [], telegram: { posts: [], channels: [] },
+    alerts: { alerts: [] }, drones: { drones: [] }, fires: { events: [] },
+    flights: { flights: [] }, ships: { ships: [] }, conflicts: [], strikes: [],
+    'regional-alerts': { alerts: [] },
+  };
+  const m = await snapshot('http://fixture.invalid', output('monitor'), {
+    ...options, fetcher: async url => response(bodies[url.pathname.split('/')[2]]),
+  });
+  const published = new Set(m.routes.map(r => new URL(r.url, 'http://fixture.invalid').pathname));
+  for (const route of ['context', 'signals', 'indicators', 'products', 'sources', 'news', 'telegram',
+    'alerts', 'drones', 'fires', 'flights', 'ships', 'conflicts', 'strikes', 'regional-alerts']) {
+    assert.ok(published.has(`/api/${route}`), `missing dashboard feed: ${route}`);
+  }
+});
 
 test('missing provenance and mixed generations reject the snapshot', async () => {
   for (const generation of [null, 'unknown', 'fixture-2']) {
@@ -36,7 +55,7 @@ test('all-503 extraction exits nonzero and never exposes partial output', () => 
   const script = `globalThis.fetch=async()=>new Response('',{status:503}); process.argv=['node','scripts/snapshot.mjs', 'http://audit.invalid', ${JSON.stringify(out)}]; await import('./scripts/snapshot.mjs');`;
   const run = spawnSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' });
   assert.equal(run.status, 1, run.stderr);
-  assert.match(run.stderr, /0 routes written; 56 failed/);
+  assert.match(run.stderr, /0 routes written; 112 failed/);
   assert.equal(existsSync(join(out, 'api')), false);
 });
 

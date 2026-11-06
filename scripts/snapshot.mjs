@@ -9,6 +9,9 @@ import { snapshotPath } from '../src/lib/snapshot.ts';
 
 const dirs = d => readdirSync(d, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name).sort();
 const recorded = new Set(['context', 'signals', 'indicators', 'products', 'sources', 'news', 'telegram']);
+// Map and sensor panels use upstream shaping through the recording proxy. Their
+// responses are included, without claiming the generation guarantee of engine views.
+const monitor = ['alerts', 'drones', 'fires', 'flights', 'ships', 'conflicts', 'strikes', 'regional-alerts'];
 const arrayRoutes = new Set(['news', 'conflicts', 'strikes', 'oil', 'markets', 'crypto', 'sources']);
 const fields = {
   alerts: ['alerts'], drones: ['drones'], fires: ['events'], flights: ['flights'],
@@ -43,7 +46,7 @@ function validate(route, body) {
  */
 export async function snapshot(base, out, {
   regions = dirs('regions').filter(r => existsSync(join('regions', r, 'region.toml'))),
-  routes = [...recorded], fetcher = fetch, strict = false,
+  routes = [...recorded, ...monitor], fetcher = fetch, strict = false,
   codeRevision = process.env.GITHUB_SHA ?? null, dataRevision = process.env.OSW_DATA_REV ?? null,
 } = {}) {
   if (!regions.length || !routes.length) throw new Error('snapshot requires regions and routes');

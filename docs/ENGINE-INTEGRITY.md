@@ -79,7 +79,10 @@ a throughput or denial-of-service benchmark.
 
 Pages runs the quality gates before extraction. Snapshot staging requires every
 retained region/route, including generated area products, to pass its shape
-contract. Strict mode requires recorded engine provenance and one generation.
+contract. Strict mode requires recorded engine provenance and one generation for
+the seven recorded engine route families. The eight upstream-shaped map/sensor
+families are included and hashed, but can fetch providers at build time and do not
+carry that generation guarantee. Their manifest provenance remains explicit.
 Accepted bytes are hashed and listed in `api/snapshot-manifest.json`, alongside
 the public code and input-data Git revisions. These identify the build inputs
 even when Pages' temporary generation files no longer exist. Failure

@@ -1,7 +1,9 @@
 # Open-Source-Watch
 
-Public-source monitor for seven conflict and shipping regions. Three views connect
-energy and trade measurements, disruption signals and supporting reports. A Rust
+Open-source intelligence monitor for seven conflict and shipping regions. The default
+view puts the theater map beside news, alerts, Telegram, strikes, aircraft, naval and
+satellite feeds. Separate views provide energy and trade context, disruption signals
+and supporting reports. A Rust
 engine retains releases, compares complete shipping weeks against recent history,
 records provider revisions and produces regional indicators. The front end is based on
 [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRONSIGHT) by Nobler Works.
@@ -30,11 +32,12 @@ reports are never changed, they can be reprocessed with the current method.
 Derivation also depends on configuration, geography, labels, code and translation
 outcomes; raw reports alone do not reproduce an earlier interpretation.
 
-The published dashboard accepts seven recorded route families. Required responses
-must pass their shape contract, name the same engine generation and reconcile with
-the published file hashes. A failed extraction stops publication. Optional upstream
-panels remain available in the source but are no longer mounted or snapshotted.
-The earlier broad recording proxy remains for local upstream compatibility. In the
+The published dashboard accepts seven recorded route families and eight map/sensor
+route families. Required responses must pass their shape contract and reconcile with
+the published file hashes. Recorded engine views must name the same generation;
+upstream-shaped map and sensor responses carry their own collection times and are
+not claimed to share that generation. A failed extraction stops publication.
+The recording proxy serves upstream-compatible map and sensor feeds. In the
 2026-10-21 route test, the engine handled all 106 requests: 103 returned HTTP 200 and
 three returned HTTP 502 from failed upstream feeds.
 
@@ -166,10 +169,13 @@ region ([method and limits](docs/SIGNALS.md)):
 A scheduled GitHub job collects the slower feeds twice a day into the `data` branch,
 and once a week translates the reports the free translation endpoint refused.
 A second job rebuilds derived tables offline with current resources, then serves
-the recorded data through the engine and dashboard. It accepts 56 required
+the recorded data through the engine and dashboard. It accepts 112 required
 region/route responses plus any generated area products before publishing the
 static dashboard. News and Telegram use stored reports. All accepted responses
-name the same generation; unavailable required routes stop publication.
+from recorded engine views name the same generation; failed required requests stop
+publication. Upstream-shaped map and sensor routes may fetch providers at build time;
+their manifest entries retain their separate provenance. Explicit unavailable payloads
+are published as unavailable, rather than preventing publication.
 Compaction groups past partitions while preserving older generations for recovery.
 Earlier storage benchmarks in [Validation](docs/VALIDATION.md) predate this commit
 protocol; its performance has not been measured.
@@ -226,8 +232,8 @@ follow; the region files list every source this project adds, with its grade.
 
 ## Data sources
 
-The compatibility collectors below remain in the source; market, crypto,
-prediction-market and tracking panels are outside the focused dashboard.
+The intelligence monitor mounts the map and tracking panels. Market, crypto and
+prediction-market panels remain in the source; economic context has its own view.
 The upstream feeds use publicly accessible endpoints without API keys. The optional
 AISSTREAM collection described above requires a key. Data belongs to its providers;
 see [Credits & Attribution](#credits--attribution).

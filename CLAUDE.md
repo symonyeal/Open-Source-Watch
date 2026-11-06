@@ -10,6 +10,12 @@ Open-Source-Watch is a fork of [IRONSIGHT](https://github.com/NoblerWorks-HQ/IRO
 (MIT, Nobler Works). The Next.js front end is upstream's, in upstream's layout; the
 Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle behind it.
 
+The product is an intelligence monitor. Evolve it cumulatively: preserve useful
+capabilities and validated improvements when integrating a review. Maps, feeds,
+regional analysis, economic context and evidence quality support the same workflow.
+A review must not silently narrow that scope or replace it with a different product;
+moving a capability must preserve a clear way to reach it and its published data.
+
 ## Always on
 
 | Rule | Reason |
@@ -32,7 +38,9 @@ Rust engine in `engine/` (crate and binary `osw`) runs the intelligence cycle be
 - The table schemas live in `engine/src/schema.rs`, the event taxonomy in `KINDS` there.
 - Upstream's shaping code is the only copy: the engine serves upstream responses
   (`/fetch`), and every engine source URL is built exactly as the upstream route builds
-  it (tests check this against Node). The focused dashboard uses recorded engine
+  it (tests check this against Node). The intelligence monitor is the default view;
+  keep its theater map and sensor feeds mounted and included in snapshot publication.
+  Energy/trade is a secondary view. The dashboard uses recorded engine
   routes for news, Telegram, context, signals, sources, indicators and products.
 - The gazetteer is `regions/geonames.tsv`, rebuilt by `osw gazetteer <GeoNames dir>`
   (cities15000.zip, admin1CodesASCII.txt, admin2Codes.txt and `<CC>.zip` for each

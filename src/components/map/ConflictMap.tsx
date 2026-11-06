@@ -442,7 +442,7 @@ export default function ConflictMap({ className }: MapProps) {
       html += `</div>`;
       marker.setPopupContent(html);
     });
-  }, [conflicts, alerts]);
+  }, [mounted, conflicts, alerts]);
 
   // City/air/naval visibility toggles
   useEffect(() => { if (mapRef.current && cityLayerRef.current) { showCities ? mapRef.current.addLayer(cityLayerRef.current) : mapRef.current.removeLayer(cityLayerRef.current); } }, [showCities]);
@@ -553,7 +553,7 @@ export default function ConflictMap({ className }: MapProps) {
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flights, showTrailForAircraft, hideTrail]);
+  }, [mounted, flights, showTrailForAircraft, hideTrail]);
 
   // === NAVAL ===
   useEffect(() => {
@@ -591,7 +591,7 @@ export default function ConflictMap({ className }: MapProps) {
       if (!currentNames.has(id)) { navalLayerRef.current!.removeLayer(marker); navalMarkersRef.current.delete(id); }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [naval]);
+  }, [mounted, naval]);
 
   // === LIVE DRONE / MISSILE TRACKS (Neptun) — always on, drones + missiles together ===
   useEffect(() => {
@@ -654,7 +654,7 @@ export default function ConflictMap({ className }: MapProps) {
         droneTrailsRef.current.delete(id);
       }
     });
-  }, [droneData]);
+  }, [mounted, droneData]);
 
   // === ALERTS with missile arcs ===
   useEffect(() => {
@@ -744,7 +744,7 @@ export default function ConflictMap({ className }: MapProps) {
       }
     }
     prevAlertStatusRef.current = alerts?.status || 'CLEAR';
-  }, [alerts]);
+  }, [mounted, alerts]);
 
   // === STRIKE MARKERS from conflict feed, strikes API, AND Telegram ===
   useEffect(() => {
@@ -850,7 +850,7 @@ export default function ConflictMap({ className }: MapProps) {
     });
 
     console.log(`[MAP] Plotted ${plotted.size} strike markers`);
-  }, [conflicts, strikes, telegram]);
+  }, [mounted, conflicts, strikes, telegram]);
 
   // === MISSILE RANGE RINGS ===
   useEffect(() => {

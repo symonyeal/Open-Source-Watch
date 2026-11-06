@@ -1,5 +1,41 @@
 # Validation
 
+## Intelligence monitor recovery (2026-11-06)
+
+- Cumulative integration check: no repair diff in `engine/`, ContextBoard,
+  SignalsBoard, IndicatorStrip, NewsFeed, TelegramPanel or the engine seam. Their
+  review improvements remain. The publication regression now requires all seven
+  recorded evidence families alongside the eight map/sensor families; all six
+  snapshot tests pass. The energy/trade footer retains the vessel/cargo caveat;
+  page lint and `git diff --check` pass after this adjustment.
+- Confirmed regression at `beb08f3`: the page default changed to energy/trade,
+  the theater map and sensor panels were unmounted, and the default snapshot
+  route set omitted their feeds. The map and collectors remained in the source.
+- `node --test tests/snapshot.test.mjs`: the new publication check first failed
+  with `missing intelligence feed: alerts`; after the repair all six tests passed.
+  Default extraction now covers 112 region/route responses before area products.
+- `node --test tests/*.test.mjs`: 34 passed, zero failed.
+- `node node_modules/eslint/bin/eslint.js .`: zero errors, 17 warnings, including
+  existing upstream map hook dependencies and the layout font warning.
+- `node node_modules/next/dist/bin/next build`: production compilation and
+  TypeScript checks passed after the map initialization repair.
+- A Playwright check with immediate feed fixtures first timed out waiting for an
+  aircraft marker: data arrived before Leaflet's asynchronous initialization.
+  Re-running layer effects when initialization completes fixed that case. The
+  check then passed for the default map, an aircraft marker, map feed requests,
+  view switching, region switching, and widths 1440, 768 and 390, with no browser
+  exceptions or horizontal page overflow. Esri basemap tiles loaded in the
+  network-enabled browser check. Fixtures test rendering, not provider accuracy.
+- Actual local production API checks, Iran/Israel, 2026-11-06 15:16 UTC:
+  flights returned HTTP 200 and 521 records (adsb.lol); alerts returned HTTP 200,
+  zero records and status CLEAR (Pikud HaOref). Other providers and the published
+  deployment were not checked by this recovery test.
+- Rust formatting and release Clippy checks passed. `cargo test --offline --release`
+  was interrupted during optimized test compilation after the laptop became slow;
+  no Rust test result is claimed. No Rust files changed. The full suite remains
+  required in CI before publication.
+
+
 What must be checked, how, and what has been. Checks are invariants and recorded real
 responses, never snapshots of live output.
 

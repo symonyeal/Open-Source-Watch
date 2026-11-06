@@ -6,6 +6,7 @@ Working task list for **Open-Source-Watch** (fork of IRONSIGHT). Read this at th
 
 ## Open-Source-Watch phases
 
+- [x] 2026-11-06 Restore the intelligence monitor default, theater map and sensor panels; include their eight route families in accepted snapshots, preserving recorded-view generation checks.
 - [x] 2026-11-05 Focused energy/trade, disruptions and supporting reports; complete-window comparisons, provider revisions and MND sample counts. Dataset generations, writer leases, required-data validation, runtime roots, bounded HTTP admission and strict snapshot acceptance; [scope and limits](docs/ENGINE-INTEGRITY.md), [checks](docs/VALIDATION.md).
 - [ ] Define a reviewed archival policy for retained generations and input blobs; compaction deliberately retains recovery files.
 

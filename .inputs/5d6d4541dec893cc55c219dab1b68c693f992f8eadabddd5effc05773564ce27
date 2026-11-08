@@ -1,0 +1,40 @@
+[package]
+name = "osw"
+version = "0.3.0"
+edition = "2024"
+description = "Open-Source-Watch engine: collection, processing, fusion, analysis and API"
+license = "MIT"
+publish = false
+
+[lib]
+doctest = false
+
+[[bin]]
+name = "osw"
+path = "src/bin/osw.rs"
+
+[dependencies]
+arrow-array = "60.1.0"
+arrow-cast = "60"
+arrow-schema = "60.1.0"
+chrono = "0.4.45"
+chrono-tz = "0.10.4"
+csv = "1.4.0"
+h3o = "0.11.0"
+htmlize = { version = "1.1.0", features = ["unescape"] }
+parquet = { version = "60.1.0", default-features = false, features = ["arrow", "snap"] }
+regex = "1.13.1"
+roxmltree = "0.21.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+sha2 = "0.11.1"
+tiny_http = "0.12.0"
+toml = { version = "1.1.8", features = ["preserve_order"] }
+tungstenite = { version = "0.30.0", default-features = false, features = ["native-tls", "handshake"] }
+ureq = { version = "3.5.0", default-features = false, features = ["native-tls", "gzip"] }
+uuid = { version = "1.29.0", features = ["v4"] }
+zip = { version = "9.2.0", default-features = false, features = ["deflate"] }
+
+[profile.release]
+lto = true
+codegen-units = 1

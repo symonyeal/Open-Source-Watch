@@ -88,7 +88,7 @@ most a day: reports of one night's strike run on into the next day. On the judge
 history to 2026-11-03 this cut the unusual-activity flags from 64 to 39 and kept 11 of
 the 13 real ones. Rerun on 2026-11-07 with the current engine and data
 (`osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6 --healthy`), it gives 38
-flags and keeps 10 of the 13. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
+flags and keeps 10 of the 13; `engine/tests/unusual_flags.rs` (ignored) checks this on a rebuilt store. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
 against 0.54 for the NumPy implementation, and 0.58 against 4.8 at nine times the history.
 Tests compare the result against a brute-force check of every pair.
 
@@ -148,7 +148,7 @@ region ([method and limits](docs/SIGNALS.md)):
 
 - Aircraft report how far their GPS position can be trusted.
   gpsjam.org counts, for each hexagonal cell and day, the aircraft that reported low
-  accuracy; cells where more than 2 % or 10 % did are counted using gpsjam.org's
+  accuracy; cells where 2 % to 10 % (medium) or more than 10 % (high) did are counted using gpsjam.org's
   own formula. On 2026-10-22 to 28 Iran/Israel had 95 to 141 such cells over 10 % a
   day and the Taiwan Strait none. Jamming is one cause, not the only one, so the
   dashboard says "low accuracy", not "jamming". A local engine also computes the cells

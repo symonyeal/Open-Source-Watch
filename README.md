@@ -85,8 +85,10 @@ into one event, using ACLED's conflict taxonomy. Country-level locations do not 
 otherwise unrelated incidents. For Russia/Ukraine, news and Telegram reports that name
 the same oblast and share most of their words are also one incident, if it spans at
 most a day: reports of one night's strike run on into the next day. On the judged
-history this cut the unusual-activity flags from 64 to 39 and kept 11 of the 13 real
-ones. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
+history to 2026-11-03 this cut the unusual-activity flags from 64 to 39 and kept 11 of
+the 13 real ones. Rerun on 2026-11-07 with the current engine and data
+(`osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6 --healthy`), it gives 38
+flags and keeps 10 of the 13. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
 against 0.54 for the NumPy implementation, and 0.58 against 4.8 at nine times the history.
 Tests compare the result against a brute-force check of every pair.
 

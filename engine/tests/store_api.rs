@@ -348,6 +348,30 @@ fn past_months_roll_up_to_one_file() {
     );
 }
 
+/// The manifest lists `/`-joined paths and reads one written with `\`.
+#[test]
+fn manifest_paths_are_portable() {
+    let _g = fresh("store_paths");
+    store::append(&[run("a", "iran-israel", now(), "ok")]);
+    let file = store::data_dir().join("CURRENT.json");
+    let text = std::fs::read_to_string(&file).unwrap();
+    let mut m: serde_json::Value = serde_json::from_str(&text).unwrap();
+    let paths = m["tables"]["collection_run"].as_array().unwrap().clone();
+    assert!(
+        paths
+            .iter()
+            .all(|p| p.as_str().unwrap().contains('/') && !p.as_str().unwrap().contains('\\'))
+    );
+    m["tables"]["collection_run"] = paths
+        .iter()
+        .map(|p| serde_json::Value::from(p.as_str().unwrap().replace('/', "\\")))
+        .collect::<Vec<_>>()
+        .into();
+    std::fs::write(&file, serde_json::to_vec(&m).unwrap()).unwrap();
+    store::set_root(Some(store::data_dir()));
+    assert_eq!(n::<Run>(), 1);
+}
+
 /// A writer's unfinished file (written aside, renamed when complete) is not read.
 #[test]
 fn queries_do_not_see_a_partially_written_poll() {

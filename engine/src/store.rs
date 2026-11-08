@@ -32,10 +32,51 @@ static WRITER: Mutex<()> = Mutex::new(());
 struct Generation {
     id: String,
     parent: Option<String>,
+    #[serde(with = "slash")]
     tables: BTreeMap<String, Vec<PathBuf>>,
     inputs: BTreeMap<String, String>,
     #[serde(default)]
     materialized: BTreeMap<String, String>,
+}
+
+/// Manifest paths are stored `/`-joined and read per component, so a manifest
+/// written on one OS (or with `\`) reads on the other.
+mod slash {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(
+        t: &BTreeMap<String, Vec<PathBuf>>,
+        s: S,
+    ) -> Result<S::Ok, S::Error> {
+        s.collect_map(t.iter().map(|(k, v)| {
+            let v: Vec<String> = v
+                .iter()
+                .map(|p| {
+                    let c: Vec<_> = p.iter().map(|c| c.to_string_lossy()).collect();
+                    c.join("/")
+                })
+                .collect();
+            (k, v)
+        }))
+    }
+
+    pub fn deserialize<'a, D: Deserializer<'a>>(
+        d: D,
+    ) -> Result<BTreeMap<String, Vec<PathBuf>>, D::Error> {
+        let t = BTreeMap::<String, Vec<String>>::deserialize(d)?;
+        Ok(t.into_iter()
+            .map(|(k, v)| {
+                let v = v
+                    .iter()
+                    .map(|p| p.split(['/', '\\']).collect::<PathBuf>())
+                    .collect();
+                (k, v)
+            })
+            .collect())
+    }
 }
 
 thread_local! {

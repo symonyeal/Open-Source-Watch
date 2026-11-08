@@ -30,7 +30,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.98.1
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: engine
@@ -63,4 +63,5 @@ jobs:
           git add -A -- . ':!.writer.lock'
           git diff --cached --quiet && exit 0
           git commit -q -m "collect $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -q origin data
+          for i in 1 2 3; do git push -q origin data && exit 0; git pull -q --rebase origin data; done
+          exit 1

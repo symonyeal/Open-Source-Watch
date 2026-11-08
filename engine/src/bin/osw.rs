@@ -132,7 +132,7 @@ fn main() {
         }
         _ => {
             eprintln!(
-                "usage: osw collect|serve|rebuild|compact|fuse|analyse|backtest|regions|gazetteer|validate"
+                "usage: osw collect|serve|rebuild|retranslate|compact|fuse|analyse|backtest|regions|gazetteer|validate"
             );
             std::process::exit(2);
         }

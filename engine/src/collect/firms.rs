@@ -82,7 +82,7 @@ pub fn parse(body: &[u8], src: &Source) -> Result<Vec<Item>, String> {
         let p = Value::Object(p);
         let (lat, lon) = (num(&p, "latitude"), num(&p, "longitude"));
         if lat.is_nan() || lon.is_nan() {
-            return Err("bad coordinate".into());
+            continue;
         }
         if !regions::all().iter().any(|r| r.in_bbox(lat, lon)) {
             continue;

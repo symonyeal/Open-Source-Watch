@@ -103,6 +103,17 @@ fn firms_keeps_detections_inside_some_region() {
     }
 }
 
+/// A row with a blank coordinate is skipped; the other rows of the poll are kept.
+#[test]
+fn firms_skips_a_row_without_a_coordinate() {
+    let text = String::from_utf8(fix("firms.csv")).unwrap();
+    let (head, rows) = text.split_once('\n').unwrap();
+    let bad = ",26.2,300.6,0.48,0.65,2026-10-20,0120,N,nominal,2.0NRT,283.2,1.09,N";
+    let all = format!("{head}\n{bad}\n{rows}");
+    let X = firms::parse(all.as_bytes(), &Source::default()).unwrap();
+    assert_eq!(X.len(), 7);
+}
+
 #[test]
 fn adsb_military_feed_is_clipped_to_regions() {
     let src = Source {

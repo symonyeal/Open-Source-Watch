@@ -676,7 +676,6 @@ pub fn schedule(stop: &'static AtomicBool, runner: &'static str) {
     }
 }
 
-/// Regenerate every derived table from raw_report (spec § Errors).
 /// Re-derive the raw reports of text observations whose text is not English (the
 /// translation endpoint failed when they were collected) and keep each observation
 /// whose text now differs; the observation table is rewritten only if one does.
@@ -721,6 +720,7 @@ pub fn retranslate() -> (usize, usize) {
     })
 }
 
+/// Regenerate every derived table from raw_report (spec § Errors).
 /// Recompute using current resources; the manifest preserves their exact bytes.
 pub fn rebuild() -> usize {
     store::transaction(|| {

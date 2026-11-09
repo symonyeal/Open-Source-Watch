@@ -397,6 +397,11 @@ fn keep(raw: Vec<Raw>, runs: Vec<Run>) -> Kept {
 /// collected (the Pages snapshot).
 pub static READ_ONLY: AtomicBool = AtomicBool::new(false);
 
+/// Set by `osw collect --raw-only` and `osw retranslate --raw-only`: only raw reports and
+/// run rows are stored. What they derive is still computed, for the translation cache,
+/// but `osw rebuild` regenerates the tables, so the Collect job does not commit them.
+pub static RAW_ONLY: AtomicBool = AtomicBool::new(false);
+
 fn save(out: Vec<Kept>) -> Vec<Run> {
     let (mut R, mut U) = (vec![], vec![]);
     for (r, u) in out {
@@ -416,8 +421,10 @@ fn save(out: Vec<Kept>) -> Vec<Run> {
         }
         let D = derive(&R);
         store::append(&R);
-        store::append(&D.obs);
-        store::append(&D.tracks);
+        if !RAW_ONLY.load(Ordering::Relaxed) {
+            store::append(&D.obs);
+            store::append(&D.tracks);
+        }
         store::append(&U);
         store::inputs();
     });
@@ -679,8 +686,23 @@ pub fn schedule(stop: &'static AtomicBool, runner: &'static str) {
 /// Re-derive the raw reports of text observations whose text is not English (the
 /// translation endpoint failed when they were collected) and keep each observation
 /// whose text now differs; the observation table is rewritten only if one does.
-/// Returns (observations tried, observations translated).
+/// Returns (observations tried, observations translated). With RAW_ONLY there is no
+/// observation table: every text report is re-derived, which caches the translations
+/// the endpoint now gives, and the result is (reports tried, texts still untranslated).
 pub fn retranslate() -> (usize, usize) {
+    if RAW_ONLY.load(Ordering::Relaxed) {
+        let raws: Vec<Raw> = store::view::<Raw>()
+            .iter()
+            .filter(|x| ["rss", "gnews", "telegram"].contains(&adapter(&x.source_id)))
+            .cloned()
+            .collect();
+        let left = derive(&raws)
+            .obs
+            .iter()
+            .filter(|x| crate::process::lang(&x.text_en) != "en")
+            .count();
+        return (raws.len(), left);
+    }
     store::transaction(|| {
         let O = store::view::<Obs>();
         let U: HashSet<&str> = O

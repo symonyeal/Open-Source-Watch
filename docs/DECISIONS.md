@@ -441,6 +441,11 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
   month, into one file per region. A row is rewritten at most twice, so the `data`
   branch's history is bounded by three copies of its data, and the file count grows
   by month.
+- **The `data` branch holds raw inputs only** (2026-11-08). The Collect job runs
+  `osw collect --raw-only` and `osw retranslate --raw-only`: raw reports and run rows are
+  stored, what they derive is computed for the translation cache and discarded, and the
+  tip no longer has `observation/`. Pages already rebuilt every derived table offline,
+  so the snapshot routes are the same. The history before 2026-11-08 was squashed.
 - **Phone layout** (2026-10-25). Below desktop width the panels stack in one scrolling
   column; upstream's 12-column grid left 390 px phones with unreadable slivers.
 - **Basemap** (2026-10-25). CARTO's free Dark Matter tiles now return an

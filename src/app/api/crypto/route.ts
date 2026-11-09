@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
 
 import { fetchWithTimeout } from '@/lib/fetcher';
+import GLOBAL from '../../../../regions/global.json';
 
 export const dynamic = 'force-dynamic';
 
 // CoinGecko free API — no API key required
-const COINS = ['bitcoin', 'ethereum', 'solana', 'binancecoin'];
-
-const COIN_META: Record<string, { name: string; symbol: string }> = {
-  bitcoin: { name: 'Bitcoin', symbol: 'BTC' },
-  ethereum: { name: 'Ethereum', symbol: 'ETH' },
-  solana: { name: 'Solana', symbol: 'SOL' },
-  binancecoin: { name: 'BNB', symbol: 'BNB' },
-};
+const COIN_META: Record<string, { name: string; symbol: string }> = Object.fromEntries(
+  GLOBAL.coins.map((x) => [x.id, { name: x.name, symbol: x.symbol }]),
+);
+const COINS = GLOBAL.coins.map((x) => x.id);
 
 export async function GET() {
   try {

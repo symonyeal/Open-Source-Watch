@@ -1,50 +1,11 @@
 import CITY_DATA from '../data/city-data.json';
+import GLOBAL from '../../regions/global.json';
 
 // Hebrew to English translations for Pikud HaOref alert terms
 // The alert system uses a fixed vocabulary so a dictionary works perfectly
 
 // Threat type translations
-export const THREAT_TRANSLATIONS: Record<string, string> = {
-  // Missile threats
-  'ירי רקטות וטילים': 'Rocket and Missile Fire',
-  'ירי רקטות': 'Rocket Fire',
-  'ירי טילים': 'Missile Fire',
-  'טיל בליסטי': 'Ballistic Missile',
-  'טילים': 'Missiles',
-  'רקטות': 'Rockets',
-
-  // Drone/UAV threats
-  'חדירת כלי טיס עוין': 'Hostile Aircraft Intrusion',
-  'חדירת כטבם': 'UAV Intrusion',
-  'כלי טיס עוין': 'Hostile Aircraft',
-  'כטבם': 'UAV/Drone',
-  'כטב"ם': 'UAV/Drone',
-
-  // Ground threats
-  'חדירת מחבלים': 'Terrorist Infiltration',
-  'חדירה': 'Infiltration',
-
-  // Other threats
-  'רעידת אדמה': 'Earthquake',
-  'צונמי': 'Tsunami',
-  'חומרים מסוכנים': 'Hazardous Materials',
-  'אירוע חומרים מסוכנים': 'Hazmat Incident',
-  'אירוע רדיולוגי': 'Radiological Event',
-  'התרעה': 'Alert',
-  'התרעת צבע אדום': 'Red Alert Warning',
-  'צבע אדום': 'Red Alert',
-
-  // Instructions
-  'היכנסו למרחב המוגן': 'Enter Protected Space',
-  'היכנסו למבנה': 'Enter Building',
-
-  // Military/weapon terms for partial matching
-  'טיל': 'Missile',
-  'מטוס': 'Aircraft',
-  'מסוק': 'Helicopter',
-  'מל"ט': 'Drone',
-  'רחפן': 'Drone',
-};
+export const THREAT_TRANSLATIONS: Record<string, string> = GLOBAL.threatTranslations;
 
 // Israeli locality translations - 1,266 official localities from Israel CBS (data.gov.il)
 // plus custom additions for regions, alert-specific terms, and alternate spellings

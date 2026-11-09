@@ -169,7 +169,8 @@ region ([method and limits](docs/SIGNALS.md)):
 ## Published snapshot
 
 A scheduled GitHub job collects the slower feeds twice a day into the `data` branch,
-and once a week translates the reports the free translation endpoint refused.
+which holds only raw reports, run records and the translation cache, and once a week
+retries the translations the free translation endpoint refused.
 A second job rebuilds derived tables offline with current resources, then serves
 the recorded data through the engine and dashboard. It accepts 112 required
 region/route responses plus any generated area products before publishing the

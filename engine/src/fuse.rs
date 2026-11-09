@@ -11,8 +11,11 @@
 //! W the lower-cased words of three letters or more less English function words, and
 //! the merged incident spans at most τ_I: reports of one night's strike run for a day,
 //! past τ (Validation 2026-11-03). The span bound stops a daily story chaining days.
-//! Events are the connected components of this graph (single linkage, geo::components),
-//! so the partition does not depend on input order. A country-level observation links
+//! Events are the connected components of the space-time links (single linkage,
+//! geo::components), which do not depend on input order. The incident links are merged
+//! greedily in (t, id) order, each merge allowed only while the span stays within τ_I,
+//! so the partition depends on that order; `events` sorts by it, so the result is
+//! deterministic for any input order. A country-level observation links
 //! to nothing (a single-observation event); an unlocated one forms no event.
 //!
 //! Credibility of an event (Admiralty 1-6), first match wins, with n the number of
@@ -25,7 +28,6 @@ use std::collections::{BTreeSet, HashMap};
 use crate::collect::{Report, adapter, rss, sha, stored};
 use crate::fmt::Time;
 use crate::geo::{Point, components, km};
-use crate::np;
 use crate::process::feeds::entities;
 use crate::regions::{self, Region};
 use crate::schema::{Entity, Event, Obs, Run};
@@ -231,7 +233,8 @@ pub fn events(
                 .collect();
             let lat: Vec<f64> = F.iter().map(|&i| P[i].lat).collect();
             let lon: Vec<f64> = F.iter().map(|&i| P[i].lon).collect();
-            let (a, o) = (np::mean(&lat), np::mean(&lon));
+            let mean = |v: &[f64]| v.iter().sum::<f64>() / v.len() as f64;
+            let (a, o) = (mean(&lat), mean(&lon));
             let m = *F
                 .iter()
                 .min_by(|&&i, &&j| {

@@ -1,7 +1,11 @@
 //! The unusual-activity backtest of README.md and VALIDATION.md against the judged
-//! flags docs/labels/unusual-flags.jsonl. Ignored: it needs a store rebuilt from the
-//! `data` branch at be528bf7 (`osw rebuild` on a copy), named by OSW_DATA. Run with
-//! `OSW_DATA=<copy> cargo test --release --test unusual_flags -- --ignored`.
+//! flags docs/labels/unusual-flags.jsonl. Ignored: it needs the raw reports of the tag
+//! `backtest-data-20261108` of the `data` branch, checked out as a worktree named by
+//! OSW_DATA; the test regenerates every derived table there (offline) before the
+//! backtest. Run with
+//!     git fetch origin tag backtest-data-20261108
+//!     git worktree add <dir> backtest-data-20261108
+//!     OSW_DATA=<dir> cargo test --release --test unusual_flags -- --ignored
 #![allow(non_snake_case)]
 
 mod common;
@@ -19,6 +23,7 @@ type Flag = (String, String, String);
 fn flags_and_supported_flags_kept() {
     common::offline();
     store::set_root(Some(std::env::var_os("OSW_DATA").expect("OSW_DATA").into()));
+    cycle::rebuild();
     let t = |m, d| Utc.with_ymd_and_hms(2026, m, d, 0, 0, 0).unwrap();
     let B = cycle::backtest(
         regions::get("russia-ukraine").unwrap(),

@@ -1,6 +1,6 @@
-//! osw collect [--region R ...] [--adapter A ...] [--runner local|cron] [--due]
+//! osw collect [--region R ...] [--adapter A ...] [--runner local|cron] [--due] [--raw-only]
 //! osw serve [--port 8790] [--no-collect]   # --no-collect: read-only store, proxy not recorded
-//! osw rebuild | retranslate | compact | fuse | regions | validate
+//! osw rebuild | retranslate [--raw-only] | compact | fuse | regions | validate
 //! osw analyse [intsum] [sitrep]   # indicator snapshot and products, after fuse
 //! osw gazetteer <GeoNames dir>
 //! osw backtest <region> <from YYYY-MM-DD> [to] [--step hours] [--healthy]   # boards over history
@@ -21,6 +21,10 @@ fn values(a: &[String], f: &str) -> Vec<String> {
     })
 }
 
+fn raw_only(a: &[String]) -> bool {
+    a.iter().any(|x| x == "--raw-only")
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().skip(1).collect();
     let cmd = a.first().map_or("", String::as_str);
@@ -32,6 +36,7 @@ fn main() {
             } else {
                 S
             };
+            cycle::RAW_ONLY.store(raw_only(&a), std::sync::atomic::Ordering::Relaxed);
             let runner = values(&a, "--runner")
                 .first()
                 .cloned()
@@ -47,18 +52,25 @@ fn main() {
             );
         }
         "serve" => {
-            let port = values(&a, "--port")
-                .first()
-                .and_then(|p| p.parse().ok())
-                .unwrap_or(8790);
+            let port = values(&a, "--port").first().map_or(8790, |p| {
+                p.parse().unwrap_or_else(|_| {
+                    eprintln!("bad --port {p}");
+                    std::process::exit(2)
+                })
+            });
             let collect = !a.iter().any(|x| x == "--no-collect");
             cycle::READ_ONLY.store(!collect, std::sync::atomic::Ordering::Relaxed);
             osw::api::serve(port, collect);
         }
         "rebuild" => println!("{} raw reports reprocessed", cycle::rebuild()),
         "retranslate" => {
+            cycle::RAW_ONLY.store(raw_only(&a), std::sync::atomic::Ordering::Relaxed);
             let (n, k) = cycle::retranslate();
-            println!("{k} of {n} untranslated text reports translated");
+            if raw_only(&a) {
+                println!("{n} text reports re-derived, {k} texts still untranslated");
+            } else {
+                println!("{k} of {n} untranslated text reports translated");
+            }
         }
         "compact" => println!("{} files merged", store::compact(None)),
         "fuse" => println!("{} events", fuse::fuse()),

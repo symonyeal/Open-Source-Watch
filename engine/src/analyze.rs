@@ -43,7 +43,6 @@ use serde_json::{Value, json};
 use crate::collect::adapter;
 use crate::fmt::{Time, round};
 use crate::gnss::{self, midnight};
-use crate::np;
 use crate::regions::{Indicator, Pir, Region};
 use crate::schema::{Event, Obs, Status, Track};
 use crate::signals;
@@ -273,7 +272,9 @@ fn transit(r: &Region, i: &Indicator, t: Time) -> Value {
         out["status"] = json!("no data");
         return out;
     }
-    let (m, sd) = (np::mean(&x), np::sd(&x));
+    let k = x.len() as f64;
+    let m = x.iter().sum::<f64>() / k;
+    let sd = (x.iter().map(|v| (v - m) * (v - m)).sum::<f64>() / (k - 1.0)).sqrt();
     let d = n as f64 - m;
     let z = if sd == 0.0 && d == 0.0 {
         0.0

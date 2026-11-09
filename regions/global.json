@@ -1,29 +1,98 @@
 {
   "markets": [
-    "LMT",
-    "RTX",
-    "NOC",
-    "BA",
-    "GD",
-    "LHX",
-    "^GSPC",
-    "^DJI",
-    "^VIX",
-    "GC=F",
-    "DX-Y.NYB"
+    {
+      "symbol": "LMT",
+      "name": "Lockheed Martin"
+    },
+    {
+      "symbol": "RTX",
+      "name": "Raytheon"
+    },
+    {
+      "symbol": "NOC",
+      "name": "Northrop Grumman"
+    },
+    {
+      "symbol": "BA",
+      "name": "Boeing"
+    },
+    {
+      "symbol": "GD",
+      "name": "General Dynamics"
+    },
+    {
+      "symbol": "LHX",
+      "name": "L3Harris"
+    },
+    {
+      "symbol": "^GSPC",
+      "name": "S&P 500"
+    },
+    {
+      "symbol": "^DJI",
+      "name": "Dow Jones"
+    },
+    {
+      "symbol": "^VIX",
+      "name": "VIX (Fear Index)"
+    },
+    {
+      "symbol": "GC=F",
+      "name": "Gold"
+    },
+    {
+      "symbol": "DX-Y.NYB",
+      "name": "US Dollar Index"
+    }
   ],
   "oil": [
-    "CL=F",
-    "BZ=F",
-    "NG=F",
-    "HO=F",
-    "RB=F"
+    {
+      "symbol": "CL=F",
+      "name": "WTI Crude Oil",
+      "type": "crude_wti"
+    },
+    {
+      "symbol": "BZ=F",
+      "name": "Brent Crude",
+      "type": "crude_brent"
+    },
+    {
+      "symbol": "NG=F",
+      "name": "Natural Gas",
+      "type": "natural_gas"
+    },
+    {
+      "symbol": "HO=F",
+      "name": "Heating Oil",
+      "type": "heating_oil"
+    },
+    {
+      "symbol": "RB=F",
+      "name": "RBOB Gasoline",
+      "type": "gasoline"
+    }
   ],
   "coins": [
-    "bitcoin",
-    "ethereum",
-    "solana",
-    "binancecoin"
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin",
+      "symbol": "BTC"
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "symbol": "ETH"
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "symbol": "SOL"
+    },
+    {
+      "id": "binancecoin",
+      "name": "BNB",
+      "symbol": "BNB"
+    }
   ],
   "threatTranslations": {
     "ירי רקטות וטילים": "Rocket and Missile Fire",

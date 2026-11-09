@@ -206,8 +206,8 @@ rx!(
 /// The largest count of people a casualty word w states in s ("13 people were
 /// killed", "kills 2", "the number injured has increased to 34"); 0 if the text says
 /// nobody was hurt.
-fn count(s: &str, passive: &str, active: &str) -> Option<i32> {
-    let P = [
+fn counters(passive: &str, active: &str) -> Vec<Regex> {
+    [
         format!(
             r"\b{N}\s+(?:[\w-]+,?\s+){{0,4}}(?:were |was |have been |has been |had been |are )?(?:{passive})\b"
         ),
@@ -217,11 +217,16 @@ fn count(s: &str, passive: &str, active: &str) -> Option<i32> {
         format!(
             r"\b(?:{passive}|{active})\b[^.]{{0,90}}\b(?:rose|risen|rises|increased|grew|reached)\s+to\s+{N}\b"
         ),
-    ];
+    ]
+    .iter()
+    .map(|p| re(p))
+    .collect()
+}
+
+fn count(s: &str, P: &[Regex]) -> Option<i32> {
     P.iter()
         .flat_map(|p| {
-            re(p)
-                .captures_iter(s)
+            p.captures_iter(s)
                 .filter_map(|c| number(c.get(1)?.as_str()))
                 .collect::<Vec<_>>()
         })
@@ -266,15 +271,14 @@ pub fn detail(s: &str, site: Option<&str>, country: Option<&str>) -> Detail {
     let missile = weapon
         .contains(&"missile")
         .then(|| {
-            MISSILES
-                .iter()
-                .find(|(p, _)| re(p).is_match(s))
-                .map(|x| x.1)
-                .or_else(|| {
-                    ["ballistic", "cruise"]
-                        .into_iter()
-                        .find(|w| re(w).is_match(s))
-                })
+            static M: LazyLock<Vec<(Regex, &str)>> = LazyLock::new(|| {
+                MISSILES
+                    .iter()
+                    .map(|(p, k)| (re(p), *k))
+                    .chain([(re("ballistic"), "ballistic"), (re("cruise"), "cruise")])
+                    .collect()
+            });
+            M.iter().find(|(r, _)| r.is_match(s)).map(|x| x.1)
         })
         .flatten();
     let sub_event = if DISRUPTED.is_match(s) && !HIT.is_match(s) {
@@ -291,16 +295,11 @@ pub fn detail(s: &str, site: Option<&str>, country: Option<&str>) -> Detail {
     };
     static T: LazyLock<Vec<(&str, Regex)>> =
         LazyLock::new(|| TARGETS.iter().map(|(k, p)| (*k, re(p))).collect());
-    let killed = count(
-        s,
-        "killed|dead|died|dies",
-        "kills?|killing|killed|death toll",
-    );
-    let injured = count(
-        s,
-        "injured|wounded|hurt",
-        "injures?|injuring|injured|wounding",
-    );
+    static KILLED: LazyLock<Vec<Regex>> =
+        LazyLock::new(|| counters("killed|dead|died|dies", "kills?|killing|killed|death toll"));
+    static INJURED: LazyLock<Vec<Regex>> =
+        LazyLock::new(|| counters("injured|wounded|hurt", "injures?|injuring|injured|wounding"));
+    let (killed, injured) = (count(s, &KILLED), count(s, &INJURED));
     // A site's kind first, then the first class named; an arms maker is military, and
     // people hurt with nothing else named are civilians.
     let target = site

@@ -16,7 +16,6 @@ pub mod fmt;
 pub mod fuse;
 pub mod geo;
 pub mod gnss;
-pub mod np;
 pub mod process;
 pub mod produce;
 pub mod regions;

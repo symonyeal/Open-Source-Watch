@@ -36,6 +36,30 @@ fn classifier_predicts_a_known_kind() {
     assert!(KINDS.contains(&k[0].as_str()), "{}", k[0]);
 }
 
+/// The classifier is scikit-learn's TfidfVectorizer(sublinear_tf, ngram_range=(1, 2)) +
+/// LogisticRegression(C=4, class_weight="balanced", tol=1e-8) fitted on kinds-sample.jsonl
+/// (scikit-learn 1.9.1): the fixture holds its kind for each text of kinds-week2.jsonl.
+#[test]
+fn classifier_equals_scikit_learn_on_unseen_texts() {
+    let T: Vec<String> = std::fs::read_to_string(repo().join("docs/labels/kinds-week2.jsonl"))
+        .unwrap()
+        .lines()
+        .map(|l| {
+            serde_json::from_str::<serde_json::Value>(l).unwrap()["text"]
+                .as_str()
+                .unwrap()
+                .to_string()
+        })
+        .collect();
+    let want = text("kinds_week2_sklearn.txt");
+    let got = osw::classifier::predict(&T);
+    let diff: Vec<usize> = (0..T.len())
+        .filter(|&i| got[i] != want.lines().nth(i).unwrap())
+        .collect();
+    assert_eq!(T.len(), want.lines().count());
+    assert!(diff.is_empty(), "differs at {diff:?}");
+}
+
 /// GeoNames names match capitalised; 'Hit' (Iraq, under 500,000) is not a place.
 #[test]
 fn geonames_city_and_short_words() {

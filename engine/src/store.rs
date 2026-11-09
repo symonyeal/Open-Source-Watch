@@ -211,7 +211,15 @@ pub fn inputs() {
                 }
             }
         } else if p.exists() {
-            let b = fs::read(p).unwrap();
+            // Line endings are the checkout's choice, not the input's.
+            let mut b = fs::read(p).unwrap();
+            let n = b.len();
+            b = b
+                .iter()
+                .enumerate()
+                .filter(|&(i, &c)| !(c == b'\r' && i + 1 < n && b[i + 1] == b'\n'))
+                .map(|(_, &c)| c)
+                .collect();
             let hash = Sha256::digest(&b)
                 .iter()
                 .map(|x| format!("{x:02x}"))

@@ -16,12 +16,13 @@ fn yahoo(s: &str) -> String {
     format!("https://query1.finance.yahoo.com/v8/finance/chart/{s}?interval=1d&range=5d")
 }
 
-fn list(k: &str) -> Vec<String> {
+/// Field f of each entry of the regions/global.json list k.
+fn list(k: &str, f: &str) -> Vec<String> {
     global()[k]
         .as_array()
         .into_iter()
         .flatten()
-        .filter_map(|v| v.as_str().map(String::from))
+        .filter_map(|v| v[f].as_str().map(String::from))
         .collect()
 }
 
@@ -36,11 +37,11 @@ pub fn sources(_R: &[Region]) -> Vec<Source> {
         ..Default::default()
     };
     // The markets route encodes the symbol; the oil route inserts it raw.
-    let mut S: Vec<Source> = list("markets")
+    let mut S: Vec<Source> = list("markets", "symbol")
         .iter()
         .map(|s| q(s, yahoo(&encode_uri_component(s))))
         .collect();
-    S.extend(list("oil").iter().map(|s| q(s, yahoo(s))));
+    S.extend(list("oil", "symbol").iter().map(|s| q(s, yahoo(s))));
     S.push(Source {
         id: "markets:CoinGecko".into(),
         region: "global".into(),
@@ -50,7 +51,7 @@ pub fn sources(_R: &[Region]) -> Vec<Source> {
         url: format!(
             "https://api.coingecko.com/api/v3/simple/price?ids={}&vs_currencies=usd\
                                   &include_24hr_change=true",
-            list("coins").join(",")
+            list("coins", "id").join(",")
         ),
         ..Default::default()
     });

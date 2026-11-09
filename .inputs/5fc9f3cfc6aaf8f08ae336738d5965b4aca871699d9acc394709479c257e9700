@@ -1,0 +1,127 @@
+{
+  "markets": [
+    {
+      "symbol": "LMT",
+      "name": "Lockheed Martin"
+    },
+    {
+      "symbol": "RTX",
+      "name": "Raytheon"
+    },
+    {
+      "symbol": "NOC",
+      "name": "Northrop Grumman"
+    },
+    {
+      "symbol": "BA",
+      "name": "Boeing"
+    },
+    {
+      "symbol": "GD",
+      "name": "General Dynamics"
+    },
+    {
+      "symbol": "LHX",
+      "name": "L3Harris"
+    },
+    {
+      "symbol": "^GSPC",
+      "name": "S&P 500"
+    },
+    {
+      "symbol": "^DJI",
+      "name": "Dow Jones"
+    },
+    {
+      "symbol": "^VIX",
+      "name": "VIX (Fear Index)"
+    },
+    {
+      "symbol": "GC=F",
+      "name": "Gold"
+    },
+    {
+      "symbol": "DX-Y.NYB",
+      "name": "US Dollar Index"
+    }
+  ],
+  "oil": [
+    {
+      "symbol": "CL=F",
+      "name": "WTI Crude Oil",
+      "type": "crude_wti"
+    },
+    {
+      "symbol": "BZ=F",
+      "name": "Brent Crude",
+      "type": "crude_brent"
+    },
+    {
+      "symbol": "NG=F",
+      "name": "Natural Gas",
+      "type": "natural_gas"
+    },
+    {
+      "symbol": "HO=F",
+      "name": "Heating Oil",
+      "type": "heating_oil"
+    },
+    {
+      "symbol": "RB=F",
+      "name": "RBOB Gasoline",
+      "type": "gasoline"
+    }
+  ],
+  "coins": [
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin",
+      "symbol": "BTC"
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "symbol": "ETH"
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "symbol": "SOL"
+    },
+    {
+      "id": "binancecoin",
+      "name": "BNB",
+      "symbol": "BNB"
+    }
+  ],
+  "threatTranslations": {
+    "ירי רקטות וטילים": "Rocket and Missile Fire",
+    "ירי רקטות": "Rocket Fire",
+    "ירי טילים": "Missile Fire",
+    "טיל בליסטי": "Ballistic Missile",
+    "טילים": "Missiles",
+    "רקטות": "Rockets",
+    "חדירת כלי טיס עוין": "Hostile Aircraft Intrusion",
+    "חדירת כטבם": "UAV Intrusion",
+    "כלי טיס עוין": "Hostile Aircraft",
+    "כטבם": "UAV/Drone",
+    "כטב\"ם": "UAV/Drone",
+    "חדירת מחבלים": "Terrorist Infiltration",
+    "חדירה": "Infiltration",
+    "רעידת אדמה": "Earthquake",
+    "צונמי": "Tsunami",
+    "חומרים מסוכנים": "Hazardous Materials",
+    "אירוע חומרים מסוכנים": "Hazmat Incident",
+    "אירוע רדיולוגי": "Radiological Event",
+    "התרעה": "Alert",
+    "התרעת צבע אדום": "Red Alert Warning",
+    "צבע אדום": "Red Alert",
+    "היכנסו למרחב המוגן": "Enter Protected Space",
+    "היכנסו למבנה": "Enter Building",
+    "טיל": "Missile",
+    "מטוס": "Aircraft",
+    "מסוק": "Helicopter",
+    "מל\"ט": "Drone",
+    "רחפן": "Drone"
+  }
+}

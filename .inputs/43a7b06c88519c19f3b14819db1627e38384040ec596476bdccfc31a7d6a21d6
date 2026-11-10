@@ -1,0 +1,8 @@
+{
+  "drawn": "2026-11-10",
+  "from": "russia-ukraine located text observations (telegram, rss, gnews; kind not report) after `osw rebuild` of the data branch at 0147bf0's engine",
+  "pairs": "560 pairs, split at the median text time (2026-10-27 07:18 UTC): both members before -> tune (200), after -> test (360); straddling pairs dropped. Strata, seed 20261110: M merged by the stored fusion, N same kind, same oblast or within 100 km, within 24 h, not merged; C other kind, same oblast, within 24 h; R any two within 48 h. Tune 70/70/30/30, test 130/130/50/50. Pairwise scores weight large events, since merged pairs are drawn uniformly",
+  "mentions": "120 text observations, 60 with a stored actor or site and 60 without, labelled actor1, actor2, site",
+  "labeller": "one labelling agent per 140 pairs and one for the mentions, blind to stratum and fusion output, by guides in the working notes (same main incident; Admiralty-free reading of each text); 25 random test pairs labelled independently by hand: 24 agree, 19 of 19 where both were sure",
+  "keys": "same: same real-world incident; sure: false when the texts do not settle it (110 of 560)"
+}

@@ -90,7 +90,7 @@ the 13 real ones. Rerun on 2026-11-07 with the current engine and data
 (`osw backtest russia-ukraine 2026-10-14 2026-11-03 --step 6 --healthy`), it gives 38
 flags and keeps 10 of the 13; `engine/tests/unusual_flags.rs` (ignored) checks this on a rebuilt store. In the 2026-10-25 audit, Rust linkage took 0.06 seconds
 against 0.54 for the NumPy implementation, and 0.58 against 4.8 at nine times the history.
-Tests compare the result against a brute-force check of every pair.
+Tests compare the result against a brute-force check of every pair. On 360 labelled test pairs (2026-11-10) fusion scores precision 0.754, recall 0.737 and F1 0.745; graph methods tried against it gained at most 2.5 points and were not adopted ([validation](docs/VALIDATION.md)).
 
 ### Indicators and reports
 

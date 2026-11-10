@@ -4,6 +4,15 @@ Each entry: the decision, the alternatives considered, the evidence, the date.
 
 ## Taken
 
+- **Graph methods for fusion not adopted** (2026-11-10). On 360 labelled test pairs (Validation 2026-11-10) the best
+  method chosen on the tune split, IDF-weighted text links across kinds plus a spectral split, raised pairwise F1 from
+  0.745 to 0.770 at precision 0.773; with an identical-text rule, found on test errors, 0.788. Below the 5-point bar
+  set for an engine change, and merging across kinds would change the one-kind-per-event model. Credibility
+  propagation recovered held-out grades at chance (AUC 0.485). Open: whether identical texts without an oblast should
+  link (to be checked on a fresh sample), and whether the 24 h incident span should split morning and evening strikes
+  on one city; whether any propagated score should become a field remains the owner's (grades come only from
+  `region.toml`).
+
 - **Restore the intelligence monitor** (2026-11-06). The owner identified the
   energy-first screen as a regression. `beb08f3` removed the map and sensor panels
   from `page.tsx` and their routes from snapshot publication. Restore the theater

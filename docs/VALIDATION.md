@@ -1,5 +1,41 @@
 # Validation
 
+## 2026-11-10 Fusion against labelled pairs; graph methods measured, none adopted
+
+Measured on a copy of the `data` branch rebuilt offline by `osw rebuild` (185,936 raw reports, 70.6 min), Russia/Ukraine.
+Labels: `docs/labels/fusion-pairs.jsonl` (560 pairs: 200 tune, 360 test, split by date; strata and labelling in
+`fusion.meta.json`) and `fusion-mentions.jsonl` (120 reports). Pairwise scores on the test split; every setting was
+chosen on the tune split (best F1 with precision at least the stored fusion's tune precision, 0.786).
+
+| Fusion | Precision | Recall | F1 | Change in F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Stored (`fuse.rs`) | 0.754 | 0.737 | 0.745 | |
+| Text links of overlap >= 0.45 added (same kind, same oblast, 24 h span) | 0.741 | 0.774 | 0.757 | +1.2 |
+| The same, any kind, overlap >= 0.5 | 0.743 | 0.805 | 0.773 | +2.8, lower precision |
+| Text links alone (weighted components, no space-time links) | 0.785-0.857 | 0.44-0.54 | 0.57-0.66 | worse |
+| Stored, split by a spectral (Fiedler) sweep at conductance < 0.02 | 0.770 | 0.729 | 0.749 | +0.4 |
+| IDF-weighted links >= 0.5, any kind, then the sweep split | 0.773 | 0.767 | 0.770 | +2.5 |
+| Stored + identical text within 2 h, any location (no graph) | 0.761 | 0.767 | 0.764 | +1.9 |
+| IDF links + split + identical text | 0.779 | 0.797 | 0.788 | +4.3 |
+
+- No method reaches +5 points. The best tune-chosen method gains +2.5 (paired bootstrap 95 % interval +0.2 to +5.2;
+  precision +1.9, interval -0.4 to +4.4). The identical-text rule was found by reading test errors, so its gains are
+  optimistic until checked on a fresh sample.
+- Worst false merges, stored and best method alike: separate morning and evening strikes on Kyiv chained within the
+  24 h incident span (pairs 264, 133, 141 and 70; raw ids 4df867f0, b0fba287, 508e6f56, c65f2b85, 5053690a,
+  e69cce26, c18ff6e2). Worst false splits: the same article at the same minute without an oblast, which links to
+  nothing (pairs 228, 232, 481; raw ids 0a60f1b0 / c5e33bf2, 76eefc60 / 6e3ca43c, c9c78e18 / 67c85586).
+- Labels: one blind labelling agent per 140 pairs; 25 test pairs relabelled by hand agree on 24, and on 19 of 19
+  where both were sure. 110 of 560 pairs are marked unsure.
+- Detail fields on the 120 labelled reports: actor1 precision 0.867, recall 0.675; actor2 0.900, 0.667; site 1.000,
+  0.200 (3 of 15: railway stations, factories and heat plants are not in `regions/sites.tsv`).
+- Credibility propagation (personalized PageRank from B-graded sources on the source-event graph, five folds): AUC of
+  held-out B against D/E sources 0.485, chance; only 5 of 31 graded text sources are B. The share of a source's events
+  that another owner also reports: 0.300. Neither is added.
+- Actor co-occurrence communities: the actor fields take two values (Russia, Ukraine), so the graph has two nodes.
+  A corroboration score by source communities has no labelled ground truth here and is not added.
+- No engine change: derived tables, `osw rebuild` output and the other regions are as before.
+
 ## Intelligence monitor recovery (2026-11-06)
 
 - Cumulative integration check: no repair diff in `engine/`, ContextBoard,
